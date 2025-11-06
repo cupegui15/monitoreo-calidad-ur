@@ -9,7 +9,7 @@ from datetime import date
 st.set_page_config(page_title="Monitoreo de Calidad UR", layout="wide", page_icon="📋")
 
 # ===============================
-# 🎨 ESTILO UNIVERSIDAD DEL ROSARIO (versión perfeccionada)
+# 🎨 ESTILO UNIVERSIDAD DEL ROSARIO
 # ===============================
 st.markdown("""
     <style>
@@ -57,7 +57,7 @@ st.markdown("""
             font-weight: 600 !important;
         }
 
-        /* Cajas de texto, fecha, selects, textareas */
+        /* ===== INPUTS ===== */
         .stTextInput input, .stTextArea textarea, .stSelectbox div[data-baseweb="select"] > div, 
         .stDateInput input {
             background-color: #fff !important;
@@ -67,13 +67,8 @@ st.markdown("""
             font-weight: 500 !important;
         }
 
-        /* Radios (Cumple / No cumple) */
-        div[data-baseweb="radio"] {
-            background-color: #fff !important;
-            border-radius: 10px;
-            padding: 0.3rem 0.8rem;
-        }
-        div[data-baseweb="radio"] label p {
+        /* ===== RADIO ===== */
+        div[data-baseweb="radio"] label, div[data-baseweb="radio"] p {
             color: #2b2b2b !important;
             font-weight: 600 !important;
         }
@@ -98,6 +93,15 @@ st.markdown("""
         .stMetricLabel {
             color: #9B0029 !important;
             font-weight: 700 !important;
+        }
+
+        /* ===== TEXTO VACÍO ===== */
+        .empty-msg {
+            color: #2b2b2b !important;
+            font-size: 1.2rem;
+            font-weight: 600;
+            text-align: center;
+            padding: 2rem;
         }
 
         /* ===== SECCIONES ===== */
@@ -170,27 +174,6 @@ preguntas = {
             ("¿Valida comprensión del usuario?", 8),
             ("¿Documenta correctamente la atención?", 14),
             ("¿Finaliza de forma amable?", 10)
-        ],
-        "Back": [
-            ("¿Cumple ANS establecido?", 20),
-            ("¿Analiza correctamente la solicitud?", 20),
-            ("¿Gestión SAP/UXXI/Bizagi adecuada?", 20),
-            ("¿Responde eficazmente según solicitud?", 20),
-            ("¿Empatía al cerrar la solicitud?", 20)
-        ]
-    },
-    "Servicios 2030": {
-        "Linea 2030": [
-            ("¿Atiende oportunamente?", 9),
-            ("¿Saluda profesionalmente?", 9),
-            ("¿Valida identidad?", 9),
-            ("¿Escucha activamente?", 9),
-            ("¿Consulta herramientas de soporte?", 9),
-            ("¿Gestiona tiempos de espera?", 9),
-            ("¿Sigue flujo definido?", 14),
-            ("¿Valida comprensión del usuario?", 8),
-            ("¿Documenta coherentemente?", 14),
-            ("¿Finaliza cordialmente?", 10)
         ]
     }
 }
@@ -202,9 +185,9 @@ st.sidebar.image("https://upload.wikimedia.org/wikipedia/commons/7/7e/University
 pagina = st.sidebar.radio("Menú:", ["📝 Formulario de Monitoreo", "📊 Dashboard de Análisis"])
 
 # ===============================
-# 🏛️ ENCABEZADO CON LOGO E IMAGEN
+# 🏛️ ENCABEZADO
 # ===============================
-st.markdown("""
+st.markdown(f"""
 <div class="banner">
     <div>
         <h1>Monitoreo de Calidad - Universidad del Rosario</h1>
@@ -233,10 +216,7 @@ if pagina == "📝 Formulario de Monitoreo":
     canal = st.selectbox("Canal", areas[area]["canales"])
     error_critico = st.radio("¿Corresponde a un error crítico?", ["No", "Sí"], horizontal=True)
 
-    if area in preguntas:
-        preguntas_canal = preguntas[area].get(canal, next(iter(preguntas[area].values())))
-    else:
-        preguntas_canal = []
+    preguntas_canal = preguntas.get(area, {}).get(canal, [])
 
     resultados, total = {}, 0
 
@@ -267,32 +247,15 @@ if pagina == "📝 Formulario de Monitoreo":
         st.success("✅ Monitoreo guardado correctamente.")
 
 # ===============================
-# 📊 DASHBOARD
+# 📊 DASHBOARD DE ANÁLISIS
 # ===============================
-if pagina == "📊 Dashboard de Análisis":
-    st.markdown('<div class="section-title">📈 Dashboard de Monitoreos</div>', unsafe_allow_html=True)
-
+elif pagina == "📊 Dashboard de Análisis":
+    st.markdown('<div class="section-title">📈 Dashboard de Análisis</div>', unsafe_allow_html=True)
     df = cargar_datos()
+
     if df.empty:
-        st.warning("⚠️ No hay registros aún.")
-        st.stop()
-
-    area_f = st.sidebar.selectbox("Filtrar por Área:", ["Todas"] + sorted(df["Área"].unique()))
-    canal_f = st.sidebar.selectbox("Filtrar por Canal:", ["Todos"] + sorted(df["Canal"].unique()))
-
-    if area_f != "Todas":
-        df = df[df["Área"] == area_f]
-    if canal_f != "Todos":
-        df = df[df["Canal"] == canal_f]
-
-    total_mon, prom_total, errores = len(df), df["Total"].mean(), len(df[df["Error Crítico"] == "Sí"])
-
-    c1, c2, c3 = st.columns(3)
-    c1.metric("Monitoreos Totales", total_mon)
-    c2.metric("Promedio de Puntaje", round(prom_total, 2))
-    c3.metric("Errores Críticos", errores)
-
-    st.divider()
-    st.plotly_chart(px.bar(df, x="Monitor", color="Monitor", title="Monitoreos por Evaluador", color_discrete_sequence=["#9B0029"]), use_container_width=True)
-    st.plotly_chart(px.bar(df, x="Asesor", color="Área", title="Monitoreos por Asesor"), use_container_width=True)
-    st.plotly_chart(px.box(df, x="Área", y="Total", color="Canal", title="Distribución de Puntajes"), use_container_width=True)
+        st.markdown('<div class="empty-msg">📭 No hay registros aún</div>', unsafe_allow_html=True)
+    else:
+        st.write("Datos cargados correctamente")
+        fig = px.bar(df, x="Área", y="Total", color="Monitor", title="Promedio de Puntajes por Área")
+        st.plotly_chart(fig, use_container_width=True)
