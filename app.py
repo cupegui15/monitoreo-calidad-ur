@@ -326,6 +326,7 @@ else:
 st.subheader("✅ Cumplimiento por Pregunta")
 
 preguntas_cols = [c for c in df.columns if "¿" in c or "?" in c]
+
 if preguntas_cols:
     for i, pregunta in enumerate(preguntas_cols):
         resumen = df[pregunta].value_counts().reset_index()
@@ -356,12 +357,14 @@ if preguntas_cols:
 else:
     st.info("⚠️ No se han registrado preguntas aún en los monitoreos.")
 
-        # ===============================
-        # DESCARGA DE DATOS
-        # ===============================
-        st.download_button(
-            label="⬇️ Descargar base consolidada (CSV)",
-            data=df.to_csv(index=False).encode("utf-8"),
-            file_name="monitoreos_consolidado.csv",
-            mime="text/csv"
-        )
+# ===============================
+# DESCARGA DE DATOS
+# ===============================
+st.divider()
+
+st.download_button(
+    label="⬇️ Descargar base consolidada (CSV)",
+    data=df.to_csv(index=False).encode("utf-8"),
+    file_name="monitoreos_consolidado.csv",
+    mime="text/csv"
+)
