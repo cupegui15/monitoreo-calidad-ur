@@ -269,37 +269,105 @@ if pagina == "📝 Formulario de Monitoreo":
 # DASHBOARD
 # ===============================
 else:
-    st.markdown('<div class="section-title">📈 Dashboard de Análisis</div>', unsafe_allow_html=True)
     df = cargar_datos()
 
     if df.empty:
-        st.markdown('<div class="empty-msg">📭 No hay registros aún</div>', unsafe_allow_html=True)
+        st.warning("📭 No hay registros para mostrar aún.")
     else:
         st.sidebar.subheader("Filtros")
         area_f = st.sidebar.selectbox("Área:", ["Todas"] + sorted(df["Área"].unique()))
         canal_f = st.sidebar.selectbox("Canal:", ["Todos"] + sorted(df["Canal"].unique()))
         asesor_f = st.sidebar.selectbox("Asesor:", ["Todos"] + sorted(df["Asesor"].unique()))
+        monitor_f = st.sidebar.selectbox("Monitor:", ["Todos"] + sorted(df["Monitor"].unique()))
 
+        # FILTROS
         if area_f != "Todas":
             df = df[df["Área"] == area_f]
         if canal_f != "Todos":
             df = df[df["Canal"] == canal_f]
         if asesor_f != "Todos":
             df = df[df["Asesor"] == asesor_f]
+        if monitor_f != "Todos":
+            df = df[df["Monitor"] == monitor_f]
 
-        c1, c2, c3 = st.columns(3)
+        # ===============================
+        # MÉTRICAS
+        # ===============================
+        c1, c2, c3, c4 = st.columns(4)
         c1.metric("Monitoreos Totales", len(df))
         c2.metric("Promedio Puntaje", round(df["Total"].mean(), 2))
         c3.metric("Errores Críticos", len(df[df["Error crítico"] == "Sí"]))
+        c4.metric("Última Fecha", df["Fecha"].max())
 
         st.divider()
+
+        # ===============================
+        # GRÁFICOS GENERALES
+        # ===============================
+        st.subheader("📊 Análisis General")
+
+        col1, col2 = st.columns(2)
+        with col1:
+            fig1 = px.bar(df, x="Monitor", color="Área", title="Monitoreos por Monitor", text_auto=True)
+            st.plotly_chart(fig1, use_container_width=True)
+
+        with col2:
+            fig2 = px.bar(df, x="Asesor", color="Área", title="Monitoreos por Asesor", text_auto=True)
+            st.plotly_chart(fig2, use_container_width=True)
+
+        st.divider()
+
+        # ===============================
+        # PROMEDIO POR CANAL / ÁREA
+        # ===============================
+        st.subheader("📈 Promedios Comparativos")
+
+        col3, col4 = st.columns(2)
+        with col3:
+            fig3 = px.bar(df.groupby("Canal")["Total"].mean().reset_index(),
+                          x="Canal", y="Total", title="Promedio de Puntaje por Canal",
+                          color="Canal", text_auto=True)
+            st.plotly_chart(fig3, use_container_width=True)
+        with col4:
+            fig4 = px.bar(df.groupby("Área")["Total"].mean().reset_index(),
+                          x="Área", y="Total", title="Promedio de Puntaje por Área",
+                          color="Área", text_auto=True)
+            st.plotly_chart(fig4, use_container_width=True)
+
+        st.divider()
+
+        # ===============================
+        # ANÁLISIS DE CUMPLIMIENTO POR PREGUNTA
+        # ===============================
+        st.subheader("✅ Cumplimiento por Pregunta")
+
+        preguntas_cols = [c for c in df.columns if "¿" in c or "?" in c]
+        if preguntas_cols:
+            for pregunta in preguntas_cols:
+                resumen = df[pregunta].value_counts().reset_index()
+                resumen.columns = ["Estado", "Cantidad"]
+                colA, colB = st.columns([2, 1])
+                with colA:
+                    figQ = px.bar(resumen, x="Estado", y="Cantidad", color="Estado",
+                                  title=pregunta, text_auto=True,
+                                  color_discrete_map={"1": "#007700", "0": "#cc0000"})
+                    st.plotly_chart(figQ, use_container_width=True)
+                with colB:
+                    figPie = px.pie(resumen, names="Estado", values="Cantidad",
+                                    color="Estado",
+                                    color_discrete_map={"1": "#007700", "0": "#cc0000"})
+                    st.plotly_chart(figPie, use_container_width=True)
+        else:
+            st.info("⚠️ No se han registrado preguntas aún en los monitoreos.")
+
+        st.divider()
+
+        # ===============================
+        # DESCARGA DE DATOS
+        # ===============================
         st.download_button(
-            label="⬇️ Descargar Base de Monitoreos (CSV)",
+            label="⬇️ Descargar base consolidada (CSV)",
             data=df.to_csv(index=False).encode("utf-8"),
-            file_name="monitoreos.csv",
+            file_name="monitoreos_consolidado.csv",
             mime="text/csv"
         )
-
-        st.divider()
-        fig = px.bar(df, x="Monitor", y="Total", color="Área", title="Puntaje promedio por monitor", barmode="group")
-        st.plotly_chart(fig, use_container_width=True)
