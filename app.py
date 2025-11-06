@@ -2,80 +2,90 @@ import streamlit as st
 import pandas as pd
 import plotly.express as px
 from datetime import date
+import base64
+from io import BytesIO
 
-st.set_page_config(
-    page_title="Monitoreo de Calidad UR",
-    layout="wide",
-    page_icon="📋"
-)
+st.set_page_config(page_title="Monitoreo de Calidad UR", layout="wide", page_icon="📋")
 
 # ===============================
-# ESTILOS INSTITUCIONALES
+# FONDO Y COLORES INSTITUCIONALES
 # ===============================
 st.markdown("""
     <style>
-        /* Fondo general */
-        body, .stApp {
-            background-color: #f7f7f7;
-            color: #333;
-            font-family: 'Segoe UI', sans-serif;
+        /* Colores institucionales */
+        :root {
+            --ur-rojo: #A80532;
+            --ur-gris: #f5f5f5;
+            --ur-texto: #2c2c2c;
         }
 
-        /* Encabezado */
-        .main-header {
-            background-color: #A80532;
-            color: white;
-            padding: 1.2rem;
-            border-radius: 10px;
-            text-align: center;
-            font-size: 1.8rem;
-            font-weight: 600;
-            margin-bottom: 1rem;
+        body, .stApp {
+            background-color: var(--ur-gris);
+            color: var(--ur-texto);
+            font-family: "Segoe UI", sans-serif;
         }
 
         /* Sidebar */
         [data-testid="stSidebar"] {
-            background-color: #A80532;
-            color: white;
+            background-color: var(--ur-rojo);
         }
 
-        [data-testid="stSidebar"] h2, [data-testid="stSidebar"] span, [data-testid="stSidebar"] p {
+        [data-testid="stSidebar"] * {
             color: white !important;
-        }
-
-        [data-testid="stSidebarNav"] ul {
-            background-color: transparent;
+            font-weight: 500;
         }
 
         /* Botones */
         .stButton>button {
-            background-color: #A80532;
+            background-color: var(--ur-rojo);
             color: white;
-            font-weight: bold;
+            font-weight: 600;
+            border-radius: 8px;
             border: none;
-            border-radius: 10px;
-            padding: 0.6rem 1.2rem;
+            transition: 0.3s;
         }
 
         .stButton>button:hover {
-            background-color: #88042A;
+            background-color: #87042A;
         }
 
-        /* Títulos de secciones */
-        .stMarkdown h2, .stMarkdown h3, .stMarkdown h4 {
-            color: #A80532;
+        /* Encabezado */
+        .header-container {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            background-color: var(--ur-rojo);
+            color: white;
+            padding: 1rem 2rem;
+            border-radius: 10px;
+            margin-bottom: 2rem;
+        }
+
+        .header-title {
+            font-size: 1.8rem;
             font-weight: 600;
         }
 
-        /* Campos y select */
-        .stSelectbox, .stTextInput, .stDateInput, .stRadio, .stTextArea {
-            border-radius: 8px !important;
+        .section-title {
+            color: var(--ur-rojo);
+            font-weight: 600;
+            font-size: 1.4rem;
+            margin-top: 1.5rem;
+        }
+
+        .stSelectbox label, .stTextInput label, .stDateInput label, .stRadio label, .stTextArea label {
+            color: var(--ur-texto) !important;
+            font-weight: 500;
+        }
+
+        .stMetricLabel {
+            color: var(--ur-rojo) !important;
         }
     </style>
 """, unsafe_allow_html=True)
 
 # ===============================
-# FUNCIONES
+# CARGA DE DATOS
 # ===============================
 @st.cache_data
 def cargar_datos():
@@ -94,7 +104,7 @@ def guardar_datos(data):
     df.to_csv("monitoreos.csv", index=False)
 
 # ===============================
-# CONFIGURACIÓN DE ÁREAS
+# CONFIGURACIÓN
 # ===============================
 areas = {
     "CASA UR": {
@@ -165,14 +175,21 @@ st.sidebar.image("https://upload.wikimedia.org/wikipedia/commons/7/7e/University
 pagina = st.sidebar.radio("Menú:", ["📝 Formulario de Monitoreo", "📊 Dashboard de Análisis"])
 
 # ===============================
+# ENCABEZADO CON BANNER
+# ===============================
+col1, col2, col3 = st.columns([1, 5, 1])
+with col1:
+    st.image("https://upload.wikimedia.org/wikipedia/commons/7/7e/University_of_Rosario_logo.png", width=120)
+with col2:
+    st.markdown('<div class="header-title">📋 Sistema de Monitoreo de Calidad - Universidad del Rosario</div>', unsafe_allow_html=True)
+with col3:
+    st.image("https://i.imgur.com/nHEk2V1.png", width=120)  # Lobo UR (puedes reemplazar por tu imagen local)
+
+# ===============================
 # FORMULARIO
 # ===============================
 if pagina == "📝 Formulario de Monitoreo":
-    st.markdown('<div class="main-header">📝 Formulario de Monitoreo de Calidad</div>', unsafe_allow_html=True)
-
-    # Imagen institucional del lobo
-    st.image("https://upload.wikimedia.org/wikipedia/commons/7/7e/University_of_Rosario_logo.png", width=120)
-    st.image("https://i.ibb.co/gmy7DwV/lobo-urosario.png", width=220)
+    st.markdown('<div class="section-title">📝 Formulario de Monitoreo</div>', unsafe_allow_html=True)
 
     col1, col2, col3 = st.columns(3)
     with col1:
@@ -186,16 +203,10 @@ if pagina == "📝 Formulario de Monitoreo":
     fecha = st.date_input("Fecha de la interacción", date.today())
     canal = st.selectbox("Canal", areas[area]["canales"])
 
-    st.markdown("---")
-
     error_critico = st.radio("¿Corresponde a un error crítico?", ["No", "Sí"], horizontal=True)
 
-    # Manejo de preguntas
     if area in preguntas:
-        if canal in preguntas[area]:
-            preguntas_canal = preguntas[area][canal]
-        else:
-            preguntas_canal = next(iter(preguntas[area].values()))
+        preguntas_canal = preguntas[area].get(canal, next(iter(preguntas[area].values())))
     else:
         preguntas_canal = []
 
@@ -238,7 +249,7 @@ if pagina == "📝 Formulario de Monitoreo":
 # DASHBOARD
 # ===============================
 if pagina == "📊 Dashboard de Análisis":
-    st.markdown('<div class="main-header">📊 Dashboard de Análisis de Monitoreos</div>', unsafe_allow_html=True)
+    st.markdown('<div class="section-title">📊 Dashboard de Monitoreos</div>', unsafe_allow_html=True)
 
     df = cargar_datos()
     if df.empty:
