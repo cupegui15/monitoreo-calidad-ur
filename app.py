@@ -185,7 +185,7 @@ preguntas = {
 # ===============================
 # 🧭 SIDEBAR
 # ===============================
-st.sidebar.image("https://urosario.edu.co/sites/default/files/2025-04/logo_vertical_ur_rojo.png", width=150)
+st.sidebar.image("https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcQY0ZMIXOVuzLond_jNv713shc6TmUWej0JDQ&s", width=150)
 pagina = st.sidebar.radio("Menú:", ["📝 Formulario de Monitoreo", "📊 Dashboard de Análisis"])
 
 # ===============================
