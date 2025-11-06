@@ -12,8 +12,7 @@ st.set_page_config(page_title="Monitoreo de Calidad UR", layout="wide", page_ico
 # ===============================
 # RUTA DEL ARCHIVO DE DATOS
 # ===============================
-BASE_DIR = os.path.dirname(os.path.abspath(__file__))
-DATA_PATH = os.path.join(BASE_DIR, "monitoreos.csv")
+DATA_FILE = "monitoreos.csv"
 
 # ===============================
 # IMÁGENES INSTITUCIONALES
@@ -36,8 +35,6 @@ html, body, .stApp {
     color: var(--texto) !important;
     font-family: "Segoe UI", sans-serif;
 }
-
-/* Sidebar */
 [data-testid="stSidebar"] {
     background-color: var(--rojo-ur) !important;
 }
@@ -45,8 +42,6 @@ html, body, .stApp {
     color: #fff !important;
     font-weight: 600 !important;
 }
-
-/* Banner */
 .banner {
     background-color: var(--rojo-ur);
     color: white;
@@ -59,14 +54,19 @@ html, body, .stApp {
 }
 .banner h2 { margin: 0; font-size: 1.6rem; font-weight: 700; }
 .banner p { margin: 0; font-size: 0.9rem; }
-
-/* Radios */
-div[data-baseweb="radio"] label, div[role="radiogroup"] > div {
-    color: var(--texto) !important;
-    font-weight: 600 !important;
+.section-title {
+    color: var(--rojo-ur);
+    font-weight: 700;
+    font-size: 1.2rem;
+    margin-top: 1rem;
+    margin-bottom: 0.6rem;
 }
-
-/* Botones */
+.empty-msg {
+    color: var(--texto);
+    font-weight: 700;
+    text-align: center;
+    padding: 1.2rem;
+}
 .stButton>button {
     background-color: var(--rojo-ur) !important;
     color: white !important;
@@ -77,42 +77,27 @@ div[data-baseweb="radio"] label, div[role="radiogroup"] > div {
     background-color: #7d0221 !important;
     transform: scale(1.03);
 }
-
-/* Títulos */
-.section-title {
-    color: var(--rojo-ur);
-    font-weight: 700;
-    font-size: 1.2rem;
-    margin-top: 1rem;
-    margin-bottom: 0.6rem;
-}
-
-/* Mensaje vacío */
-.empty-msg {
-    color: var(--texto);
-    font-weight: 700;
-    text-align: center;
-    padding: 1.2rem;
-}
 </style>
 """, unsafe_allow_html=True)
 
 # ===============================
 # FUNCIONES DE DATOS
 # ===============================
-@st.cache_data
 def cargar_datos():
-    if os.path.exists(DATA_PATH):
-        return pd.read_csv(DATA_PATH)
-    return pd.DataFrame()
+    """Carga los datos del CSV si existe."""
+    if os.path.exists(DATA_FILE):
+        return pd.read_csv(DATA_FILE)
+    else:
+        return pd.DataFrame()
 
 def guardar_datos(data):
+    """Guarda los registros en monitoreos.csv."""
     df = pd.DataFrame([data])
-    if os.path.exists(DATA_PATH):
-        df_exist = pd.read_csv(DATA_PATH)
-        df = pd.concat([df_exist, df], ignore_index=True)
-    df.to_csv(DATA_PATH, index=False)
-    st.toast(f"💾 Datos guardados en {os.path.basename(DATA_PATH)}", icon="✅")
+    if os.path.exists(DATA_FILE):
+        df_existente = pd.read_csv(DATA_FILE)
+        df = pd.concat([df_existente, df], ignore_index=True)
+    df.to_csv(DATA_FILE, index=False, encoding='utf-8')
+    st.success("✅ Monitoreo guardado correctamente y almacenado en monitoreos.csv")
 
 # ===============================
 # CONFIGURACIÓN DE ÁREAS Y PREGUNTAS
@@ -279,7 +264,6 @@ if pagina == "📝 Formulario de Monitoreo":
         }
         fila.update(resultados)
         guardar_datos(fila)
-        st.success("✅ Monitoreo guardado correctamente.")
 
 # ===============================
 # DASHBOARD
@@ -287,6 +271,7 @@ if pagina == "📝 Formulario de Monitoreo":
 else:
     st.markdown('<div class="section-title">📈 Dashboard de Análisis</div>', unsafe_allow_html=True)
     df = cargar_datos()
+
     if df.empty:
         st.markdown('<div class="empty-msg">📭 No hay registros aún</div>', unsafe_allow_html=True)
     else:
@@ -304,23 +289,17 @@ else:
 
         c1, c2, c3 = st.columns(3)
         c1.metric("Monitoreos Totales", len(df))
-        c2.metric("Promedio Puntaje", round(df["Total"].astype(float).mean(), 2))
+        c2.metric("Promedio Puntaje", round(df["Total"].mean(), 2))
         c3.metric("Errores Críticos", len(df[df["Error crítico"] == "Sí"]))
 
         st.divider()
-
-        # ===============================
-        # DESCARGA DE CSV
-        # ===============================
         st.download_button(
             label="⬇️ Descargar Base de Monitoreos (CSV)",
-            data=df.to_csv(index=False).encode('utf-8'),
+            data=df.to_csv(index=False).encode("utf-8"),
             file_name="monitoreos.csv",
             mime="text/csv"
         )
 
         st.divider()
-        fig1 = px.bar(df, x="Monitor", color="Monitor", title="Monitoreos por Monitor")
-        fig2 = px.bar(df, x="Asesor", color="Área", title="Monitoreos por Asesor")
-        st.plotly_chart(fig1, use_container_width=True)
-        st.plotly_chart(fig2, use_container_width=True)
+        fig = px.bar(df, x="Monitor", y="Total", color="Área", title="Puntaje promedio por monitor", barmode="group")
+        st.plotly_chart(fig, use_container_width=True)
