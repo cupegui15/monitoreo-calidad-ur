@@ -137,7 +137,10 @@ if pagina == "📝 Formulario de Monitoreo":
     st.markdown("---")
 
     error_critico = st.radio("¿Corresponde a un error crítico?", ["No", "Sí"], horizontal=True)
-    preguntas_canal = preguntas[area].get(canal, preguntas[area]["Telefónico"])
+    preguntas_canal = preguntas[area].get(canal)
+
+if preguntas_canal is None:
+    preguntas_canal = next(iter(preguntas[area].values()))
 
     resultados = {}
     total = 0
