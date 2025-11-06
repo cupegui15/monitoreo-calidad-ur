@@ -9,7 +9,7 @@ from datetime import date
 st.set_page_config(page_title="Monitoreo de Calidad UR", layout="wide", page_icon="📋")
 
 # ===============================
-# 🎨 ESTILO UNIVERSIDAD DEL ROSARIO (tema claro institucional)
+# 🎨 ESTILO UNIVERSIDAD DEL ROSARIO (versión perfeccionada)
 # ===============================
 st.markdown("""
     <style>
@@ -51,17 +51,31 @@ st.markdown("""
             margin: 0;
         }
 
-        /* ===== FORMULARIO ===== */
+        /* ===== FORMULARIOS ===== */
         label, .stRadio > label, .stTextInput > label, .stDateInput > label {
             color: #2b2b2b !important;
             font-weight: 600 !important;
         }
-        .stTextInput input, .stTextArea textarea, .stSelectbox div[data-baseweb="select"] > div {
+
+        /* Cajas de texto, fecha, selects, textareas */
+        .stTextInput input, .stTextArea textarea, .stSelectbox div[data-baseweb="select"] > div, 
+        .stDateInput input {
             background-color: #fff !important;
             color: #2b2b2b !important;
             border: 1px solid #ccc !important;
             border-radius: 6px !important;
             font-weight: 500 !important;
+        }
+
+        /* Radios (Cumple / No cumple) */
+        div[data-baseweb="radio"] {
+            background-color: #fff !important;
+            border-radius: 10px;
+            padding: 0.3rem 0.8rem;
+        }
+        div[data-baseweb="radio"] label p {
+            color: #2b2b2b !important;
+            font-weight: 600 !important;
         }
 
         /* ===== BOTONES ===== */
