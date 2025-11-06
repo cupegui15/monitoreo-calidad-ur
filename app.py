@@ -159,18 +159,18 @@ if pagina == "📝 Formulario de Monitoreo":
     st.metric("Puntaje Total", total)
 
     if st.button("💾 Guardar Monitoreo"):
-    data = {
-        "Área": area,
-        "Monitor": monitor,
-        "Asesor": asesor,
-        "Código": codigo,
-        "Fecha": fecha,
-        "Canal": canal,
-        "Error Crítico": error_critico,
-        "Puntaje Total": total,
-        "Aspectos Positivos": positivos,
-        "Aspectos por Mejorar": mejorar
-    }
-    data.update(resultados)
-    guardar_datos(data)
-    st.success("✅ Monitoreo guardado correctamente.")
+        data = {
+            "Área": area,
+            "Monitor": monitor,
+            "Asesor": asesor,
+            "Código": codigo,
+            "Fecha": fecha,
+            "Canal": canal,
+            "Error Crítico": error_critico,
+            "Puntaje Total": total,
+            "Aspectos Positivos": positivos,
+            "Aspectos por Mejorar": mejorar
+        }
+        data.update(resultados)
+        guardar_datos(data)
+        st.success("✅ Monitoreo guardado correctamente.")
