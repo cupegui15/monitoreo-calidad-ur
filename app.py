@@ -2,90 +2,79 @@ import streamlit as st
 import pandas as pd
 import plotly.express as px
 from datetime import date
-import base64
-from io import BytesIO
 
 st.set_page_config(page_title="Monitoreo de Calidad UR", layout="wide", page_icon="📋")
 
 # ===============================
-# FONDO Y COLORES INSTITUCIONALES
+# 🎨 ESTILO UNIVERSIDAD DEL ROSARIO
 # ===============================
 st.markdown("""
     <style>
-        /* Colores institucionales */
-        :root {
-            --ur-rojo: #A80532;
-            --ur-gris: #f5f5f5;
-            --ur-texto: #2c2c2c;
-        }
-
         body, .stApp {
-            background-color: var(--ur-gris);
-            color: var(--ur-texto);
+            background-color: #f7f7f7;
+            color: #2b2b2b;
             font-family: "Segoe UI", sans-serif;
         }
 
-        /* Sidebar */
+        /* ======= SIDEBAR ======= */
         [data-testid="stSidebar"] {
-            background-color: var(--ur-rojo);
+            background-color: #9B0029;
         }
-
         [data-testid="stSidebar"] * {
             color: white !important;
             font-weight: 500;
         }
 
-        /* Botones */
-        .stButton>button {
-            background-color: var(--ur-rojo);
-            color: white;
-            font-weight: 600;
-            border-radius: 8px;
-            border: none;
-            transition: 0.3s;
-        }
-
-        .stButton>button:hover {
-            background-color: #87042A;
-        }
-
-        /* Encabezado */
-        .header-container {
+        /* ======= ENCABEZADO ======= */
+        .banner {
+            background-color: #9B0029;
+            border-radius: 12px;
+            padding: 1.2rem 2rem;
             display: flex;
             justify-content: space-between;
             align-items: center;
-            background-color: var(--ur-rojo);
             color: white;
-            padding: 1rem 2rem;
-            border-radius: 10px;
             margin-bottom: 2rem;
         }
-
-        .header-title {
+        .banner-title {
             font-size: 1.8rem;
             font-weight: 600;
         }
+        .banner-subtitle {
+            font-size: 1rem;
+            font-weight: 400;
+            opacity: 0.9;
+        }
 
-        .section-title {
-            color: var(--ur-rojo);
+        /* ======= BOTONES ======= */
+        .stButton>button {
+            background-color: #9B0029;
+            color: white;
+            border-radius: 8px;
+            border: none;
+            padding: 0.5rem 1rem;
             font-weight: 600;
-            font-size: 1.4rem;
+        }
+        .stButton>button:hover {
+            background-color: #7d0221;
+        }
+
+        /* ======= TÍTULOS ======= */
+        .section-title {
+            color: #9B0029;
+            font-size: 1.3rem;
+            font-weight: 600;
             margin-top: 1.5rem;
         }
 
-        .stSelectbox label, .stTextInput label, .stDateInput label, .stRadio label, .stTextArea label {
-            color: var(--ur-texto) !important;
-            font-weight: 500;
-        }
-
         .stMetricLabel {
-            color: var(--ur-rojo) !important;
+            color: #9B0029 !important;
         }
     </style>
 """, unsafe_allow_html=True)
 
 # ===============================
-# CARGA DE DATOS
+# 📦 FUNCIONES DE DATOS
 # ===============================
 @st.cache_data
 def cargar_datos():
@@ -104,28 +93,28 @@ def guardar_datos(data):
     df.to_csv("monitoreos.csv", index=False)
 
 # ===============================
-# CONFIGURACIÓN
+# ⚙️ CONFIGURACIÓN DE ÁREAS Y PREGUNTAS
 # ===============================
 areas = {
     "CASA UR": {
         "canales": ["Telefónico", "Chat", "Contact Center", "Back"],
         "monitores": ["Mauricio Ramirez Cubillos", "Alejandro Parra Sánchez", "Cristian Alberto Upegui M"],
         "asesores": [
-            "Adela Bogotá Cagua", "David Esteban Puerto Salgado", "Diana Marcela Sánchez Cano",
-            "Diana Milena Nieto Perez", "Jenny Lorena Quintero", "Jhon Caballero", "Jose Edwin Navarro Rondon",
-            "Jose Efrain Arguello", "Laura Alejandra Bernal Perez", "Leidy Johanna Alonso Rincón",
-            "Leyner Anyul Silva Avila", "Martha Soraya Monsalve Fonseca", "Nancy Viviana Bulla Bustos",
-            "Nelson Peña Ramírez", "Solangel Milena Rodriguez Quitian", "Leidy Sofia Ramirez Paez"
+            "Adela Bogotá Cagua","David Esteban Puerto Salgado","Diana Marcela Sánchez Cano",
+            "Diana Milena Nieto Perez","Jenny Lorena Quintero","Jhon Caballero","Jose Edwin Navarro Rondon",
+            "Jose Efrain Arguello","Laura Alejandra Bernal Perez","Leidy Johanna Alonso Rincón",
+            "Leyner Anyul Silva Avila","Martha Soraya Monsalve Fonseca","Nancy Viviana Bulla Bustos",
+            "Nelson Peña Ramírez","Solangel Milena Rodriguez Quitian","Leidy Sofia Ramirez Paez"
         ]
     },
     "Servicios 2030": {
         "canales": ["Linea 2030", "Chat 2030"],
         "monitores": ["Johanna Rueda Cuvajante", "Cristian Alberto Upegui M"],
         "asesores": [
-            "Juan Sebastian Silva Gomez", "Jennyfer Caicedo Alfonso", "Jerly Durley Mendez Fontecha",
-            "Addison Rodriguez Casallas", "Gabriel Ferney Martinez Lopez", "Juan David Gonzalez Jimenez",
-            "Miguel Angel Rico Acevedo", "Juan Camilo Ortega Clavijo", "Andres Fernando Galindo Algarra",
-            "Adrian Jose Sosa Gil", "Andrea Katherine Torres Junco", "Leidi Daniela Arias Rodriguez"
+            "Juan Sebastian Silva Gomez","Jennyfer Caicedo Alfonso","Jerly Durley Mendez Fontecha",
+            "Addison Rodriguez Casallas","Gabriel Ferney Martinez Lopez","Juan David Gonzalez Jimenez",
+            "Miguel Angel Rico Acevedo","Juan Camilo Ortega Clavijo","Andres Fernando Galindo Algarra",
+            "Adrian Jose Sosa Gil","Andrea Katherine Torres Junco","Leidi Daniela Arias Rodriguez"
         ]
     }
 }
@@ -169,27 +158,32 @@ preguntas = {
 }
 
 # ===============================
-# SIDEBAR
+# 🧭 SIDEBAR
 # ===============================
 st.sidebar.image("https://upload.wikimedia.org/wikipedia/commons/7/7e/University_of_Rosario_logo.png", width=150)
 pagina = st.sidebar.radio("Menú:", ["📝 Formulario de Monitoreo", "📊 Dashboard de Análisis"])
 
 # ===============================
-# ENCABEZADO CON BANNER
+# 🏛️ ENCABEZADO CON IMÁGENES INSTITUCIONALES
 # ===============================
-col1, col2, col3 = st.columns([1, 5, 1])
+col1, col2, col3 = st.columns([1, 5, 2])
 with col1:
     st.image("https://upload.wikimedia.org/wikipedia/commons/7/7e/University_of_Rosario_logo.png", width=120)
 with col2:
-    st.markdown('<div class="header-title">📋 Sistema de Monitoreo de Calidad - Universidad del Rosario</div>', unsafe_allow_html=True)
+    st.markdown("""
+    <div class="banner-title">Sistema de Monitoreo de Calidad</div>
+    <div class="banner-subtitle">Universidad del Rosario - Comprometidos con la excelencia en el servicio</div>
+    """, unsafe_allow_html=True)
 with col3:
-    st.image("https://i.imgur.com/nHEk2V1.png", width=120)  # Lobo UR (puedes reemplazar por tu imagen local)
+    st.image("https://uredu-my.sharepoint.com/personal/cristian_upegui_urosario_edu_co/Documents/Imagenes/Imagen%201.jpg", width=180)
+
+st.markdown("---")
 
 # ===============================
-# FORMULARIO
+# 📝 FORMULARIO
 # ===============================
 if pagina == "📝 Formulario de Monitoreo":
-    st.markdown('<div class="section-title">📝 Formulario de Monitoreo</div>', unsafe_allow_html=True)
+    st.markdown('<div class="section-title">📝 Registro de Monitoreo</div>', unsafe_allow_html=True)
 
     col1, col2, col3 = st.columns(3)
     with col1:
@@ -202,7 +196,6 @@ if pagina == "📝 Formulario de Monitoreo":
     codigo = st.text_input("Código de la interacción")
     fecha = st.date_input("Fecha de la interacción", date.today())
     canal = st.selectbox("Canal", areas[area]["canales"])
-
     error_critico = st.radio("¿Corresponde a un error crítico?", ["No", "Sí"], horizontal=True)
 
     if area in preguntas:
@@ -210,8 +203,7 @@ if pagina == "📝 Formulario de Monitoreo":
     else:
         preguntas_canal = []
 
-    resultados = {}
-    total = 0
+    resultados, total = {}, 0
 
     if error_critico == "Sí":
         st.error("❌ Error crítico: puntaje total será 0.")
@@ -230,23 +222,17 @@ if pagina == "📝 Formulario de Monitoreo":
 
     if st.button("💾 Guardar Monitoreo"):
         data = {
-            "Área": area,
-            "Monitor": monitor,
-            "Asesor": asesor,
-            "Código": codigo,
-            "Fecha": fecha,
-            "Canal": canal,
-            "Error Crítico": error_critico,
-            "Total": total,
-            "Aspectos Positivos": positivos,
-            "Aspectos por Mejorar": mejorar
+            "Área": area, "Monitor": monitor, "Asesor": asesor,
+            "Código": codigo, "Fecha": fecha, "Canal": canal,
+            "Error Crítico": error_critico, "Total": total,
+            "Aspectos Positivos": positivos, "Aspectos por Mejorar": mejorar
         }
         data.update(resultados)
         guardar_datos(data)
         st.success("✅ Monitoreo guardado correctamente.")
 
 # ===============================
-# DASHBOARD
+# 📊 DASHBOARD
 # ===============================
 if pagina == "📊 Dashboard de Análisis":
     st.markdown('<div class="section-title">📊 Dashboard de Monitoreos</div>', unsafe_allow_html=True)
@@ -264,9 +250,7 @@ if pagina == "📊 Dashboard de Análisis":
     if canal_f != "Todos":
         df = df[df["Canal"] == canal_f]
 
-    total_mon = len(df)
-    prom_total = df["Total"].mean()
-    errores = len(df[df["Error Crítico"] == "Sí"])
+    total_mon, prom_total, errores = len(df), df["Total"].mean(), len(df[df["Error Crítico"] == "Sí"])
 
     c1, c2, c3 = st.columns(3)
     c1.metric("Monitoreos Totales", total_mon)
@@ -274,12 +258,6 @@ if pagina == "📊 Dashboard de Análisis":
     c3.metric("Errores Críticos", errores)
 
     st.divider()
-
-    fig1 = px.bar(df, x="Monitor", color="Monitor", title="Monitoreos por Evaluador", color_discrete_sequence=["#A80532"])
-    st.plotly_chart(fig1, use_container_width=True)
-
-    fig2 = px.bar(df, x="Asesor", color="Área", title="Monitoreos por Asesor", color_discrete_sequence=px.colors.qualitative.Set2)
-    st.plotly_chart(fig2, use_container_width=True)
-
-    fig3 = px.box(df, x="Área", y="Total", color="Canal", title="Distribución de Puntajes")
-    st.plotly_chart(fig3, use_container_width=True)
+    st.plotly_chart(px.bar(df, x="Monitor", color="Monitor", title="Monitoreos por Evaluador", color_discrete_sequence=["#9B0029"]), use_container_width=True)
+    st.plotly_chart(px.bar(df, x="Asesor", color="Área", title="Monitoreos por Asesor"), use_container_width=True)
+    st.plotly_chart(px.box(df, x="Área", y="Total", color="Canal", title="Distribución de Puntajes"), use_container_width=True)
