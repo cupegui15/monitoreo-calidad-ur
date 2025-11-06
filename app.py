@@ -5,66 +5,117 @@ import pandas as pd
 import plotly.express as px
 from datetime import date
 
-# --------------------------
-# CONFIGURACIÓN PRINCIPAL
-# --------------------------
+# ===============================
+# CONFIGURACIÓN GENERAL
+# ===============================
 st.set_page_config(page_title="Monitoreo de Calidad UR", layout="wide", page_icon="📋")
 
-# --------------------------
-# IMÁGENES INSTITUCIONALES
-# --------------------------
+# ===============================
+# RUTAS DE IMÁGENES
+# ===============================
 URL_LOGO_UR = "https://upload.wikimedia.org/wikipedia/commons/7/7e/University_of_Rosario_logo.png"
-URL_BANNER = "https://uredu-my.sharepoint.com/personal/cristian_upegui_urosario_edu_co/Documents/Imagenes/Imagen%201.jpg"
+URL_BANNER_IMG = "https://uredu-my.sharepoint.com/personal/cristian_upegui_urosario_edu_co/Documents/Imagenes/Imagen%201.jpg"
 LOCAL_BANNER = "Imagen1.jpg"
 
 def url_imagen_valida(url):
     try:
-        r = requests.head(url, allow_redirects=True, timeout=3)
+        r = requests.head(url, allow_redirects=True, timeout=4)
         return r.status_code == 200
     except:
         return False
 
-# --------------------------
-# CSS - ESTILO INSTITUCIONAL
-# --------------------------
+# ===============================
+# ESTILOS INSTITUCIONALES
+# ===============================
 st.markdown("""
-    <style>
-    :root{
-        --ur-rojo:#9B0029;
-        --ur-rojo2:#C21833;
-        --ur-gris:#f8f8f8;
-        --ur-text:#222;
-    }
-    html, body, .stApp { background-color: var(--ur-gris) !important; color: var(--ur-text) !important; font-family: "Segoe UI", sans-serif; }
+<style>
+:root {
+    --rojo-ur: #9B0029;
+    --rojo-claro: #C21833;
+    --gris-fondo: #f8f8f8;
+    --texto: #222;
+}
 
-    /* Sidebar */
-    [data-testid="stSidebar"] { background-color: var(--ur-rojo) !important; }
-    [data-testid="stSidebar"] * { color: #fff !important; font-weight:600 !important; }
+html, body, .stApp {
+    background-color: var(--gris-fondo) !important;
+    color: var(--texto) !important;
+    font-family: "Segoe UI", sans-serif;
+}
 
-    /* Inputs y radios */
-    .stTextInput input, .stTextArea textarea, .stSelectbox div[data-baseweb="select"] > div, .stDateInput input {
-        background-color: #fff !important; color: var(--ur-text) !important;
-    }
-    div[data-baseweb="radio"] label, div[role="radiogroup"] > div, div[data-baseweb="radio"] p {
-        color: var(--ur-text) !important; font-weight:600 !important;
-    }
+/* Sidebar */
+[data-testid="stSidebar"] {
+    background-color: var(--rojo-ur) !important;
+}
+[data-testid="stSidebar"] * {
+    color: #fff !important;
+    font-weight: 600 !important;
+}
 
-    /* Botones */
-    .stButton>button { background-color: var(--ur-rojo) !important; color: white !important; border-radius:8px !important; font-weight:700 !important; }
-    .stButton>button:hover { background-color:#7d0221 !important; transform:scale(1.02); }
+/* Banner superior */
+.banner {
+    background-color: var(--rojo-ur);
+    color: white;
+    padding: 1.3rem 2rem;
+    border-radius: 8px;
+    margin-bottom: 1.2rem;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+}
+.banner h2 {
+    margin: 0;
+    font-size: 1.6rem;
+    font-weight: 700;
+}
+.banner p {
+    margin: 0;
+    font-size: 0.9rem;
+}
 
-    /* Secciones */
-    .section-title { color: var(--ur-rojo); font-weight:700; font-size:1.2rem; margin-top:8px; margin-bottom:8px; }
+/* Inputs y radios */
+.stTextInput input, .stTextArea textarea, .stSelectbox div[data-baseweb="select"] > div, .stDateInput input {
+    background-color: #fff !important;
+    color: var(--texto) !important;
+}
+div[data-baseweb="radio"] label, div[role="radiogroup"] > div {
+    color: var(--texto) !important;
+    font-weight: 600 !important;
+}
 
-    /* Mensaje vacío */
-    .empty-msg { color: var(--ur-text); font-weight:700; text-align:center; padding:18px; }
+/* Botones */
+.stButton>button {
+    background-color: var(--rojo-ur) !important;
+    color: white !important;
+    border-radius: 6px !important;
+    font-weight: 700 !important;
+}
+.stButton>button:hover {
+    background-color: #7d0221 !important;
+    transform: scale(1.03);
+}
 
-    </style>
+/* Secciones */
+.section-title {
+    color: var(--rojo-ur);
+    font-weight: 700;
+    font-size: 1.2rem;
+    margin-top: 1rem;
+    margin-bottom: 0.6rem;
+}
+
+/* Mensaje vacío */
+.empty-msg {
+    color: var(--texto);
+    font-weight: 700;
+    text-align: center;
+    padding: 1.2rem;
+}
+</style>
 """, unsafe_allow_html=True)
 
-# --------------------------
+# ===============================
 # FUNCIONES DE DATOS
-# --------------------------
+# ===============================
 @st.cache_data
 def cargar_datos():
     try:
@@ -81,9 +132,9 @@ def guardar_datos(data):
         pass
     df.to_csv("monitoreos.csv", index=False)
 
-# --------------------------
+# ===============================
 # CONFIGURACIÓN DE ÁREAS Y PREGUNTAS
-# --------------------------
+# ===============================
 areas = {
     "CASA UR": {
         "canales": ["Telefónico", "Chat", "Contact Center", "Back"],
@@ -109,27 +160,6 @@ areas = {
 }
 
 preguntas = {
-    "CASA UR": {
-        "Telefónico": [
-            ("¿Atiende la interacción en el momento que se establece contacto con el(a) usuario(a)?", 9),
-            ("¿Saluda, se presenta de una forma amable y cortés, usando el dialogo de saludo y bienvenida?", 9),
-            ("¿Realiza la validación de identidad del usuario y personaliza la interacción garantizando confidencialidad?", 9),
-            ("¿Escucha activamente al usuario y realiza preguntas adicionales?", 9),
-            ("¿Consulta todas las herramientas disponibles?", 9),
-            ("¿Controla los tiempos de espera informando al usuario?", 9),
-            ("¿Brinda respuesta precisa, completa y coherente?", 14),
-            ("¿Valida si la información fue clara?", 8),
-            ("¿Documenta la atención correctamente?", 14),
-            ("¿Finaliza la atención de forma amable y cortés?", 10)
-        ],
-        "Back": [
-            ("¿Cumplimiento del ANS establecido para el servicio?", 20),
-            ("¿Análisis correspondiente a la solicitud?", 20),
-            ("¿Gestión SAP/UXXI/Bizagi adecuada?", 20),
-            ("¿Respuestas eficaces según la solicitud?", 20),
-            ("¿Empatía en la notificación de cierre?", 20)
-        ]
-    },
     "Servicios 2030": {
         "Línea 2030": [
             ("¿Atiende la interacción de forma oportuna en el momento que se establece el contacto?", 9),
@@ -165,59 +195,59 @@ preguntas = {
     }
 }
 
-# --------------------------
-# SIDEBAR Y MENÚ
-# --------------------------
+# ===============================
+# SIDEBAR Y BANNER
+# ===============================
 st.sidebar.image(URL_LOGO_UR, width=150)
 pagina = st.sidebar.radio("Menú:", ["📝 Formulario de Monitoreo", "📊 Dashboard de Análisis"])
 
-# --------------------------
-# BANNER SUPERIOR
-# --------------------------
-col1, col2, col3 = st.columns([1, 6, 2])
-with col1:
-    st.image(URL_LOGO_UR, width=90)
-with col2:
-    st.markdown("<h2 style='color:#9B0029;margin-bottom:0;'>Monitoreo de Calidad - Universidad del Rosario</h2><p style='margin-top:2px;color:#444;'>Comprometidos con la excelencia en la atención al usuario</p>", unsafe_allow_html=True)
-with col3:
-    if url_imagen_valida(URL_BANNER):
-        st.image(URL_BANNER, width=110)
-    elif os.path.exists(LOCAL_BANNER):
-        st.image(LOCAL_BANNER, width=110)
-st.markdown("---")
+# Banner superior con fondo rojo
+banner_html = f"""
+<div class="banner">
+    <div style="display:flex;align-items:center;gap:1rem;">
+        <img src="{URL_LOGO_UR}" width="80">
+        <div>
+            <h2>Monitoreo de Calidad - Universidad del Rosario</h2>
+            <p>Comprometidos con la excelencia en la atención al usuario</p>
+        </div>
+    </div>
+    <div>
+        <img src="{URL_BANNER_IMG}" width="130" style="border-radius:6px;">
+    </div>
+</div>
+"""
+st.markdown(banner_html, unsafe_allow_html=True)
 
-# --------------------------
+# ===============================
 # FORMULARIO
-# --------------------------
+# ===============================
 if pagina == "📝 Formulario de Monitoreo":
     st.markdown('<div class="section-title">🧾 Registro de Monitoreo</div>', unsafe_allow_html=True)
-    c1, c2, c3 = st.columns(3)
-    with c1:
+    col1, col2, col3 = st.columns(3)
+    with col1:
         area = st.selectbox("Área", list(areas.keys()))
-    with c2:
+    with col2:
         monitor = st.selectbox("Persona que monitorea", areas[area]["monitores"])
-    with c3:
+    with col3:
         asesor = st.selectbox("Asesor monitoreado", areas[area]["asesores"])
 
     codigo = st.text_input("Código de la interacción")
     fecha = st.date_input("Fecha de la interacción", date.today())
     canal = st.selectbox("Canal", areas[area]["canales"])
-
-    st.markdown("---")
     error_critico = st.radio("¿Corresponde a un error crítico?", ["No", "Sí"], horizontal=True)
 
     preguntas_canal = preguntas.get(area, {}).get(canal, [])
     resultados, total = {}, 0
 
     if error_critico == "Sí":
-        st.error("❌ Error crítico marcado: puntaje total = 0")
+        st.error("❌ Error crítico: el puntaje total será 0.")
         for q, _ in preguntas_canal:
             resultados[q] = 0
         total = 0
     else:
         for idx, (q, p) in enumerate(preguntas_canal):
-            respuesta = st.radio(q, ["Cumple", "No cumple"], horizontal=True, key=f"{idx}-{q}")
-            resultados[q] = p if respuesta == "Cumple" else 0
+            resp = st.radio(q, ["Cumple", "No cumple"], horizontal=True, key=f"{idx}-{q}")
+            resultados[q] = p if resp == "Cumple" else 0
             total += resultados[q]
 
     positivos = st.text_area("Aspectos Positivos")
@@ -235,9 +265,9 @@ if pagina == "📝 Formulario de Monitoreo":
         guardar_datos(fila)
         st.success("✅ Monitoreo guardado correctamente.")
 
-# --------------------------
+# ===============================
 # DASHBOARD
-# --------------------------
+# ===============================
 else:
     st.markdown('<div class="section-title">📈 Dashboard de Análisis</div>', unsafe_allow_html=True)
     df = cargar_datos()
