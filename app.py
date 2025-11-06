@@ -134,13 +134,20 @@ if pagina == "📝 Formulario de Monitoreo":
     fecha = st.date_input("Fecha de la interacción", date.today())
     canal = st.selectbox("Canal", areas[area]["canales"])
 
-    st.markdown("---")
+st.markdown("---")
 
     error_critico = st.radio("¿Corresponde a un error crítico?", ["No", "Sí"], horizontal=True)
-    preguntas_canal = preguntas[area].get(canal)
 
-if preguntas_canal is None:
-    preguntas_canal = next(iter(preguntas[area].values()))
+    preguntas_canal = None
+    if area in preguntas:
+        if canal in preguntas[area]:
+            preguntas_canal = preguntas[area][canal]
+        else:
+          
+            preguntas_canal = next(iter(preguntas[area].values()))
+    else:
+    
+        preguntas_canal = []
 
     resultados = {}
     total = 0
