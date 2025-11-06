@@ -101,17 +101,8 @@ div[data-baseweb="radio"] label, div[role="radiogroup"] > div {
 # FUNCIONES DE DATOS
 # ===============================
 @st.cache_data
-def cargar_datos():
-    """Carga los datos del CSV o crea un DataFrame vacío si no existe."""
-    try:
-        df = pd.read_csv("monitoreos.csv", dtype=str)
-        df["Total"] = pd.to_numeric(df["Total"], errors="coerce").fillna(0)
-        return df
-    except FileNotFoundError:
-        return pd.DataFrame()
-
 def guardar_datos(data):
-    """Guarda los datos en CSV y Excel (como copia)."""
+    """Guarda los datos solo en CSV (sin Excel para evitar error openpyxl)."""
     df = pd.DataFrame([data])
     try:
         df_exist = pd.read_csv("monitoreos.csv", dtype=str)
@@ -120,10 +111,7 @@ def guardar_datos(data):
     except FileNotFoundError:
         pass
 
-    # Guardar en CSV
     df.to_csv("monitoreos.csv", index=False)
-    # Guardar también en Excel
-    df.to_excel("monitoreos.xlsx", index=False)
 
 # ===============================
 # ÁREAS Y PREGUNTAS
