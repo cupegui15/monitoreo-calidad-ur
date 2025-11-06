@@ -257,14 +257,23 @@ if pagina == "📝 Formulario de Monitoreo":
     st.metric("Puntaje Total", total)
 
     if st.button("💾 Guardar Monitoreo"):
+    if not codigo.strip():
+        st.error("⚠️ Debes ingresar el código de la interacción antes de guardar.")
+    else:
         fila = {
-            "Área": area, "Monitor": monitor, "Asesor": asesor, "Código": codigo,
-            "Fecha": fecha, "Canal": canal, "Error crítico": error_critico,
-            "Total": total, "Aspectos positivos": positivos, "Aspectos por mejorar": mejorar
+            "Área": area,
+            "Monitor": monitor,
+            "Asesor": asesor,
+            "Código": codigo.strip(),
+            "Fecha": fecha,
+            "Canal": canal,
+            "Error crítico": error,
+            "Total": total,
+            "Aspectos positivos": positivos,
+            "Aspectos por mejorar": mejorar
         }
         fila.update(resultados)
         guardar_datos(fila)
-
 # ===============================
 # DASHBOARD
 # ===============================
