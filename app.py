@@ -13,7 +13,7 @@ st.set_page_config(page_title="Monitoreo de Calidad UR", layout="wide", page_ico
 # ===============================
 # IMÁGENES INSTITUCIONALES
 # ===============================
-URL_LOGO_UR = "https://upload.wikimedia.org/wikipedia/commons/7/7e/University_of_Rosario_logo.png"
+URL_LOGO_UR = "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcQY0ZMIXOVuzLond_jNv713shc6TmUWej0JDQ&s"
 URL_BANNER_IMG = "https://uredu-my.sharepoint.com/personal/cristian_upegui_urosario_edu_co/Documents/Imagenes/Imagen%201.jpg"
 
 # ===============================
