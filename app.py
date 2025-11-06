@@ -102,27 +102,31 @@ div[data-baseweb="radio"] label, div[role="radiogroup"] > div {
 # ===============================
 @st.cache_data
 def cargar_datos():
+    """Carga los datos del CSV o crea un DataFrame vacío si no existe."""
     try:
         df = pd.read_csv("monitoreos.csv", dtype=str)
-        df = df.applymap(lambda x: x.strip() if isinstance(x, str) else x)
         df["Total"] = pd.to_numeric(df["Total"], errors="coerce").fillna(0)
         return df
     except FileNotFoundError:
         return pd.DataFrame()
 
 def guardar_datos(data):
+    """Guarda los datos en CSV y Excel (como copia)."""
     df = pd.DataFrame([data])
-    df = df.applymap(lambda x: str(x).strip() if isinstance(x, str) else x)
     try:
         df_exist = pd.read_csv("monitoreos.csv", dtype=str)
-        df_exist = df_exist.applymap(lambda x: str(x).strip() if isinstance(x, str) else x)
+        df_exist["Total"] = pd.to_numeric(df_exist["Total"], errors="coerce").fillna(0)
         df = pd.concat([df_exist, df], ignore_index=True)
     except FileNotFoundError:
         pass
+
+    # Guardar en CSV
     df.to_csv("monitoreos.csv", index=False)
+    # Guardar también en Excel
+    df.to_excel("monitoreos.xlsx", index=False)
 
 # ===============================
-# ÁREAS, CANALES Y PREGUNTAS
+# ÁREAS Y PREGUNTAS
 # ===============================
 areas = {
     "CASA UR": {
@@ -196,35 +200,35 @@ preguntas = {
     },
     "Servicios 2030": {
         "Línea 2030": [
-            ("¿Atiende la interacción de forma oportuna en el momento que se establece el contacto?", 9),
-            ("¿Saluda y se presenta de manera amable y profesional, estableciendo un inicio cordial de la atención?", 9),
-            ("¿Realiza la validación de identidad del usuario garantizando confidencialidad y aplica protocolos de seguridad de la información?", 9),
-            ("¿Escucha activamente al usuario y formula preguntas pertinentes para un diagnóstico claro y completo?", 9),
-            ("¿Consulta y utiliza todas las herramientas de soporte disponibles (base de conocimiento, sistemas, documentación) para estructurar una respuesta adecuada?", 9),
-            ("¿Gestiona adecuadamente los tiempos de espera, manteniendo informado al usuario y realizando acompañamiento oportuno durante la interacción?", 9),
-            ("¿Sigue el flujo definido para solución o escalamiento, asegurando trazabilidad y cumplimiento de procesos internos?", 14),
-            ("¿Valida con el usuario que la información brindada es clara, completa y confirma si requiere trámites o pasos adicionales?", 8),
-            ("¿Documenta la atención en el sistema de tickets de manera coherente, seleccionando tipologías correctas y con redacción/ortografía adecuadas?", 14),
-            ("¿Finaliza la atención de forma amable y profesional, utilizando el cierre de interacción definido y remitiendo al usuario a la encuesta de satisfacción?", 10)
+            ("¿Atiende la interacción de forma oportuna?", 9),
+            ("¿Saluda y se presenta profesionalmente?", 9),
+            ("¿Valida identidad con confidencialidad?", 9),
+            ("¿Escucha activamente y pregunta adecuadamente?", 9),
+            ("¿Usa herramientas de soporte?", 9),
+            ("¿Gestiona tiempos de espera correctamente?", 9),
+            ("¿Sigue flujo de solución/escalamiento?", 14),
+            ("¿Valida comprensión de la información?", 8),
+            ("¿Documenta atención con redacción adecuada?", 14),
+            ("¿Finaliza de forma amable y profesional?", 10)
         ],
         "Chat 2030": [
-            ("¿Atiende la interacción de forma oportuna en el momento que se establece el contacto?", 9),
-            ("¿Saluda y se presenta de manera amable y profesional, estableciendo un inicio cordial de la atención?", 9),
-            ("¿Realiza la validación de identidad del usuario garantizando confidencialidad y aplica protocolos de seguridad de la información?", 9),
-            ("¿Escucha activamente al usuario y formula preguntas pertinentes para un diagnóstico claro y completo?", 9),
-            ("¿Consulta y utiliza todas las herramientas de soporte disponibles (base de conocimiento, sistemas, documentación) para estructurar una respuesta adecuada?", 9),
-            ("¿Gestiona adecuadamente los tiempos de espera, manteniendo informado al usuario y realizando acompañamiento oportuno durante la interacción?", 9),
-            ("¿Sigue el flujo definido para solución o escalamiento, asegurando trazabilidad y cumplimiento de procesos internos?", 14),
-            ("¿Valida con el usuario que la información brindada es clara, completa y confirma si requiere trámites o pasos adicionales?", 8),
-            ("¿Documenta la atención en el sistema de tickets de manera coherente, seleccionando tipologías correctas y con redacción/ortografía adecuadas?", 14),
-            ("¿Finaliza la atención de forma amable y profesional, utilizando el cierre de interacción definido y remitiendo al usuario a la encuesta de satisfacción?", 10)
+            ("¿Atiende la interacción de forma oportuna?", 9),
+            ("¿Saluda y se presenta profesionalmente?", 9),
+            ("¿Valida identidad con confidencialidad?", 9),
+            ("¿Escucha activamente y pregunta adecuadamente?", 9),
+            ("¿Usa herramientas de soporte?", 9),
+            ("¿Gestiona tiempos de espera correctamente?", 9),
+            ("¿Sigue flujo de solución/escalamiento?", 14),
+            ("¿Valida comprensión de la información?", 8),
+            ("¿Documenta atención con redacción adecuada?", 14),
+            ("¿Finaliza de forma amable y profesional?", 10)
         ],
         "Sitio 2030": [
-            ("¿Cumple con el ANS/SLA establecido para el servicio, iniciando la gestión dentro del tiempo definido?", 20),
-            ("¿Realiza un análisis completo y pertinente de la solicitud, aplicando diagnóstico claro antes de ejecutar acciones?", 20),
-            ("¿Gestiona correctamente en las herramientas institucionales (SAP / UXXI / Salesforce u otras) garantizando trazabilidad y registro adecuado?", 20),
-            ("¿Brinda una respuesta eficaz y alineada a la solicitud radicada por el usuario, asegurando calidad técnica en la solución?", 20),
-            ("¿Comunica el cierre de la solicitud de manera empática y profesional, validando la satisfacción del usuario?", 20)
+            ("¿Cumple con ANS/SLA definido?", 20),
+            ("¿Realiza análisis completo antes de ejecutar acciones?", 20),
+            ("¿Gestiona correctamente en SAP/UXXI/Salesforce?", 20),
+            ("¿Brinda respuesta eficaz y alineada?", 20),
+            ("¿Comunica cierre de manera empática y profesional?", 20)
         ]
     }
 }
@@ -286,12 +290,14 @@ if pagina == "📝 Formulario de Monitoreo":
     st.metric("Puntaje Total", total)
 
     if st.button("💾 Guardar Monitoreo"):
-        fila = {"Área": area, "Monitor": monitor, "Asesor": asesor, "Código": codigo,
-                "Fecha": fecha, "Canal": canal, "Error crítico": error_critico,
-                "Total": total, "Aspectos positivos": positivos, "Aspectos por mejorar": mejorar}
+        fila = {
+            "Área": area, "Monitor": monitor, "Asesor": asesor, "Código": codigo,
+            "Fecha": fecha, "Canal": canal, "Error crítico": error_critico,
+            "Total": total, "Aspectos positivos": positivos, "Aspectos por mejorar": mejorar
+        }
         fila.update(resultados)
         guardar_datos(fila)
-        st.success("✅ Monitoreo guardado correctamente.")
+        st.success("✅ Monitoreo guardado correctamente y almacenado en CSV y Excel.")
 
 # ===============================
 # DASHBOARD
@@ -302,10 +308,6 @@ else:
     if df.empty:
         st.markdown('<div class="empty-msg">📭 No hay registros aún</div>', unsafe_allow_html=True)
     else:
-        df["Área"] = df["Área"].str.strip()
-        df["Canal"] = df["Canal"].str.strip()
-        df["Asesor"] = df["Asesor"].str.strip()
-
         area_f = st.sidebar.selectbox("Área:", ["Todas"] + sorted(df["Área"].unique()))
         canal_f = st.sidebar.selectbox("Canal:", ["Todos"] + sorted(df["Canal"].unique()))
         asesor_f = st.sidebar.selectbox("Asesor:", ["Todos"] + sorted(df["Asesor"].unique()))
@@ -325,3 +327,13 @@ else:
             c2.metric("Promedio Puntaje", round(df["Total"].mean(), 2))
             c3.metric("Errores Críticos", len(df[df["Error crítico"] == "Sí"]))
 
+            st.divider()
+            fig1 = px.bar(df, x="Monitor", color="Monitor", title="Monitoreos por Monitor")
+            st.plotly_chart(fig1, use_container_width=True)
+
+            fig2 = px.bar(df, x="Asesor", color="Área", title="Monitoreos por Asesor")
+            fig2.update_layout(xaxis_tickangle=45)
+            st.plotly_chart(fig2, use_container_width=True)
+
+            fig3 = px.box(df, x="Área", y="Total", color="Canal", title="Distribución de Puntajes por Área y Canal")
+            st.plotly_chart(fig3, use_container_width=True)
