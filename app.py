@@ -256,7 +256,11 @@ if pagina == "📝 Formulario de Monitoreo":
     mejorar = st.text_area("Aspectos por Mejorar")
     st.metric("Puntaje Total", total)
 
-    if st.button("💾 Guardar Monitoreo"):
+    # ===============================
+# BOTÓN GUARDAR (CÓDIGO OBLIGATORIO)
+# ===============================
+if st.button("💾 Guardar Monitoreo"):
+    # Validar campo obligatorio
     if not codigo.strip():
         st.error("⚠️ Debes ingresar el código de la interacción antes de guardar.")
     else:
@@ -274,6 +278,7 @@ if pagina == "📝 Formulario de Monitoreo":
         }
         fila.update(resultados)
         guardar_datos(fila)
+
 # ===============================
 # DASHBOARD
 # ===============================
