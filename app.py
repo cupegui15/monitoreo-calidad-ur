@@ -235,7 +235,6 @@ pagina = st.sidebar.radio("Menú:", ["📝 Formulario de Monitoreo", "📊 Dashb
 st.markdown(f"""
 <div class="banner">
     <div style="display:flex;align-items:center;gap:1rem;">
-        <img src="{URL_LOGO_UR}" width="80">
         <div>
             <h2>Monitoreo de Calidad - Universidad del Rosario</h2>
             <p>Comprometidos con la excelencia en la atención al usuario</p>
