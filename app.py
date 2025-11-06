@@ -1,3 +1,4 @@
+import os
 import streamlit as st
 import pandas as pd
 import plotly.express as px
@@ -7,6 +8,12 @@ from datetime import date
 # CONFIGURACIÓN PRINCIPAL
 # ===============================
 st.set_page_config(page_title="Monitoreo de Calidad UR", layout="wide", page_icon="📋")
+
+# ===============================
+# RUTA DEL ARCHIVO DE DATOS
+# ===============================
+BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+DATA_PATH = os.path.join(BASE_DIR, "monitoreos.csv")
 
 # ===============================
 # IMÁGENES INSTITUCIONALES
@@ -24,7 +31,6 @@ st.markdown("""
     --gris-fondo: #f8f8f8;
     --texto: #222;
 }
-
 html, body, .stApp {
     background-color: var(--gris-fondo) !important;
     color: var(--texto) !important;
@@ -54,12 +60,6 @@ html, body, .stApp {
 .banner h2 { margin: 0; font-size: 1.6rem; font-weight: 700; }
 .banner p { margin: 0; font-size: 0.9rem; }
 
-/* Inputs */
-.stTextInput input, .stTextArea textarea, .stSelectbox div[data-baseweb="select"] > div, .stDateInput input {
-    background-color: #fff !important;
-    color: var(--texto) !important;
-}
-
 /* Radios */
 div[data-baseweb="radio"] label, div[role="radiogroup"] > div {
     color: var(--texto) !important;
@@ -78,7 +78,7 @@ div[data-baseweb="radio"] label, div[role="radiogroup"] > div {
     transform: scale(1.03);
 }
 
-/* Secciones */
+/* Títulos */
 .section-title {
     color: var(--rojo-ur);
     font-weight: 700;
@@ -102,25 +102,20 @@ div[data-baseweb="radio"] label, div[role="radiogroup"] > div {
 # ===============================
 @st.cache_data
 def cargar_datos():
-    """Carga los datos del archivo CSV."""
-    try:
-        return pd.read_csv("monitoreos.csv")
-    except FileNotFoundError:
-        return pd.DataFrame()
+    if os.path.exists(DATA_PATH):
+        return pd.read_csv(DATA_PATH)
+    return pd.DataFrame()
 
 def guardar_datos(data):
-    """Guarda o actualiza los datos en monitoreos.csv"""
     df = pd.DataFrame([data])
-    try:
-        df_exist = pd.read_csv("monitoreos.csv", dtype=str)
-        df_exist["Total"] = pd.to_numeric(df_exist["Total"], errors="coerce").fillna(0)
+    if os.path.exists(DATA_PATH):
+        df_exist = pd.read_csv(DATA_PATH)
         df = pd.concat([df_exist, df], ignore_index=True)
-    except FileNotFoundError:
-        pass
-    df.to_csv("monitoreos.csv", index=False)
+    df.to_csv(DATA_PATH, index=False)
+    st.toast(f"💾 Datos guardados en {os.path.basename(DATA_PATH)}", icon="✅")
 
 # ===============================
-# ÁREAS, CANALES Y PREGUNTAS
+# CONFIGURACIÓN DE ÁREAS Y PREGUNTAS
 # ===============================
 areas = {
     "CASA UR": {
@@ -146,26 +141,25 @@ areas = {
     }
 }
 
-# --- PREGUNTAS ---
 preguntas = {
     "CASA UR": {
         "Presencial": [
             ("¿Atiende la interacción en el momento que se establece contacto con el(a) usuario(a)?", 9),
-            ("¿Saluda, se presenta de forma amable y cortés?", 9),
+            ("¿Saluda, se presenta de una forma amable y cortés?", 9),
             ("¿Realiza la validación de identidad del usuario garantizando confidencialidad?", 9),
-            ("¿Escucha activamente al usuario y realiza preguntas adicionales demostrando atención?", 9),
-            ("¿Consulta todas las herramientas disponibles para estructurar la respuesta?", 9),
-            ("¿Controla los tiempos de espera informando al usuario y realizando acompañamiento?", 9),
-            ("¿Brinda respuesta precisa, completa y coherente, de acuerdo a lo solicitado?", 14),
-            ("¿Valida con el usuario si la información fue clara y completa?", 8),
-            ("¿Documenta la atención de forma coherente seleccionando tipologías correctas?", 14),
+            ("¿Escucha activamente y realiza preguntas adicionales demostrando atención?", 9),
+            ("¿Consulta herramientas disponibles para estructurar la respuesta?", 9),
+            ("¿Controla los tiempos de espera informando y acompañando al usuario?", 9),
+            ("¿Brinda respuesta precisa y coherente?", 14),
+            ("¿Valida con el usuario si la información fue clara o requiere algo más?", 8),
+            ("¿Documenta la atención correctamente con redacción adecuada?", 14),
             ("¿Finaliza la atención amablemente remitiendo al usuario a la encuesta?", 10)
         ],
         "Contact Center": [
             ("¿Atiende la interacción oportunamente?", 9),
             ("¿Saluda y se presenta de forma amable y profesional?", 9),
-            ("¿Valida identidad del usuario garantizando confidencialidad?", 9),
-            ("¿Escucha activamente y hace preguntas pertinentes?", 9),
+            ("¿Valida identidad garantizando confidencialidad?", 9),
+            ("¿Escucha activamente al usuario?", 9),
             ("¿Consulta herramientas para estructurar respuesta adecuada?", 9),
             ("¿Controla tiempos de espera e informa al usuario?", 9),
             ("¿Brinda respuesta coherente y completa?", 14),
@@ -175,9 +169,9 @@ preguntas = {
         ],
         "Chat": [
             ("¿Atiende la interacción oportunamente?", 9),
-            ("¿Saluda y se presenta cordialmente?", 9),
+            ("¿Saluda cordialmente?", 9),
             ("¿Valida identidad y personaliza la atención?", 9),
-            ("¿Escucha activamente y responde adecuadamente?", 9),
+            ("¿Responde adecuadamente demostrando comprensión?", 9),
             ("¿Utiliza herramientas para resolver adecuadamente?", 9),
             ("¿Gestiona tiempos de espera e informa avances?", 9),
             ("¿Brinda respuesta precisa y coherente?", 14),
@@ -195,32 +189,32 @@ preguntas = {
     },
     "Servicios 2030": {
         "Línea 2030": [
-            ("¿Atiende la interacción de forma oportuna en el momento que se establece el contacto?", 9),
-            ("¿Saluda y se presenta de manera amable y profesional?", 9),
-            ("¿Valida identidad garantizando confidencialidad y seguridad de la información?", 9),
-            ("¿Escucha activamente y formula preguntas pertinentes para diagnóstico claro?", 9),
-            ("¿Consulta y utiliza todas las herramientas de soporte disponibles?", 9),
-            ("¿Gestiona adecuadamente los tiempos de espera manteniendo informado al usuario?", 9),
+            ("¿Atiende la interacción de forma oportuna?", 9),
+            ("¿Saluda y se presenta profesionalmente?", 9),
+            ("¿Valida identidad garantizando confidencialidad?", 9),
+            ("¿Escucha activamente y formula preguntas pertinentes?", 9),
+            ("¿Consulta y utiliza herramientas de soporte?", 9),
+            ("¿Gestiona adecuadamente los tiempos de espera?", 9),
             ("¿Sigue flujo definido para solución o escalamiento?", 14),
             ("¿Valida que la información brindada es clara y completa?", 8),
-            ("¿Documenta coherentemente y con buena redacción?", 14),
-            ("¿Finaliza de forma amable y profesional remitiendo a encuesta?", 10)
+            ("¿Documenta coherentemente?", 14),
+            ("¿Finaliza amablemente y remite a encuesta?", 10)
         ],
         "Chat 2030": [
             ("¿Atiende la interacción de forma oportuna?", 9),
             ("¿Saluda y se presenta profesionalmente?", 9),
             ("¿Valida identidad garantizando confidencialidad?", 9),
             ("¿Escucha activamente y formula preguntas pertinentes?", 9),
-            ("¿Utiliza herramientas adecuadas para resolver?", 9),
-            ("¿Gestiona tiempos de espera adecuadamente?", 9),
+            ("¿Consulta y utiliza herramientas de soporte?", 9),
+            ("¿Gestiona adecuadamente los tiempos de espera?", 9),
             ("¿Sigue flujo definido para solución o escalamiento?", 14),
-            ("¿Valida comprensión del usuario?", 8),
-            ("¿Documenta correctamente la atención?", 14),
+            ("¿Valida que la información brindada es clara y completa?", 8),
+            ("¿Documenta coherentemente?", 14),
             ("¿Finaliza amablemente y remite a encuesta?", 10)
         ],
         "Sitio 2030": [
             ("¿Cumple con el ANS/SLA establecido?", 20),
-            ("¿Realiza análisis completo y pertinente de la solicitud?", 20),
+            ("¿Realiza análisis completo y pertinente?", 20),
             ("¿Gestiona correctamente en SAP/UXXI/Salesforce?", 20),
             ("¿Brinda respuesta eficaz y alineada a la solicitud?", 20),
             ("¿Comunica el cierre de manera empática y profesional?", 20)
@@ -236,13 +230,9 @@ pagina = st.sidebar.radio("Menú:", ["📝 Formulario de Monitoreo", "📊 Dashb
 
 st.markdown(f"""
 <div class="banner">
-    <div>
-        <h2>Monitoreo de Calidad - Universidad del Rosario</h2>
-        <p>Comprometidos con la excelencia en la atención al usuario</p>
-    </div>
-    <div>
-        <img src="{URL_BANNER_IMG}" width="130" style="border-radius:6px;">
-    </div>
+    <div><h2>Monitoreo de Calidad - Universidad del Rosario</h2>
+    <p>Comprometidos con la excelencia en la atención al usuario</p></div>
+    <div><img src="{URL_BANNER_IMG}" width="130" style="border-radius:6px;"></div>
 </div>
 """, unsafe_allow_html=True)
 
@@ -251,12 +241,12 @@ st.markdown(f"""
 # ===============================
 if pagina == "📝 Formulario de Monitoreo":
     st.markdown('<div class="section-title">🧾 Registro de Monitoreo</div>', unsafe_allow_html=True)
-    col1, col2, col3 = st.columns(3)
-    with col1:
+    c1, c2, c3 = st.columns(3)
+    with c1:
         area = st.selectbox("Área", list(areas.keys()))
-    with col2:
+    with c2:
         monitor = st.selectbox("Persona que monitorea", areas[area]["monitores"])
-    with col3:
+    with c3:
         asesor = st.selectbox("Asesor monitoreado", areas[area]["asesores"])
 
     codigo = st.text_input("Código de la interacción")
@@ -271,7 +261,6 @@ if pagina == "📝 Formulario de Monitoreo":
         st.error("❌ Error crítico: el puntaje total será 0.")
         for q, _ in preguntas_canal:
             resultados[q] = 0
-        total = 0
     else:
         for idx, (q, p) in enumerate(preguntas_canal):
             resp = st.radio(q, ["Cumple", "No cumple"], horizontal=True, key=f"{idx}-{q}")
@@ -283,9 +272,11 @@ if pagina == "📝 Formulario de Monitoreo":
     st.metric("Puntaje Total", total)
 
     if st.button("💾 Guardar Monitoreo"):
-        fila = {"Área": area, "Monitor": monitor, "Asesor": asesor, "Código": codigo,
-                "Fecha": fecha, "Canal": canal, "Error crítico": error_critico,
-                "Total": total, "Aspectos positivos": positivos, "Aspectos por mejorar": mejorar}
+        fila = {
+            "Área": area, "Monitor": monitor, "Asesor": asesor, "Código": codigo,
+            "Fecha": fecha, "Canal": canal, "Error crítico": error_critico,
+            "Total": total, "Aspectos positivos": positivos, "Aspectos por mejorar": mejorar
+        }
         fila.update(resultados)
         guardar_datos(fila)
         st.success("✅ Monitoreo guardado correctamente.")
@@ -299,19 +290,37 @@ else:
     if df.empty:
         st.markdown('<div class="empty-msg">📭 No hay registros aún</div>', unsafe_allow_html=True)
     else:
+        st.sidebar.subheader("Filtros")
         area_f = st.sidebar.selectbox("Área:", ["Todas"] + sorted(df["Área"].unique()))
         canal_f = st.sidebar.selectbox("Canal:", ["Todos"] + sorted(df["Canal"].unique()))
         asesor_f = st.sidebar.selectbox("Asesor:", ["Todos"] + sorted(df["Asesor"].unique()))
 
-        if area_f != "Todas": df = df[df["Área"] == area_f]
-        if canal_f != "Todos": df = df[df["Canal"] == canal_f]
-        if asesor_f != "Todos": df = df[df["Asesor"] == asesor_f]
+        if area_f != "Todas":
+            df = df[df["Área"] == area_f]
+        if canal_f != "Todos":
+            df = df[df["Canal"] == canal_f]
+        if asesor_f != "Todos":
+            df = df[df["Asesor"] == asesor_f]
 
         c1, c2, c3 = st.columns(3)
         c1.metric("Monitoreos Totales", len(df))
-        c2.metric("Promedio Puntaje", round(df["Total"].mean(), 2))
+        c2.metric("Promedio Puntaje", round(df["Total"].astype(float).mean(), 2))
         c3.metric("Errores Críticos", len(df[df["Error crítico"] == "Sí"]))
 
         st.divider()
+
+        # ===============================
+        # DESCARGA DE CSV
+        # ===============================
+        st.download_button(
+            label="⬇️ Descargar Base de Monitoreos (CSV)",
+            data=df.to_csv(index=False).encode('utf-8'),
+            file_name="monitoreos.csv",
+            mime="text/csv"
+        )
+
+        st.divider()
         fig1 = px.bar(df, x="Monitor", color="Monitor", title="Monitoreos por Monitor")
+        fig2 = px.bar(df, x="Asesor", color="Área", title="Monitoreos por Asesor")
         st.plotly_chart(fig1, use_container_width=True)
+        st.plotly_chart(fig2, use_container_width=True)
