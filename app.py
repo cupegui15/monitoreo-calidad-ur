@@ -68,7 +68,11 @@ st.markdown("""
         }
 
         /* ===== RADIO ===== */
-        div[data-baseweb="radio"] label, div[data-baseweb="radio"] p {
+        div[data-baseweb="radio"] label {
+            color: #2b2b2b !important;
+            font-weight: 600 !important;
+        }
+        div[role="radiogroup"] > div {
             color: #2b2b2b !important;
             font-weight: 600 !important;
         }
@@ -256,6 +260,5 @@ elif pagina == "📊 Dashboard de Análisis":
     if df.empty:
         st.markdown('<div class="empty-msg">📭 No hay registros aún</div>', unsafe_allow_html=True)
     else:
-        st.write("Datos cargados correctamente")
         fig = px.bar(df, x="Área", y="Total", color="Monitor", title="Promedio de Puntajes por Área")
         st.plotly_chart(fig, use_container_width=True)
