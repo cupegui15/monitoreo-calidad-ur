@@ -6,7 +6,7 @@ import plotly.express as px
 from datetime import date
 
 # ===============================
-# CONFIGURACIÓN GENERAL
+# CONFIGURACIÓN PRINCIPAL
 # ===============================
 st.set_page_config(page_title="Monitoreo de Calidad UR", layout="wide", page_icon="📋")
 
@@ -15,8 +15,10 @@ st.set_page_config(page_title="Monitoreo de Calidad UR", layout="wide", page_ico
 # ===============================
 URL_LOGO_UR = "https://upload.wikimedia.org/wikipedia/commons/7/7e/University_of_Rosario_logo.png"
 URL_BANNER_IMG = "https://uredu-my.sharepoint.com/personal/cristian_upegui_urosario_edu_co/Documents/Imagenes/Imagen%201.jpg"
-LOCAL_BANNER = "Imagen1.jpg"
 
+# ===============================
+# FUNCIÓN PARA VALIDAR IMÁGENES
+# ===============================
 def url_imagen_valida(url):
     try:
         r = requests.head(url, allow_redirects=True, timeout=4)
@@ -25,13 +27,12 @@ def url_imagen_valida(url):
         return False
 
 # ===============================
-# ESTILOS INSTITUCIONALES
+# CSS - ESTILO INSTITUCIONAL
 # ===============================
 st.markdown("""
 <style>
 :root {
     --rojo-ur: #9B0029;
-    --rojo-claro: #C21833;
     --gris-fondo: #f8f8f8;
     --texto: #222;
 }
@@ -51,7 +52,7 @@ html, body, .stApp {
     font-weight: 600 !important;
 }
 
-/* Banner superior */
+/* Banner */
 .banner {
     background-color: var(--rojo-ur);
     color: white;
@@ -62,21 +63,16 @@ html, body, .stApp {
     align-items: center;
     justify-content: space-between;
 }
-.banner h2 {
-    margin: 0;
-    font-size: 1.6rem;
-    font-weight: 700;
-}
-.banner p {
-    margin: 0;
-    font-size: 0.9rem;
-}
+.banner h2 { margin: 0; font-size: 1.6rem; font-weight: 700; }
+.banner p { margin: 0; font-size: 0.9rem; }
 
-/* Inputs y radios */
+/* Inputs */
 .stTextInput input, .stTextArea textarea, .stSelectbox div[data-baseweb="select"] > div, .stDateInput input {
     background-color: #fff !important;
     color: var(--texto) !important;
 }
+
+/* Radios */
 div[data-baseweb="radio"] label, div[role="radiogroup"] > div {
     color: var(--texto) !important;
     font-weight: 600 !important;
@@ -137,7 +133,7 @@ def guardar_datos(data):
 # ===============================
 areas = {
     "CASA UR": {
-        "canales": ["Telefónico", "Chat", "Contact Center", "Back"],
+        "canales": ["Presencial", "Contact Center", "Chat", "Back Office"],
         "monitores": ["Mauricio Ramirez Cubillos", "Alejandro Parra Sánchez", "Cristian Alberto Upegui M"],
         "asesores": [
             "Adela Bogotá Cagua","David Esteban Puerto Salgado","Diana Marcela Sánchez Cano",
@@ -160,7 +156,53 @@ areas = {
 }
 
 preguntas = {
+    "CASA UR": {
+        "Presencial": [
+            ("¿Atiende la interacción en el momento que se establece contacto con el(a) usuario(a)?", 9),
+            ("¿Saluda, se presenta de una forma amable y cortés, usando el dialogo de saludo y bienvenida?", 9),
+            ("¿Realiza la validación de identidad del usuario y personaliza la interacción de forma adecuada garantizando la confidencialidad de la información?", 9),
+            ("¿Escucha activamente al usuario y realiza preguntas adicionales demostrando atención y concentración?", 9),
+            ("¿Consulta todas las herramientas disponibles para estructurar la posible respuesta que se le brindará al usuario?", 9),
+            ("¿Controla los tiempos de espera informando al usuario y realizando acompañamiento cada 2 minutos?", 9),
+            ("¿Brinda respuesta de forma precisa, completa y coherente, de acuerdo a lo solicitado por el usuario?", 14),
+            ("¿Valida con el usuario si la información fue clara, completa o si requiere algún trámite adicional?", 8),
+            ("¿Documenta la atención de forma coherente según lo solicitado e informado al cliente; seleccionando las tipologías adecuadas y manejando correcta redacción y ortografía?", 14),
+            ("¿Finaliza la atención de forma amable, cortés utilizando el dialogo de cierre y despedida remitiendo al usuario a responder la encuesta de percepción?", 10)
+        ],
+        "Contact Center": [
+            ("¿Atiende la interacción en el momento que se establece contacto con el(a) usuario(a)?", 9),
+            ("¿Saluda, se presenta de una forma amable y cortés, usando el dialogo de saludo y bienvenida?", 9),
+            ("¿Realiza la validación de identidad del usuario y personaliza la interacción de forma adecuada garantizando la confidencialidad de la información?", 9),
+            ("¿Escucha activamente al usuario y realiza preguntas adicionales demostrando atención y concentración?", 9),
+            ("¿Consulta todas las herramientas disponibles para estructurar la posible respuesta que se le brindará al usuario?", 9),
+            ("¿Controla los tiempos de espera informando al usuario y realizando acompañamiento cada 2 minutos?", 9),
+            ("¿Brinda respuesta de forma precisa, completa y coherente, de acuerdo a lo solicitado por el usuario?", 14),
+            ("¿Valida con el usuario si la información fue clara, completa o si requiere algún trámite adicional?", 8),
+            ("¿Documenta la atención de forma coherente según lo solicitado e informado al cliente; seleccionando las tipologías adecuadas y manejando correcta redacción y ortografía?", 14),
+            ("¿Finaliza la atención de forma amable, cortés utilizando el dialogo de cierre y despedida remitiendo al usuario a responder la encuesta de percepción?", 10)
+        ],
+        "Chat": [
+            ("¿Atiende la interacción en el momento que se establece contacto con el(a) usuario(a)?", 9),
+            ("¿Saluda, se presenta de una forma amable y cortés, usando el dialogo de saludo y bienvenida?", 9),
+            ("¿Realiza la validación de identidad del usuario y personaliza la interacción de forma adecuada garantizando la confidencialidad de la información?", 9),
+            ("¿Escucha activamente al usuario y realiza preguntas adicionales demostrando atención y concentración?", 9),
+            ("¿Consulta todas las herramientas disponibles para estructurar la posible respuesta que se le brindará al usuario?", 9),
+            ("¿Controla los tiempos de espera informando al usuario y realizando acompañamiento cada 2 minutos?", 9),
+            ("¿Brinda respuesta de forma precisa, completa y coherente, de acuerdo a lo solicitado por el usuario?", 14),
+            ("¿Valida con el usuario si la información fue clara, completa o si requiere algún trámite adicional?", 8),
+            ("¿Documenta la atención de forma coherente según lo solicitado e informado al cliente; seleccionando las tipologías adecuadas y manejando correcta redacción y ortografía?", 14),
+            ("¿Finaliza la atención de forma amable, cortés utilizando el dialogo de cierre y despedida remitiendo al usuario a responder la encuesta de percepción?", 10)
+        ],
+        "Back Office": [
+            ("¿Cumplimiento del ANS establecido para el servicio?", 20),
+            ("¿Análisis correspondiente a la solicitud?", 20),
+            ("¿Gestión SAP/UXXI/Bizagi adecuada?", 20),
+            ("¿Respuestas eficaz de acuerdo a la solicitud radicada por el usuario?", 20),
+            ("¿Es empático en la notificación de cierre de la solicitud?", 20)
+        ]
+    },
     "Servicios 2030": {
+        "Servicios 2030": {
         "Línea 2030": [
             ("¿Atiende la interacción de forma oportuna en el momento que se establece el contacto?", 9),
             ("¿Saluda y se presenta de manera amable y profesional, estableciendo un inicio cordial de la atención?", 9),
@@ -192,6 +234,7 @@ preguntas = {
             ("¿Brinda una respuesta eficaz y alineada a la solicitud radicada por el usuario, asegurando calidad técnica en la solución?", 20),
             ("¿Comunica el cierre de la solicitud de manera empática y profesional, validando la satisfacción del usuario?", 20)
         ]
+        }
     }
 }
 
@@ -201,8 +244,7 @@ preguntas = {
 st.sidebar.image(URL_LOGO_UR, width=150)
 pagina = st.sidebar.radio("Menú:", ["📝 Formulario de Monitoreo", "📊 Dashboard de Análisis"])
 
-# Banner superior con fondo rojo
-banner_html = f"""
+st.markdown(f"""
 <div class="banner">
     <div style="display:flex;align-items:center;gap:1rem;">
         <img src="{URL_LOGO_UR}" width="80">
@@ -215,8 +257,7 @@ banner_html = f"""
         <img src="{URL_BANNER_IMG}" width="130" style="border-radius:6px;">
     </div>
 </div>
-"""
-st.markdown(banner_html, unsafe_allow_html=True)
+""", unsafe_allow_html=True)
 
 # ===============================
 # FORMULARIO
@@ -255,12 +296,9 @@ if pagina == "📝 Formulario de Monitoreo":
     st.metric("Puntaje Total", total)
 
     if st.button("💾 Guardar Monitoreo"):
-        fila = {
-            "Área": area, "Monitor": monitor, "Asesor": asesor,
-            "Código": codigo, "Fecha": fecha, "Canal": canal,
-            "Error crítico": error_critico, "Total": total,
-            "Aspectos positivos": positivos, "Aspectos por mejorar": mejorar
-        }
+        fila = {"Área": area, "Monitor": monitor, "Asesor": asesor, "Código": codigo,
+                "Fecha": fecha, "Canal": canal, "Error crítico": error_critico,
+                "Total": total, "Aspectos positivos": positivos, "Aspectos por mejorar": mejorar}
         fila.update(resultados)
         guardar_datos(fila)
         st.success("✅ Monitoreo guardado correctamente.")
@@ -290,10 +328,3 @@ else:
         st.divider()
         fig1 = px.bar(df, x="Monitor", color="Monitor", title="Monitoreos por Monitor")
         st.plotly_chart(fig1, use_container_width=True)
-
-        fig2 = px.bar(df, x="Asesor", color="Área", title="Monitoreos por Asesor")
-        fig2.update_layout(xaxis_tickangle=45)
-        st.plotly_chart(fig2, use_container_width=True)
-
-        fig3 = px.box(df, x="Área", y="Total", color="Canal", title="Distribución de Puntajes por Área y Canal")
-        st.plotly_chart(fig3, use_container_width=True)
