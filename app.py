@@ -3,72 +3,96 @@ import pandas as pd
 import plotly.express as px
 from datetime import date
 
+# ===============================
+# ⚙️ CONFIGURACIÓN INICIAL
+# ===============================
 st.set_page_config(page_title="Monitoreo de Calidad UR", layout="wide", page_icon="📋")
 
 # ===============================
-# 🎨 ESTILO UNIVERSIDAD DEL ROSARIO
+# 🎨 ESTILO UNIVERSIDAD DEL ROSARIO (tema claro institucional)
 # ===============================
 st.markdown("""
     <style>
-        body, .stApp {
-            background-color: #f7f7f7;
-            color: #2b2b2b;
-            font-family: "Segoe UI", sans-serif;
+        html, body, .stApp {
+            background-color: #f8f8f8 !important;
+            color: #2b2b2b !important;
+            font-family: 'Segoe UI', sans-serif !important;
         }
 
-        /* ======= SIDEBAR ======= */
+        /* ===== SIDEBAR ===== */
         [data-testid="stSidebar"] {
-            background-color: #9B0029;
+            background-color: #9B0029 !important;
         }
         [data-testid="stSidebar"] * {
-            color: white !important;
-            font-weight: 500;
+            color: #ffffff !important;
+            font-weight: 500 !important;
         }
 
-        /* ======= ENCABEZADO ======= */
+        /* ===== ENCABEZADO ===== */
         .banner {
-            background-color: #9B0029;
+            background: linear-gradient(90deg, #9B0029 0%, #C21833 100%);
             border-radius: 12px;
             padding: 1.2rem 2rem;
+            color: white !important;
             display: flex;
-            justify-content: space-between;
             align-items: center;
-            color: white;
+            justify-content: space-between;
             margin-bottom: 2rem;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
         }
-        .banner-title {
+        .banner h1 {
             font-size: 1.8rem;
-            font-weight: 600;
+            font-weight: 700;
+            margin: 0;
         }
-        .banner-subtitle {
+        .banner p {
             font-size: 1rem;
-            font-weight: 400;
             opacity: 0.9;
+            margin: 0;
         }
 
-        /* ======= BOTONES ======= */
+        /* ===== FORMULARIO ===== */
+        label, .stRadio > label, .stTextInput > label, .stDateInput > label {
+            color: #2b2b2b !important;
+            font-weight: 600 !important;
+        }
+        .stTextInput input, .stTextArea textarea, .stSelectbox div[data-baseweb="select"] > div {
+            background-color: #fff !important;
+            color: #2b2b2b !important;
+            border: 1px solid #ccc !important;
+            border-radius: 6px !important;
+            font-weight: 500 !important;
+        }
+
+        /* ===== BOTONES ===== */
         .stButton>button {
-            background-color: #9B0029;
-            color: white;
-            border-radius: 8px;
-            border: none;
-            padding: 0.5rem 1rem;
-            font-weight: 600;
+            background-color: #9B0029 !important;
+            color: white !important;
+            border-radius: 6px !important;
+            border: none !important;
+            padding: 0.6rem 1.2rem !important;
+            font-weight: 600 !important;
+            font-size: 1rem !important;
+            transition: 0.2s;
         }
         .stButton>button:hover {
-            background-color: #7d0221;
+            background-color: #7d0221 !important;
+            transform: scale(1.03);
         }
 
-        /* ======= TÍTULOS ======= */
-        .section-title {
-            color: #9B0029;
-            font-size: 1.3rem;
-            font-weight: 600;
-            margin-top: 1.5rem;
-        }
-
+        /* ===== MÉTRICAS ===== */
         .stMetricLabel {
             color: #9B0029 !important;
+            font-weight: 700 !important;
+        }
+
+        /* ===== SECCIONES ===== */
+        .section-title {
+            color: #9B0029;
+            font-size: 1.4rem;
+            font-weight: 700;
+            margin-top: 1.5rem;
+            margin-bottom: 1rem;
         }
     </style>
 """, unsafe_allow_html=True)
@@ -164,26 +188,23 @@ st.sidebar.image("https://upload.wikimedia.org/wikipedia/commons/7/7e/University
 pagina = st.sidebar.radio("Menú:", ["📝 Formulario de Monitoreo", "📊 Dashboard de Análisis"])
 
 # ===============================
-# 🏛️ ENCABEZADO CON IMÁGENES INSTITUCIONALES
+# 🏛️ ENCABEZADO CON LOGO E IMAGEN
 # ===============================
-col1, col2, col3 = st.columns([1, 5, 2])
-with col1:
-    st.image("https://upload.wikimedia.org/wikipedia/commons/7/7e/University_of_Rosario_logo.png", width=120)
-with col2:
-    st.markdown("""
-    <div class="banner-title">Sistema de Monitoreo de Calidad</div>
-    <div class="banner-subtitle">Universidad del Rosario - Comprometidos con la excelencia en el servicio</div>
-    """, unsafe_allow_html=True)
-with col3:
-    st.image("https://uredu-my.sharepoint.com/personal/cristian_upegui_urosario_edu_co/Documents/Imagenes/Imagen%201.jpg", width=180)
-
-st.markdown("---")
+st.markdown("""
+<div class="banner">
+    <div>
+        <h1>Monitoreo de Calidad - Universidad del Rosario</h1>
+        <p>Comprometidos con la excelencia en la atención al usuario</p>
+    </div>
+    <img src="https://uredu-my.sharepoint.com/personal/cristian_upegui_urosario_edu_co/Documents/Imagenes/Imagen%201.jpg" width="140">
+</div>
+""", unsafe_allow_html=True)
 
 # ===============================
 # 📝 FORMULARIO
 # ===============================
 if pagina == "📝 Formulario de Monitoreo":
-    st.markdown('<div class="section-title">📝 Registro de Monitoreo</div>', unsafe_allow_html=True)
+    st.markdown('<div class="section-title">🧾 Registro de Monitoreo</div>', unsafe_allow_html=True)
 
     col1, col2, col3 = st.columns(3)
     with col1:
@@ -235,7 +256,7 @@ if pagina == "📝 Formulario de Monitoreo":
 # 📊 DASHBOARD
 # ===============================
 if pagina == "📊 Dashboard de Análisis":
-    st.markdown('<div class="section-title">📊 Dashboard de Monitoreos</div>', unsafe_allow_html=True)
+    st.markdown('<div class="section-title">📈 Dashboard de Monitoreos</div>', unsafe_allow_html=True)
 
     df = cargar_datos()
     if df.empty:
