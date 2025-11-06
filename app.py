@@ -2,8 +2,6 @@ import streamlit as st
 import pandas as pd
 import plotly.express as px
 from datetime import date
-import smtplib
-from email.mime.text import MIMEText
 
 st.set_page_config(page_title="Monitoreo de Calidad UR", layout="wide", page_icon="📋")
 
@@ -26,25 +24,6 @@ def guardar_datos(data):
         pass
     df.to_csv("monitoreos.csv", index=False)
 
-def enviar_correo(destinatario, asunto, cuerpo):
-    """Función para enviar notificación (ajustable para entorno real)."""
-    try:
-        # Ejemplo con Gmail (requiere activar "App Password" en la cuenta)
-        remitente = "tu_correo@gmail.com"
-        password = "TU_APP_PASSWORD"
-        msg = MIMEText(cuerpo, "html")
-        msg["Subject"] = asunto
-        msg["From"] = remitente
-        msg["To"] = destinatario
-
-        with smtplib.SMTP("smtp.gmail.com", 587) as server:
-            server.starttls()
-            server.login(remitente, password)
-            server.send_message(msg)
-        print("Correo enviado correctamente")
-    except Exception as e:
-        print("No se pudo enviar el correo:", e)
-
 # ===============================
 # CONFIGURACIÓN DE ÁREAS Y PREGUNTAS
 # ===============================
@@ -53,21 +32,21 @@ areas = {
         "canales": ["Telefónico", "Chat", "Contact Center", "Back"],
         "monitores": ["Mauricio Ramirez Cubillos", "Alejandro Parra Sánchez", "Cristian Alberto Upegui M"],
         "asesores": [
-            "Adela Bogotá Cagua","David Esteban Puerto Salgado","Diana Marcela Sánchez Cano",
-            "Diana Milena Nieto Perez","Jenny Lorena Quintero","Jhon Caballero","Jose Edwin Navarro Rondon",
-            "Jose Efrain Arguello","Laura Alejandra Bernal Perez","Leidy Johanna Alonso Rincón",
-            "Leyner Anyul Silva Avila","Martha Soraya Monsalve Fonseca","Nancy Viviana Bulla Bustos",
-            "Nelson Peña Ramírez","Solangel Milena Rodriguez Quitian","Leidy Sofia Ramirez Paez"
+            "Adela Bogotá Cagua", "David Esteban Puerto Salgado", "Diana Marcela Sánchez Cano",
+            "Diana Milena Nieto Perez", "Jenny Lorena Quintero", "Jhon Caballero", "Jose Edwin Navarro Rondon",
+            "Jose Efrain Arguello", "Laura Alejandra Bernal Perez", "Leidy Johanna Alonso Rincón",
+            "Leyner Anyul Silva Avila", "Martha Soraya Monsalve Fonseca", "Nancy Viviana Bulla Bustos",
+            "Nelson Peña Ramírez", "Solangel Milena Rodriguez Quitian", "Leidy Sofia Ramirez Paez"
         ]
     },
     "Servicios 2030": {
         "canales": ["Linea 2030", "Chat 2030"],
         "monitores": ["Johanna Rueda Cuvajante", "Cristian Alberto Upegui M"],
         "asesores": [
-            "Juan Sebastian Silva Gomez","Jennyfer Caicedo Alfonso","Jerly Durley Mendez Fontecha",
-            "Addison Rodriguez Casallas","Gabriel Ferney Martinez Lopez","Juan David Gonzalez Jimenez",
-            "Miguel Angel Rico Acevedo","Juan Camilo Ortega Clavijo","Andres Fernando Galindo Algarra",
-            "Adrian Jose Sosa Gil","Andrea Katherine Torres Junco","Leidi Daniela Arias Rodriguez"
+            "Juan Sebastian Silva Gomez", "Jennyfer Caicedo Alfonso", "Jerly Durley Mendez Fontecha",
+            "Addison Rodriguez Casallas", "Gabriel Ferney Martinez Lopez", "Juan David Gonzalez Jimenez",
+            "Miguel Angel Rico Acevedo", "Juan Camilo Ortega Clavijo", "Andres Fernando Galindo Algarra",
+            "Adrian Jose Sosa Gil", "Andrea Katherine Torres Junco", "Leidi Daniela Arias Rodriguez"
         ]
     }
 }
@@ -134,19 +113,17 @@ if pagina == "📝 Formulario de Monitoreo":
     fecha = st.date_input("Fecha de la interacción", date.today())
     canal = st.selectbox("Canal", areas[area]["canales"])
 
-st.markdown("---")
+    st.markdown("---")
 
     error_critico = st.radio("¿Corresponde a un error crítico?", ["No", "Sí"], horizontal=True)
 
-    preguntas_canal = None
+    # 🔒 Manejo seguro de preguntas por canal
     if area in preguntas:
         if canal in preguntas[area]:
             preguntas_canal = preguntas[area][canal]
         else:
-          
             preguntas_canal = next(iter(preguntas[area].values()))
     else:
-    
         preguntas_canal = []
 
     resultados = {}
@@ -156,7 +133,6 @@ st.markdown("---")
         st.error("❌ Error crítico: puntaje total será 0.")
         for pregunta, _ in preguntas_canal:
             resultados[pregunta] = 0
-        total = 0
     else:
         for pregunta, puntaje in preguntas_canal:
             cumple = st.radio(pregunta, ["Cumple", "No cumple"], horizontal=True, key=pregunta)
@@ -177,10 +153,55 @@ st.markdown("---")
             "Fecha": fecha,
             "Canal": canal,
             "Error Crítico": error_critico,
-            "Puntaje Total": total,
+            "Total": total,
             "Aspectos Positivos": positivos,
             "Aspectos por Mejorar": mejorar
         }
         data.update(resultados)
         guardar_datos(data)
         st.success("✅ Monitoreo guardado correctamente.")
+
+# ===============================
+# DASHBOARD DE ANÁLISIS
+# ===============================
+if pagina == "📊 Dashboard de Análisis":
+    st.header("📊 Dashboard de Monitoreos")
+
+    df = cargar_datos()
+    if df.empty:
+        st.warning("⚠️ No hay registros de monitoreos aún.")
+        st.stop()
+
+    # Filtros
+    area_f = st.sidebar.selectbox("Filtrar por Área:", ["Todas"] + sorted(df["Área"].unique()))
+    canal_f = st.sidebar.selectbox("Filtrar por Canal:", ["Todos"] + sorted(df["Canal"].unique()))
+    asesor_f = st.sidebar.selectbox("Filtrar por Asesor:", ["Todos"] + sorted(df["Asesor"].unique()))
+
+    if area_f != "Todas":
+        df = df[df["Área"] == area_f]
+    if canal_f != "Todos":
+        df = df[df["Canal"] == canal_f]
+    if asesor_f != "Todos":
+        df = df[df["Asesor"] == asesor_f]
+
+    # KPIs
+    total_mon = len(df)
+    prom_total = df["Total"].mean()
+    errores = len(df[df["Error Crítico"] == "Sí"])
+
+    c1, c2, c3 = st.columns(3)
+    c1.metric("Monitoreos Totales", total_mon)
+    c2.metric("Promedio de Puntaje", round(prom_total, 2))
+    c3.metric("Errores Críticos", errores)
+
+    st.divider()
+
+    # Gráficos
+    fig1 = px.bar(df, x="Monitor", color="Monitor", title="Monitoreos por Evaluador")
+    st.plotly_chart(fig1, use_container_width=True)
+
+    fig2 = px.bar(df, x="Asesor", color="Área", title="Monitoreos por Asesor")
+    st.plotly_chart(fig2, use_container_width=True)
+
+    fig3 = px.box(df, x="Área", y="Total", color="Canal", title="Distribución de Puntajes")
+    st.plotly_chart(fig3, use_container_width=True)
