@@ -11,23 +11,13 @@ from datetime import date
 st.set_page_config(page_title="Monitoreo de Calidad UR", layout="wide", page_icon="📋")
 
 # ===============================
-# RUTAS DE IMÁGENES
+# IMÁGENES INSTITUCIONALES
 # ===============================
 URL_LOGO_UR = "https://upload.wikimedia.org/wikipedia/commons/7/7e/University_of_Rosario_logo.png"
 URL_BANNER_IMG = "https://uredu-my.sharepoint.com/personal/cristian_upegui_urosario_edu_co/Documents/Imagenes/Imagen%201.jpg"
 
 # ===============================
-# FUNCIÓN PARA VALIDAR IMÁGENES
-# ===============================
-def url_imagen_valida(url):
-    try:
-        r = requests.head(url, allow_redirects=True, timeout=4)
-        return r.status_code == 200
-    except:
-        return False
-
-# ===============================
-# CSS - ESTILO INSTITUCIONAL
+# CSS INSTITUCIONAL
 # ===============================
 st.markdown("""
 <style>
@@ -129,7 +119,7 @@ def guardar_datos(data):
     df.to_csv("monitoreos.csv", index=False)
 
 # ===============================
-# CONFIGURACIÓN DE ÁREAS Y PREGUNTAS
+# ÁREAS, CANALES Y PREGUNTAS
 # ===============================
 areas = {
     "CASA UR": {
@@ -160,81 +150,79 @@ preguntas = {
         "Presencial": [
             ("¿Atiende la interacción en el momento que se establece contacto con el(a) usuario(a)?", 9),
             ("¿Saluda, se presenta de una forma amable y cortés, usando el dialogo de saludo y bienvenida?", 9),
-            ("¿Realiza la validación de identidad del usuario y personaliza la interacción de forma adecuada garantizando la confidencialidad de la información?", 9),
-            ("¿Escucha activamente al usuario y realiza preguntas adicionales demostrando atención y concentración?", 9),
-            ("¿Consulta todas las herramientas disponibles para estructurar la posible respuesta que se le brindará al usuario?", 9),
-            ("¿Controla los tiempos de espera informando al usuario y realizando acompañamiento cada 2 minutos?", 9),
-            ("¿Brinda respuesta de forma precisa, completa y coherente, de acuerdo a lo solicitado por el usuario?", 14),
-            ("¿Valida con el usuario si la información fue clara, completa o si requiere algún trámite adicional?", 8),
-            ("¿Documenta la atención de forma coherente según lo solicitado e informado al cliente; seleccionando las tipologías adecuadas y manejando correcta redacción y ortografía?", 14),
-            ("¿Finaliza la atención de forma amable, cortés utilizando el dialogo de cierre y despedida remitiendo al usuario a responder la encuesta de percepción?", 10)
+            ("¿Realiza la validación de identidad del usuario y personaliza la interacción garantizando confidencialidad?", 9),
+            ("¿Escucha activamente al usuario y realiza preguntas adicionales demostrando atención?", 9),
+            ("¿Consulta todas las herramientas disponibles para estructurar la respuesta?", 9),
+            ("¿Controla los tiempos de espera informando y acompañando al usuario?", 9),
+            ("¿Brinda respuesta precisa, completa y coherente, de acuerdo a lo solicitado?", 14),
+            ("¿Valida con el usuario si la información fue clara o si requiere algo más?", 8),
+            ("¿Documenta la atención coherentemente seleccionando tipologías correctas y con buena redacción?", 14),
+            ("¿Finaliza la atención amablemente remitiendo al usuario a la encuesta?", 10)
         ],
         "Contact Center": [
-            ("¿Atiende la interacción en el momento que se establece contacto con el(a) usuario(a)?", 9),
-            ("¿Saluda, se presenta de una forma amable y cortés, usando el dialogo de saludo y bienvenida?", 9),
-            ("¿Realiza la validación de identidad del usuario y personaliza la interacción de forma adecuada garantizando la confidencialidad de la información?", 9),
-            ("¿Escucha activamente al usuario y realiza preguntas adicionales demostrando atención y concentración?", 9),
-            ("¿Consulta todas las herramientas disponibles para estructurar la posible respuesta que se le brindará al usuario?", 9),
-            ("¿Controla los tiempos de espera informando al usuario y realizando acompañamiento cada 2 minutos?", 9),
-            ("¿Brinda respuesta de forma precisa, completa y coherente, de acuerdo a lo solicitado por el usuario?", 14),
-            ("¿Valida con el usuario si la información fue clara, completa o si requiere algún trámite adicional?", 8),
-            ("¿Documenta la atención de forma coherente según lo solicitado e informado al cliente; seleccionando las tipologías adecuadas y manejando correcta redacción y ortografía?", 14),
-            ("¿Finaliza la atención de forma amable, cortés utilizando el dialogo de cierre y despedida remitiendo al usuario a responder la encuesta de percepción?", 10)
+            ("¿Atiende la interacción oportunamente?", 9),
+            ("¿Saluda y se presenta de forma amable y profesional?", 9),
+            ("¿Valida identidad del usuario garantizando confidencialidad?", 9),
+            ("¿Escucha activamente y hace preguntas pertinentes?", 9),
+            ("¿Consulta herramientas para estructurar respuesta adecuada?", 9),
+            ("¿Controla tiempos de espera e informa al usuario?", 9),
+            ("¿Brinda respuesta coherente y completa?", 14),
+            ("¿Valida comprensión del usuario?", 8),
+            ("¿Documenta la atención correctamente?", 14),
+            ("¿Finaliza de manera amable y profesional?", 10)
         ],
         "Chat": [
-            ("¿Atiende la interacción en el momento que se establece contacto con el(a) usuario(a)?", 9),
-            ("¿Saluda, se presenta de una forma amable y cortés, usando el dialogo de saludo y bienvenida?", 9),
-            ("¿Realiza la validación de identidad del usuario y personaliza la interacción de forma adecuada garantizando la confidencialidad de la información?", 9),
-            ("¿Escucha activamente al usuario y realiza preguntas adicionales demostrando atención y concentración?", 9),
-            ("¿Consulta todas las herramientas disponibles para estructurar la posible respuesta que se le brindará al usuario?", 9),
-            ("¿Controla los tiempos de espera informando al usuario y realizando acompañamiento cada 2 minutos?", 9),
-            ("¿Brinda respuesta de forma precisa, completa y coherente, de acuerdo a lo solicitado por el usuario?", 14),
-            ("¿Valida con el usuario si la información fue clara, completa o si requiere algún trámite adicional?", 8),
-            ("¿Documenta la atención de forma coherente según lo solicitado e informado al cliente; seleccionando las tipologías adecuadas y manejando correcta redacción y ortografía?", 14),
-            ("¿Finaliza la atención de forma amable, cortés utilizando el dialogo de cierre y despedida remitiendo al usuario a responder la encuesta de percepción?", 10)
+            ("¿Atiende la interacción oportunamente?", 9),
+            ("¿Saluda y se presenta cordialmente?", 9),
+            ("¿Valida identidad y personaliza la atención?", 9),
+            ("¿Escucha activamente (lectura comprensiva) y responde adecuadamente?", 9),
+            ("¿Utiliza herramientas para resolver adecuadamente?", 9),
+            ("¿Gestiona tiempos de espera e informa avances?", 9),
+            ("¿Brinda respuesta precisa y coherente?", 14),
+            ("¿Valida comprensión del usuario?", 8),
+            ("¿Documenta correctamente la interacción?", 14),
+            ("¿Finaliza con cierre amable y remite a encuesta?", 10)
         ],
         "Back Office": [
-            ("¿Cumplimiento del ANS establecido para el servicio?", 20),
-            ("¿Análisis correspondiente a la solicitud?", 20),
-            ("¿Gestión SAP/UXXI/Bizagi adecuada?", 20),
-            ("¿Respuestas eficaz de acuerdo a la solicitud radicada por el usuario?", 20),
-            ("¿Es empático en la notificación de cierre de la solicitud?", 20)
+            ("¿Cumple con el ANS establecido para el servicio?", 20),
+            ("¿Analiza correctamente la solicitud?", 20),
+            ("¿Gestiona adecuadamente en SAP/UXXI/Bizagi?", 20),
+            ("¿Responde eficazmente según solicitud?", 20),
+            ("¿Es empático al cerrar la solicitud?", 20)
         ]
     },
     "Servicios 2030": {
-        "Servicios 2030": {
         "Línea 2030": [
             ("¿Atiende la interacción de forma oportuna en el momento que se establece el contacto?", 9),
-            ("¿Saluda y se presenta de manera amable y profesional, estableciendo un inicio cordial de la atención?", 9),
-            ("¿Realiza la validación de identidad del usuario garantizando confidencialidad y aplica protocolos de seguridad de la información?", 9),
-            ("¿Escucha activamente al usuario y formula preguntas pertinentes para un diagnóstico claro y completo?", 9),
-            ("¿Consulta y utiliza todas las herramientas de soporte disponibles (base de conocimiento, sistemas, documentación) para estructurar una respuesta adecuada?", 9),
-            ("¿Gestiona adecuadamente los tiempos de espera, manteniendo informado al usuario y realizando acompañamiento oportuno durante la interacción?", 9),
-            ("¿Sigue el flujo definido para solución o escalamiento, asegurando trazabilidad y cumplimiento de procesos internos?", 14),
-            ("¿Valida con el usuario que la información brindada es clara, completa y confirma si requiere trámites o pasos adicionales?", 8),
-            ("¿Documenta la atención en el sistema de tickets de manera coherente, seleccionando tipologías correctas y con redacción/ortografía adecuadas?", 14),
-            ("¿Finaliza la atención de forma amable y profesional, utilizando el cierre de interacción definido y remitiendo al usuario a la encuesta de satisfacción?", 10)
+            ("¿Saluda y se presenta de manera amable y profesional, estableciendo un inicio cordial?", 9),
+            ("¿Realiza validación de identidad garantizando confidencialidad y seguridad de la información?", 9),
+            ("¿Escucha activamente y formula preguntas pertinentes para diagnóstico claro?", 9),
+            ("¿Consulta y utiliza todas las herramientas de soporte disponibles?", 9),
+            ("¿Gestiona adecuadamente los tiempos de espera manteniendo informado al usuario?", 9),
+            ("¿Sigue flujo definido para solución o escalamiento?", 14),
+            ("¿Valida que la información brindada es clara y completa?", 8),
+            ("¿Documenta en sistema de tickets coherentemente y con buena redacción?", 14),
+            ("¿Finaliza la atención de forma amable y profesional remitiendo a encuesta?", 10)
         ],
         "Chat 2030": [
             ("¿Atiende la interacción de forma oportuna en el momento que se establece el contacto?", 9),
-            ("¿Saluda y se presenta de manera amable y profesional, estableciendo un inicio cordial de la atención?", 9),
-            ("¿Realiza la validación de identidad del usuario garantizando confidencialidad y aplica protocolos de seguridad de la información?", 9),
-            ("¿Escucha activamente al usuario y formula preguntas pertinentes para un diagnóstico claro y completo?", 9),
-            ("¿Consulta y utiliza todas las herramientas de soporte disponibles (base de conocimiento, sistemas, documentación) para estructurar una respuesta adecuada?", 9),
-            ("¿Gestiona adecuadamente los tiempos de espera, manteniendo informado al usuario y realizando acompañamiento oportuno durante la interacción?", 9),
-            ("¿Sigue el flujo definido para solución o escalamiento, asegurando trazabilidad y cumplimiento de procesos internos?", 14),
-            ("¿Valida con el usuario que la información brindada es clara, completa y confirma si requiere trámites o pasos adicionales?", 8),
-            ("¿Documenta la atención en el sistema de tickets de manera coherente, seleccionando tipologías correctas y con redacción/ortografía adecuadas?", 14),
-            ("¿Finaliza la atención de forma amable y profesional, utilizando el cierre de interacción definido y remitiendo al usuario a la encuesta de satisfacción?", 10)
+            ("¿Saluda y se presenta de manera amable y profesional, estableciendo un inicio cordial?", 9),
+            ("¿Realiza validación de identidad garantizando confidencialidad y seguridad de la información?", 9),
+            ("¿Escucha activamente y formula preguntas pertinentes para diagnóstico claro?", 9),
+            ("¿Consulta y utiliza todas las herramientas de soporte disponibles?", 9),
+            ("¿Gestiona adecuadamente los tiempos de espera manteniendo informado al usuario?", 9),
+            ("¿Sigue flujo definido para solución o escalamiento?", 14),
+            ("¿Valida que la información brindada es clara y completa?", 8),
+            ("¿Documenta en sistema de tickets coherentemente y con buena redacción?", 14),
+            ("¿Finaliza la atención de forma amable y profesional remitiendo a encuesta?", 10)
         ],
         "Sitio 2030": [
-            ("¿Cumple con el ANS/SLA establecido para el servicio, iniciando la gestión dentro del tiempo definido?", 20),
-            ("¿Realiza un análisis completo y pertinente de la solicitud, aplicando diagnóstico claro antes de ejecutar acciones?", 20),
-            ("¿Gestiona correctamente en las herramientas institucionales (SAP / UXXI / Salesforce u otras) garantizando trazabilidad y registro adecuado?", 20),
-            ("¿Brinda una respuesta eficaz y alineada a la solicitud radicada por el usuario, asegurando calidad técnica en la solución?", 20),
-            ("¿Comunica el cierre de la solicitud de manera empática y profesional, validando la satisfacción del usuario?", 20)
+            ("¿Cumple con el ANS/SLA establecido para el servicio?", 20),
+            ("¿Realiza análisis completo y pertinente de la solicitud?", 20),
+            ("¿Gestiona correctamente en SAP/UXXI/Salesforce u otras herramientas?", 20),
+            ("¿Brinda una respuesta eficaz y alineada a la solicitud del usuario?", 20),
+            ("¿Comunica el cierre de manera empática y profesional?", 20)
         ]
-        }
     }
 }
 
