@@ -3,10 +3,79 @@ import pandas as pd
 import plotly.express as px
 from datetime import date
 
-st.set_page_config(page_title="Monitoreo de Calidad UR", layout="wide", page_icon="📋")
+st.set_page_config(
+    page_title="Monitoreo de Calidad UR",
+    layout="wide",
+    page_icon="📋"
+)
 
 # ===============================
-# UTILIDADES
+# ESTILOS INSTITUCIONALES
+# ===============================
+st.markdown("""
+    <style>
+        /* Fondo general */
+        body, .stApp {
+            background-color: #f7f7f7;
+            color: #333;
+            font-family: 'Segoe UI', sans-serif;
+        }
+
+        /* Encabezado */
+        .main-header {
+            background-color: #A80532;
+            color: white;
+            padding: 1.2rem;
+            border-radius: 10px;
+            text-align: center;
+            font-size: 1.8rem;
+            font-weight: 600;
+            margin-bottom: 1rem;
+        }
+
+        /* Sidebar */
+        [data-testid="stSidebar"] {
+            background-color: #A80532;
+            color: white;
+        }
+
+        [data-testid="stSidebar"] h2, [data-testid="stSidebar"] span, [data-testid="stSidebar"] p {
+            color: white !important;
+        }
+
+        [data-testid="stSidebarNav"] ul {
+            background-color: transparent;
+        }
+
+        /* Botones */
+        .stButton>button {
+            background-color: #A80532;
+            color: white;
+            font-weight: bold;
+            border: none;
+            border-radius: 10px;
+            padding: 0.6rem 1.2rem;
+        }
+
+        .stButton>button:hover {
+            background-color: #88042A;
+        }
+
+        /* Títulos de secciones */
+        .stMarkdown h2, .stMarkdown h3, .stMarkdown h4 {
+            color: #A80532;
+            font-weight: 600;
+        }
+
+        /* Campos y select */
+        .stSelectbox, .stTextInput, .stDateInput, .stRadio, .stTextArea {
+            border-radius: 8px !important;
+        }
+    </style>
+""", unsafe_allow_html=True)
+
+# ===============================
+# FUNCIONES
 # ===============================
 @st.cache_data
 def cargar_datos():
@@ -25,7 +94,7 @@ def guardar_datos(data):
     df.to_csv("monitoreos.csv", index=False)
 
 # ===============================
-# CONFIGURACIÓN DE ÁREAS Y PREGUNTAS
+# CONFIGURACIÓN DE ÁREAS
 # ===============================
 areas = {
     "CASA UR": {
@@ -90,7 +159,7 @@ preguntas = {
 }
 
 # ===============================
-# PÁGINAS
+# SIDEBAR
 # ===============================
 st.sidebar.image("https://upload.wikimedia.org/wikipedia/commons/7/7e/University_of_Rosario_logo.png", width=150)
 pagina = st.sidebar.radio("Menú:", ["📝 Formulario de Monitoreo", "📊 Dashboard de Análisis"])
@@ -99,7 +168,11 @@ pagina = st.sidebar.radio("Menú:", ["📝 Formulario de Monitoreo", "📊 Dashb
 # FORMULARIO
 # ===============================
 if pagina == "📝 Formulario de Monitoreo":
-    st.header("📝 Formulario de Monitoreo de Calidad")
+    st.markdown('<div class="main-header">📝 Formulario de Monitoreo de Calidad</div>', unsafe_allow_html=True)
+
+    # Imagen institucional del lobo
+    st.image("https://upload.wikimedia.org/wikipedia/commons/7/7e/University_of_Rosario_logo.png", width=120)
+    st.image("https://i.ibb.co/gmy7DwV/lobo-urosario.png", width=220)
 
     col1, col2, col3 = st.columns(3)
     with col1:
@@ -117,7 +190,7 @@ if pagina == "📝 Formulario de Monitoreo":
 
     error_critico = st.radio("¿Corresponde a un error crítico?", ["No", "Sí"], horizontal=True)
 
-    # 🔒 Manejo seguro de preguntas por canal
+    # Manejo de preguntas
     if area in preguntas:
         if canal in preguntas[area]:
             preguntas_canal = preguntas[area][canal]
@@ -162,29 +235,24 @@ if pagina == "📝 Formulario de Monitoreo":
         st.success("✅ Monitoreo guardado correctamente.")
 
 # ===============================
-# DASHBOARD DE ANÁLISIS
+# DASHBOARD
 # ===============================
 if pagina == "📊 Dashboard de Análisis":
-    st.header("📊 Dashboard de Monitoreos")
+    st.markdown('<div class="main-header">📊 Dashboard de Análisis de Monitoreos</div>', unsafe_allow_html=True)
 
     df = cargar_datos()
     if df.empty:
-        st.warning("⚠️ No hay registros de monitoreos aún.")
+        st.warning("⚠️ No hay registros aún.")
         st.stop()
 
-    # Filtros
     area_f = st.sidebar.selectbox("Filtrar por Área:", ["Todas"] + sorted(df["Área"].unique()))
     canal_f = st.sidebar.selectbox("Filtrar por Canal:", ["Todos"] + sorted(df["Canal"].unique()))
-    asesor_f = st.sidebar.selectbox("Filtrar por Asesor:", ["Todos"] + sorted(df["Asesor"].unique()))
 
     if area_f != "Todas":
         df = df[df["Área"] == area_f]
     if canal_f != "Todos":
         df = df[df["Canal"] == canal_f]
-    if asesor_f != "Todos":
-        df = df[df["Asesor"] == asesor_f]
 
-    # KPIs
     total_mon = len(df)
     prom_total = df["Total"].mean()
     errores = len(df[df["Error Crítico"] == "Sí"])
@@ -196,11 +264,10 @@ if pagina == "📊 Dashboard de Análisis":
 
     st.divider()
 
-    # Gráficos
-    fig1 = px.bar(df, x="Monitor", color="Monitor", title="Monitoreos por Evaluador")
+    fig1 = px.bar(df, x="Monitor", color="Monitor", title="Monitoreos por Evaluador", color_discrete_sequence=["#A80532"])
     st.plotly_chart(fig1, use_container_width=True)
 
-    fig2 = px.bar(df, x="Asesor", color="Área", title="Monitoreos por Asesor")
+    fig2 = px.bar(df, x="Asesor", color="Área", title="Monitoreos por Asesor", color_discrete_sequence=px.colors.qualitative.Set2)
     st.plotly_chart(fig2, use_container_width=True)
 
     fig3 = px.box(df, x="Área", y="Total", color="Canal", title="Distribución de Puntajes")
