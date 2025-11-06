@@ -320,50 +320,41 @@ else:
         # ===============================
         # PROMEDIO POR CANAL / ÁREA
         # ===============================
-        st.subheader("📈 Promedios Comparativos")
+# ===============================
+# ANÁLISIS DE CUMPLIMIENTO POR PREGUNTA
+# ===============================
+st.subheader("✅ Cumplimiento por Pregunta")
 
-        col3, col4 = st.columns(2)
-        with col3:
-            fig3 = px.bar(df.groupby("Canal")["Total"].mean().reset_index(),
-                          x="Canal", y="Total", title="Promedio de Puntaje por Canal",
-                          color="Canal", text_auto=True)
-            st.plotly_chart(fig3, use_container_width=True)
-        with col4:
-            fig4 = px.bar(df.groupby("Área")["Total"].mean().reset_index(),
-                          x="Área", y="Total", title="Promedio de Puntaje por Área",
-                          color="Área", text_auto=True)
-            st.plotly_chart(fig4, use_container_width=True)
+preguntas_cols = [c for c in df.columns if "¿" in c or "?" in c]
+if preguntas_cols:
+    for i, pregunta in enumerate(preguntas_cols):
+        resumen = df[pregunta].value_counts().reset_index()
+        resumen.columns = ["Estado", "Cantidad"]
 
-        st.divider()
+        colA, colB = st.columns([2, 1])
+        with colA:
+            figQ = px.bar(
+                resumen,
+                x="Estado",
+                y="Cantidad",
+                color="Estado",
+                title=pregunta,
+                text_auto=True,
+                color_discrete_map={"1": "#007700", "0": "#cc0000"},
+            )
+            st.plotly_chart(figQ, use_container_width=True, key=f"bar_{i}")
 
-        # ===============================
-        # ANÁLISIS DE CUMPLIMIENTO POR PREGUNTA
-        # ===============================
-        st.subheader("✅ Cumplimiento por Pregunta")
-
-        preguntas_cols = [c for c in df.columns if "¿" in c or "?" in c]
-        if preguntas_cols:
-            for i, pregunta in enumerate(preguntas_cols):
-    resumen = df[pregunta].value_counts().reset_index()
-    resumen.columns = ["Estado", "Cantidad"]
-
-    colA, colB = st.columns([2, 1])
-    with colA:
-        figQ = px.bar(resumen, x="Estado", y="Cantidad", color="Estado",
-                      title=pregunta, text_auto=True,
-                      color_discrete_map={"1": "#007700", "0": "#cc0000"})
-        st.plotly_chart(figQ, use_container_width=True, key=f"bar_{i}")
-
-    with colB:
-        figPie = px.pie(resumen, names="Estado", values="Cantidad",
-                        color="Estado",
-                        color_discrete_map={"1": "#007700", "0": "#cc0000"})
-        st.plotly_chart(figPie, use_container_width=True, key=f"pie_{i}")
-
-        else:
-            st.info("⚠️ No se han registrado preguntas aún en los monitoreos.")
-
-        st.divider()
+        with colB:
+            figPie = px.pie(
+                resumen,
+                names="Estado",
+                values="Cantidad",
+                color="Estado",
+                color_discrete_map={"1": "#007700", "0": "#cc0000"},
+            )
+            st.plotly_chart(figPie, use_container_width=True, key=f"pie_{i}")
+else:
+    st.info("⚠️ No se han registrado preguntas aún en los monitoreos.")
 
         # ===============================
         # DESCARGA DE DATOS
