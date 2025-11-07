@@ -84,13 +84,23 @@ html, body, .stApp {
 def guardar_datos_google_sheets(data):
     """Guarda los registros directamente en Google Sheets."""
     try:
+        # Convertir fechas a texto antes de enviar
+        for k, v in data.items():
+            if isinstance(v, (date,)):
+                data[k] = v.strftime("%Y-%m-%d")
+
         creds_json = st.secrets["GCP_SERVICE_ACCOUNT"]
         creds_dict = json.loads(creds_json)
         scope = ["https://spreadsheets.google.com/feeds", "https://www.googleapis.com/auth/drive"]
         creds = ServiceAccountCredentials.from_json_keyfile_dict(creds_dict, scope)
         client = gspread.authorize(creds)
         sheet = client.open_by_key(st.secrets["GOOGLE_SHEETS_ID"]).sheet1
+
+        # Escribir encabezado si la hoja está vacía
+        if not sheet.get_all_records():
+            sheet.append_row(list(data.keys()))
         sheet.append_row(list(data.values()))
+
         st.success("✅ Monitoreo guardado correctamente en Google Sheets.")
     except Exception as e:
         st.error(f"❌ Error al guardar en Google Sheets: {e}")
