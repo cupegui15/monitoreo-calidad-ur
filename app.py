@@ -28,18 +28,44 @@ st.markdown("""
     --gris-fondo: #f8f8f8;
     --texto: #222;
 }
+
+/* Fondo general */
 html, body, .stApp {
     background-color: var(--gris-fondo) !important;
     color: var(--texto) !important;
     font-family: "Segoe UI", sans-serif;
 }
+
+/* Sidebar */
 [data-testid="stSidebar"] {
     background-color: var(--rojo-ur) !important;
 }
 [data-testid="stSidebar"] * {
-    color: #fff !important;
     font-weight: 600 !important;
 }
+
+/* NUEVO: inputs del sidebar (selectbox) con texto negro y fondo blanco */
+[data-testid="stSidebar"] select,
+[data-testid="stSidebar"] option,
+[data-testid="stSidebar"] div[data-baseweb="select"] * {
+    color: #000 !important;                 /* texto negro */
+    background-color: #ffffff !important;   /* fondo blanco */
+    font-weight: 600 !important;
+}
+
+/* NUEVO: borde y radio de los select en sidebar */
+[data-testid="stSidebar"] div[data-baseweb="select"] > div {
+    border-radius: 6px !important;
+    border: 1.5px solid #ffffff !important;
+}
+
+/* Etiquetas de los filtros del sidebar (Área, Canal, Año, Mes) */
+[data-testid="stSidebar"] label {
+    color: #ffffff !important;
+    font-weight: 700 !important;
+}
+
+/* Banner superior */
 .banner {
     background-color: var(--rojo-ur);
     color: white;
@@ -52,6 +78,8 @@ html, body, .stApp {
 }
 .banner h2 { margin: 0; font-size: 1.6rem; font-weight: 700; }
 .banner p { margin: 0; font-size: 0.9rem; }
+
+/* Títulos de sección */
 .section-title {
     color: var(--rojo-ur);
     font-weight: 700;
@@ -59,12 +87,16 @@ html, body, .stApp {
     margin-top: 1rem;
     margin-bottom: 0.6rem;
 }
+
+/* Mensaje vacío */
 .empty-msg {
     color: var(--texto);
     font-weight: 700;
     text-align: center;
     padding: 1.2rem;
 }
+
+/* Botones */
 .stButton>button {
     background-color: var(--rojo-ur) !important;
     color: white !important;
@@ -82,6 +114,7 @@ html, body, .stApp {
 # FUNCIONES GOOGLE SHEETS
 # ===============================
 def guardar_datos_google_sheets(data):
+    """Guarda un registro en Google Sheets."""
     try:
         # Convertir fechas a texto antes de enviar
         for k, v in data.items():
@@ -108,6 +141,7 @@ def guardar_datos_google_sheets(data):
         st.error(f"❌ Error al guardar en Google Sheets: {e}")
 
 def cargar_datos_google_sheets():
+    """Carga todos los registros desde Google Sheets."""
     try:
         creds_json = st.secrets["GCP_SERVICE_ACCOUNT"]
         creds_dict = json.loads(creds_json)
@@ -125,7 +159,7 @@ def cargar_datos_google_sheets():
         return pd.DataFrame()
 
 # ===============================
-# CONFIGURACIÓN DE ÁREAS Y PREGUNTAS
+# CONFIGURACIÓN DE ÁREAS Y LISTAS
 # ===============================
 areas = {
     "CASA UR": {
@@ -265,7 +299,7 @@ if pagina == "📝 Formulario de Monitoreo":
             guardar_datos_google_sheets(fila)
 
 # ===============================
-# DASHBOARD CON ANÁLISIS POR PREGUNTA (OPTIMIZADO VISUALMENTE)
+# DASHBOARD CON ANÁLISIS POR PREGUNTA
 # ===============================
 else:
     df = cargar_datos_google_sheets()
@@ -282,7 +316,7 @@ else:
             7:"Julio",8:"Agosto",9:"Septiembre",10:"Octubre",11:"Noviembre",12:"Diciembre"
         }
 
-        # === FILTROS ===
+        # FILTROS
         st.sidebar.subheader("Filtros")
         area_f = st.sidebar.selectbox("Área:", ["Todas"] + sorted(df["Área"].dropna().unique()))
         canal_f = st.sidebar.selectbox("Canal:", ["Todos"] + sorted(df["Canal"].dropna().unique()))
@@ -301,7 +335,7 @@ else:
 
         st.caption(f"📅 Registros del periodo: {mes_f if mes_f!='Todos' else 'Todos los meses'} {anio_f if anio_f!='Todos' else ''}")
 
-        # === MÉTRICAS ===
+        # MÉTRICAS
         c1, c2, c3 = st.columns(3)
         c1.metric("Monitoreos Totales", len(df))
         c2.metric("Promedio Puntaje", round(df["Total"].mean(), 2) if not df.empty else 0)
@@ -310,12 +344,19 @@ else:
         st.divider()
         st.subheader("📊 Análisis General")
 
-        # === GRAFICOS PRINCIPALES ===
+        # GRAFICOS PRINCIPALES
         col1, col2 = st.columns(2)
         with col1:
             df_monitor = df.groupby(["Monitor", "Área"]).size().reset_index(name="Total Monitoreos")
-            fig1 = px.bar(df_monitor, x="Monitor", y="Total Monitoreos", color="Área" if df_monitor["Área"].nunique() > 1 else None,
-                          text="Total Monitoreos", title="Monitoreos por Monitor", color_discrete_sequence=["#9B0029", "#004E98", "#0077B6"])
+            fig1 = px.bar(
+                df_monitor,
+                x="Monitor",
+                y="Total Monitoreos",
+                color="Área" if df_monitor["Área"].nunique() > 1 else None,
+                text="Total Monitoreos",
+                title="Monitoreos por Monitor",
+                color_discrete_sequence=["#9B0029", "#004E98", "#0077B6"]
+            )
             fig1.update_traces(textposition="outside")
             fig1.update_yaxes(dtick=1, title_text="Cantidad de Monitoreos")
             fig1.update_layout(showlegend=True, margin=dict(t=40,b=40,l=40,r=40))
@@ -323,12 +364,20 @@ else:
 
         with col2:
             df_asesor = df.groupby(["Asesor", "Área"]).size().reset_index(name="Total Monitoreos")
-            fig2 = px.bar(df_asesor, x="Asesor", y="Total Monitoreos", color="Área" if df_asesor["Área"].nunique() > 1 else None,
-                          text="Total Monitoreos", title="Monitoreos por Asesor", color_discrete_sequence=["#9B0029", "#004E98", "#0077B6"])
+            fig2 = px.bar(
+                df_asesor,
+                x="Asesor",
+                y="Total Monitoreos",
+                color="Área" if df_asesor["Área"].nunique() > 1 else None,
+                text="Total Monitoreos",
+                title="Monitoreos por Asesor",
+                color_discrete_sequence=["#9B0029", "#004E98", "#0077B6"]
+            )
             fig2.update_traces(textposition="outside")
             fig2.update_yaxes(dtick=1, title_text="Cantidad de Monitoreos")
             fig2.update_layout(showlegend=True, margin=dict(t=40,b=40,l=40,r=40))
             st.plotly_chart(fig2, use_container_width=True, key="grafico_asesor")
+
         st.divider()
         st.subheader("✅ Cumplimiento por Pregunta")
 
@@ -337,13 +386,9 @@ else:
             for i, pregunta in enumerate(preguntas_cols):
                 st.markdown(f"### {pregunta}")
 
-                # Determinar el puntaje máximo posible (seguridad)
-                max_puntaje = 20
-
-                # Crear columna binaria de cumplimiento
+                # Columna binaria de cumplimiento (1 si puntaje >0)
                 df["Cumple_tmp"] = df[pregunta].apply(lambda x: 1 if pd.to_numeric(x, errors="coerce") > 0 else 0)
 
-                # Calcular % de cumplimiento por asesor
                 resumen = (
                     df.groupby("Asesor")["Cumple_tmp"]
                     .agg(["sum", "count"])
@@ -411,7 +456,6 @@ else:
                     else:
                         st.info("No hay datos suficientes.")
 
-            # este divider debe ir aquí, no dentro del for
             st.divider()
         else:
             st.info("⚠️ No se encontraron preguntas registradas aún en los monitoreos.")
