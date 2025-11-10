@@ -40,6 +40,16 @@ html, body, .stApp {
     color: #fff !important;
     font-weight: 600 !important;
 }
+[data-testid="stSidebar"] select,
+[data-testid="stSidebar"] option,
+[data-testid="stSidebar"] div[data-baseweb="select"] * {
+    color: #000 !important;
+    background-color: #fff !important;
+    font-weight: 500 !important;
+}
+[data-testid="stSidebar"] div[data-baseweb="select"] span {
+    color: #000 !important;
+}
 .banner {
     background-color: var(--rojo-ur);
     color: white;
@@ -91,6 +101,7 @@ def guardar_datos_google_sheets(data):
         if not sheet.get_all_records():
             sheet.append_row(list(data.keys()))
         sheet.append_row(list(data.values()))
+
         st.success("✅ Monitoreo guardado correctamente en Google Sheets.")
     except Exception as e:
         st.error(f"❌ Error al guardar en Google Sheets: {e}")
@@ -103,13 +114,14 @@ def cargar_datos_google_sheets():
         creds = ServiceAccountCredentials.from_json_keyfile_dict(creds_dict, scope)
         client = gspread.authorize(creds)
         sheet = client.open_by_key(st.secrets["GOOGLE_SHEETS_ID"]).sheet1
-        return pd.DataFrame(sheet.get_all_records())
+        data = sheet.get_all_records()
+        return pd.DataFrame(data)
     except Exception as e:
         st.error(f"⚠️ No se pudieron cargar los datos: {e}")
         return pd.DataFrame()
 
 # ===============================
-# CONFIGURACIÓN DE ÁREAS
+# CONFIGURACIÓN DE ÁREAS Y PREGUNTAS
 # ===============================
 areas = {
     "CASA UR": {
@@ -136,23 +148,21 @@ areas = {
 }
 
 # ===============================
-# INTERFAZ PRINCIPAL
+# SIDEBAR Y BANNER
 # ===============================
 st.sidebar.image(URL_LOGO_UR, width=150)
 pagina = st.sidebar.radio("Menú:", ["📝 Formulario de Monitoreo", "📊 Dashboard de Análisis"])
 
 st.markdown(f"""
 <div class="banner">
-    <div>
-        <h2>Monitoreo de Calidad - Universidad del Rosario</h2>
-        <p>Comprometidos con la excelencia en la atención al usuario</p>
-    </div>
+    <div><h2>Monitoreo de Calidad - Universidad del Rosario</h2>
+    <p>Comprometidos con la excelencia en la atención al usuario</p></div>
     <div><img src="{URL_BANNER_IMG}" width="130" style="border-radius:6px;"></div>
 </div>
 """, unsafe_allow_html=True)
 
 # ===============================
-# FORMULARIO DE MONITOREO
+# FORMULARIO
 # ===============================
 if pagina == "📝 Formulario de Monitoreo":
     st.markdown('<div class="section-title">🧾 Registro de Monitoreo</div>', unsafe_allow_html=True)
@@ -161,26 +171,24 @@ if pagina == "📝 Formulario de Monitoreo":
         st.session_state.form_reset = False
 
     if st.session_state.form_reset:
-        for key in list(st.session_state.keys()):
-            if key not in ["form_reset", "GCP_SERVICE_ACCOUNT", "GOOGLE_SHEETS_ID"]:
-                del st.session_state[key]
+        st.session_state.clear()
         st.session_state.form_reset = False
-        st.experimental_rerun()
+        st.info("🧹 Formulario reiniciado correctamente.")
 
     c1, c2, c3 = st.columns(3)
     with c1:
-        area = st.selectbox("Área", list(areas.keys()), key="area")
+        area = st.selectbox("Área", ["Seleccione una opción"] + list(areas.keys()))
     with c2:
-        monitor = st.selectbox("Persona que monitorea", areas[area]["monitores"], key="monitor")
+        monitor = st.selectbox("Persona que monitorea", ["Seleccione una opción"] + (areas[area]["monitores"] if area != "Seleccione una opción" else []))
     with c3:
-        asesor = st.selectbox("Asesor monitoreado", areas[area]["asesores"], key="asesor")
+        asesor = st.selectbox("Asesor monitoreado", ["Seleccione una opción"] + (areas[area]["asesores"] if area != "Seleccione una opción" else []))
 
-    codigo = st.text_input("Código de la interacción *", key="codigo")
-    fecha = st.date_input("Fecha de la interacción", date.today(), key="fecha")
-    canal = st.selectbox("Canal", areas[area]["canales"], key="canal")
-    error_critico = st.radio("¿Corresponde a un error crítico?", ["No", "Sí"], horizontal=True, key="error")
+    codigo = st.text_input("Código de la interacción *")
+    fecha = st.date_input("Fecha de la interacción", date.today())
+    canal = st.selectbox("Canal", (areas[area]["canales"] if area != "Seleccione una opción" else ["Seleccione un área primero"]))
+    error_critico = st.radio("¿Corresponde a un error crítico?", ["No", "Sí"], horizontal=True)
 
-    # PREGUNTAS SEGÚN ÁREA Y CANAL
+    # PREGUNTAS
     preguntas_canal = []
     if area == "CASA UR":
         if canal in ["Presencial", "Contact Center", "Chat"]:
@@ -226,7 +234,6 @@ if pagina == "📝 Formulario de Monitoreo":
                 ("¿Brinda una respuesta eficaz y alineada a la solicitud radicada por el usuario, asegurando calidad técnica en la solución?", 20),
                 ("¿Comunica el cierre de la solicitud de manera empática y profesional, validando la satisfacción del usuario?", 20)
             ]
-
     resultados, total = {}, 0
     if error_critico == "Sí":
         st.error("❌ Error crítico: el puntaje total será 0.")
@@ -238,38 +245,30 @@ if pagina == "📝 Formulario de Monitoreo":
             resultados[q] = p if resp == "Cumple" else 0
             total += resultados[q]
 
-    positivos = st.text_area("Aspectos Positivos *", key="positivos")
-    mejorar = st.text_area("Aspectos por Mejorar *", key="mejorar")
+    positivos = st.text_area("Aspectos Positivos *")
+    mejorar = st.text_area("Aspectos por Mejorar *")
     st.metric("Puntaje Total", total)
 
     if st.button("💾 Guardar Monitoreo"):
-        if not codigo.strip():
-            st.error("⚠️ Debes ingresar el código de la interacción.")
-        elif not positivos.strip():
-            st.error("⚠️ Debes ingresar los aspectos positivos antes de guardar.")
-        elif not mejorar.strip():
-            st.error("⚠️ Debes ingresar los aspectos por mejorar antes de guardar.")
+        if area == "Seleccione una opción" or monitor == "Seleccione una opción" or asesor == "Seleccione una opción":
+            st.error("⚠️ Debes seleccionar Área, Persona que monitorea y Asesor monitoreado.")
+        elif not codigo.strip():
+            st.error("⚠️ Debes ingresar el código de la interacción antes de guardar.")
+        elif not positivos.strip() or not mejorar.strip():
+            st.error("⚠️ Los campos de aspectos positivos y por mejorar son obligatorios.")
         else:
             fila = {
-                "Área": area,
-                "Monitor": monitor,
-                "Asesor": asesor,
-                "Código": codigo.strip(),
-                "Fecha": fecha,
-                "Canal": canal,
-                "Error crítico": error_critico,
-                "Total": total,
-                "Aspectos positivos": positivos,
-                "Aspectos por mejorar": mejorar
+                "Área": area, "Monitor": monitor, "Asesor": asesor, "Código": codigo.strip(),
+                "Fecha": fecha, "Canal": canal, "Error crítico": error_critico,
+                "Total": total, "Aspectos positivos": positivos, "Aspectos por mejorar": mejorar
             }
             fila.update(resultados)
             guardar_datos_google_sheets(fila)
             st.session_state.form_reset = True
-            st.success("✅ Registro guardado correctamente. El formulario se limpiará automáticamente.")
-            st.balloons()
+            st.rerun()
 
 # ===============================
-# DASHBOARD (SE CARGA AQUÍ)
+# DASHBOARD
 # ===============================
 else:
     df = cargar_datos_google_sheets()
@@ -281,8 +280,10 @@ else:
         df["Año"] = df["Fecha"].dt.year
         df["Total"] = pd.to_numeric(df["Total"], errors="coerce").fillna(0)
 
-        meses = {1:"Enero",2:"Febrero",3:"Marzo",4:"Abril",5:"Mayo",6:"Junio",7:"Julio",8:"Agosto",9:"Septiembre",10:"Octubre",11:"Noviembre",12:"Diciembre"}
+        meses = {1:"Enero",2:"Febrero",3:"Marzo",4:"Abril",5:"Mayo",6:"Junio",
+                 7:"Julio",8:"Agosto",9:"Septiembre",10:"Octubre",11:"Noviembre",12:"Diciembre"}
 
+        # === FILTROS ===
         st.sidebar.subheader("Filtros")
         area_f = st.sidebar.selectbox("Área:", ["Todas"] + sorted(df["Área"].dropna().unique()))
         canal_f = st.sidebar.selectbox("Canal:", ["Todos"] + sorted(df["Canal"].dropna().unique()))
@@ -301,28 +302,84 @@ else:
 
         st.caption(f"📅 Registros del periodo: {mes_f if mes_f!='Todos' else 'Todos los meses'} {anio_f if anio_f!='Todos' else ''}")
 
+        # === MÉTRICAS ===
         c1, c2, c3 = st.columns(3)
         c1.metric("Monitoreos Totales", len(df))
-        c2.metric("Promedio Puntaje", round(df["Total"].mean(), 2))
+        c2.metric("Promedio Puntaje", round(df["Total"].mean(), 2) if not df.empty else 0)
         c3.metric("Errores Críticos", len(df[df["Error crítico"] == "Sí"]))
 
         st.divider()
         st.subheader("📊 Análisis General")
 
+        # === GRAFICOS PRINCIPALES ===
         col1, col2 = st.columns(2)
         with col1:
             df_monitor = df.groupby(["Monitor", "Área"]).size().reset_index(name="Total Monitoreos")
-            fig1 = px.bar(df_monitor, x="Monitor", y="Total Monitoreos", color="Área",
-                          text="Total Monitoreos", title="Monitoreos por Monitor",
-                          color_discrete_sequence=["#9B0029", "#004E98", "#0077B6"])
+            fig1 = px.bar(df_monitor, x="Monitor", y="Total Monitoreos",
+                          color="Área" if df_monitor["Área"].nunique() > 1 else None,
+                          text="Total Monitoreos",
+                          title="Monitoreos por Monitor",
+                          color_discrete_sequence=["#9B0029", "#004E98"])
             fig1.update_traces(textposition="outside")
             fig1.update_yaxes(dtick=1, title_text="Cantidad de Monitoreos")
-            st.plotly_chart(fig1, use_container_width=True)
+            fig1.update_layout(showlegend=True, margin=dict(t=40,b=40,l=40,r=40))
+            st.plotly_chart(fig1, use_container_width=True, key="grafico_monitor")
+
         with col2:
             df_asesor = df.groupby(["Asesor", "Área"]).size().reset_index(name="Total Monitoreos")
-            fig2 = px.bar(df_asesor, x="Asesor", y="Total Monitoreos", color="Área",
-                          text="Total Monitoreos", title="Monitoreos por Asesor",
-                          color_discrete_sequence=["#9B0029", "#004E98", "#0077B6"])
+            fig2 = px.bar(df_asesor, x="Asesor", y="Total Monitoreos",
+                          color="Área" if df_asesor["Área"].nunique() > 1 else None,
+                          text="Total Monitoreos",
+                          title="Monitoreos por Asesor",
+                          color_discrete_sequence=["#9B0029", "#004E98"])
             fig2.update_traces(textposition="outside")
             fig2.update_yaxes(dtick=1, title_text="Cantidad de Monitoreos")
-            st.plotly_chart(fig2, use_container_width=True)
+            fig2.update_layout(showlegend=True, margin=dict(t=40,b=40,l=40,r=40))
+            st.plotly_chart(fig2, use_container_width=True, key="grafico_asesor")
+
+        st.divider()
+        st.subheader("✅ Cumplimiento por Pregunta")
+
+        preguntas_cols = [c for c in df.columns if "¿" in c or "?" in c]
+        if preguntas_cols:
+            for i, pregunta in enumerate(preguntas_cols):
+                st.markdown(f"### {pregunta}")
+
+                df["Cumple_tmp"] = df[pregunta].apply(lambda x: 1 if pd.to_numeric(x, errors="coerce") > 0 else 0)
+                resumen = (df.groupby("Asesor")["Cumple_tmp"]
+                            .agg(["sum", "count"])
+                            .reset_index()
+                            .rename(columns={"sum": "Cumple", "count": "Total"}))
+                resumen["% Cumplimiento"] = (resumen["Cumple"] / resumen["Total"]) * 100
+                resumen["% Cumplimiento"] = resumen["% Cumplimiento"].fillna(0).round(2)
+
+                mejores = resumen.sort_values("% Cumplimiento", ascending=False).head(5)
+                peores = resumen.sort_values("% Cumplimiento", ascending=True).head(5)
+
+                colA, colB = st.columns(2)
+                with colA:
+                    st.markdown("🟢 **Top 5 Asesores con Mayor Cumplimiento**")
+                    if not mejores.empty:
+                        fig_top = px.bar(mejores, x="Asesor", y="% Cumplimiento", text="% Cumplimiento",
+                                         color="% Cumplimiento", color_continuous_scale="greens", range_y=[0, 100])
+                        fig_top.update_traces(texttemplate="%{text}%", textposition="outside")
+                        fig_top.update_yaxes(dtick=10, title_text="% de Cumplimiento")
+                        fig_top.update_layout(margin=dict(t=20, b=30, l=40, r=40), showlegend=False, height=400)
+                        st.plotly_chart(fig_top, use_container_width=True, key=f"grafico_mejor_{i}")
+                    else:
+                        st.info("No hay datos suficientes.")
+
+                with colB:
+                    st.markdown("🔴 **Top 5 Asesores con Menor Cumplimiento**")
+                    if not peores.empty:
+                        fig_low = px.bar(peores, x="Asesor", y="% Cumplimiento", text="% Cumplimiento",
+                                         color="% Cumplimiento", color_continuous_scale="reds", range_y=[0, 100])
+                        fig_low.update_traces(texttemplate="%{text}%", textposition="outside")
+                        fig_low.update_yaxes(dtick=10, title_text="% de Cumplimiento")
+                        fig_low.update_layout(margin=dict(t=20, b=30, l=40, r=40), showlegend=False, height=400)
+                        st.plotly_chart(fig_low, use_container_width=True, key=f"grafico_peor_{i}")
+                    else:
+                        st.info("No hay datos suficientes.")
+            st.divider()
+        else:
+            st.info("⚠️ No se encontraron preguntas registradas aún en los monitoreos.")
