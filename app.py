@@ -28,44 +28,18 @@ st.markdown("""
     --gris-fondo: #f8f8f8;
     --texto: #222;
 }
-
-/* Fondo general */
 html, body, .stApp {
     background-color: var(--gris-fondo) !important;
     color: var(--texto) !important;
     font-family: "Segoe UI", sans-serif;
 }
-
-/* Sidebar */
 [data-testid="stSidebar"] {
     background-color: var(--rojo-ur) !important;
 }
 [data-testid="stSidebar"] * {
+    color: #fff !important;
     font-weight: 600 !important;
 }
-
-/* NUEVO: inputs del sidebar (selectbox) con texto negro y fondo blanco */
-[data-testid="stSidebar"] select,
-[data-testid="stSidebar"] option,
-[data-testid="stSidebar"] div[data-baseweb="select"] * {
-    color: #000 !important;                 /* texto negro */
-    background-color: #ffffff !important;   /* fondo blanco */
-    font-weight: 600 !important;
-}
-
-/* NUEVO: borde y radio de los select en sidebar */
-[data-testid="stSidebar"] div[data-baseweb="select"] > div {
-    border-radius: 6px !important;
-    border: 1.5px solid #ffffff !important;
-}
-
-/* Etiquetas de los filtros del sidebar (Área, Canal, Año, Mes) */
-[data-testid="stSidebar"] label {
-    color: #ffffff !important;
-    font-weight: 700 !important;
-}
-
-/* Banner superior */
 .banner {
     background-color: var(--rojo-ur);
     color: white;
@@ -78,8 +52,6 @@ html, body, .stApp {
 }
 .banner h2 { margin: 0; font-size: 1.6rem; font-weight: 700; }
 .banner p { margin: 0; font-size: 0.9rem; }
-
-/* Títulos de sección */
 .section-title {
     color: var(--rojo-ur);
     font-weight: 700;
@@ -87,16 +59,12 @@ html, body, .stApp {
     margin-top: 1rem;
     margin-bottom: 0.6rem;
 }
-
-/* Mensaje vacío */
 .empty-msg {
     color: var(--texto);
     font-weight: 700;
     text-align: center;
     padding: 1.2rem;
 }
-
-/* Botones */
 .stButton>button {
     background-color: var(--rojo-ur) !important;
     color: white !important;
@@ -114,7 +82,6 @@ html, body, .stApp {
 # FUNCIONES GOOGLE SHEETS
 # ===============================
 def guardar_datos_google_sheets(data):
-    """Guarda un registro en Google Sheets."""
     try:
         # Convertir fechas a texto antes de enviar
         for k, v in data.items():
@@ -140,8 +107,8 @@ def guardar_datos_google_sheets(data):
     except Exception as e:
         st.error(f"❌ Error al guardar en Google Sheets: {e}")
 
+
 def cargar_datos_google_sheets():
-    """Carga todos los registros desde Google Sheets."""
     try:
         creds_json = st.secrets["GCP_SERVICE_ACCOUNT"]
         creds_dict = json.loads(creds_json)
@@ -159,28 +126,28 @@ def cargar_datos_google_sheets():
         return pd.DataFrame()
 
 # ===============================
-# CONFIGURACIÓN DE ÁREAS Y LISTAS
+# CONFIGURACIÓN DE ÁREAS Y PREGUNTAS
 # ===============================
 areas = {
     "CASA UR": {
         "canales": ["Presencial", "Contact Center", "Chat", "Back Office"],
         "monitores": ["Mauricio Ramirez Cubillos", "Alejandro Parra Sánchez", "Cristian Alberto Upegui M"],
         "asesores": [
-            "Adela Bogotá Cagua","David Esteban Puerto Salgado","Diana Marcela Sánchez Cano",
-            "Diana Milena Nieto Perez","Jenny Lorena Quintero","Jhon Caballero","Jose Edwin Navarro Rondon",
-            "Jose Efrain Arguello","Laura Alejandra Bernal Perez","Leidy Johanna Alonso Rincón",
-            "Leyner Anyul Silva Avila","Martha Soraya Monsalve Fonseca","Nancy Viviana Bulla Bustos",
-            "Nelson Peña Ramírez","Solangel Milena Rodriguez Quitian","Leidy Sofia Ramirez Paez"
+            "Adela Bogotá Cagua", "David Esteban Puerto Salgado", "Diana Marcela Sánchez Cano",
+            "Diana Milena Nieto Perez", "Jenny Lorena Quintero", "Jhon Caballero", "Jose Edwin Navarro Rondon",
+            "Jose Efrain Arguello", "Laura Alejandra Bernal Perez", "Leidy Johanna Alonso Rincón",
+            "Leyner Anyul Silva Avila", "Martha Soraya Monsalve Fonseca", "Nancy Viviana Bulla Bustos",
+            "Nelson Peña Ramírez", "Solangel Milena Rodriguez Quitian", "Leidy Sofia Ramirez Paez"
         ]
     },
     "Servicios 2030": {
         "canales": ["Línea 2030", "Chat 2030", "Sitio 2030"],
         "monitores": ["Johanna Rueda Cuvajante", "Cristian Alberto Upegui M"],
         "asesores": [
-            "Juan Sebastian Silva Gomez","Jennyfer Caicedo Alfonso","Jerly Durley Mendez Fontecha",
-            "Addison Rodriguez Casallas","Gabriel Ferney Martinez Lopez","Juan David Gonzalez Jimenez",
-            "Miguel Angel Rico Acevedo","Juan Camilo Ortega Clavijo","Andres Fernando Galindo Algarra",
-            "Adrian Jose Sosa Gil","Andrea Katherine Torres Junco","Leidi Daniela Arias Rodriguez"
+            "Juan Sebastian Silva Gomez", "Jennyfer Caicedo Alfonso", "Jerly Durley Mendez Fontecha",
+            "Addison Rodriguez Casallas", "Gabriel Ferney Martinez Lopez", "Juan David Gonzalez Jimenez",
+            "Miguel Angel Rico Acevedo", "Juan Camilo Ortega Clavijo", "Andres Fernando Galindo Algarra",
+            "Adrian Jose Sosa Gil", "Andrea Katherine Torres Junco", "Leidi Daniela Arias Rodriguez"
         ]
     }
 }
@@ -200,24 +167,35 @@ st.markdown(f"""
 """, unsafe_allow_html=True)
 
 # ===============================
-# FORMULARIO
+# FORMULARIO DE MONITOREO
 # ===============================
 if pagina == "📝 Formulario de Monitoreo":
     st.markdown('<div class="section-title">🧾 Registro de Monitoreo</div>', unsafe_allow_html=True)
+
+    if "form_reset" not in st.session_state:
+        st.session_state.form_reset = False
+
+    if st.session_state.form_reset:
+        for key in list(st.session_state.keys()):
+            if key not in ["form_reset", "GCP_SERVICE_ACCOUNT", "GOOGLE_SHEETS_ID"]:
+                del st.session_state[key]
+        st.session_state.form_reset = False
+        st.experimental_rerun()
+
     c1, c2, c3 = st.columns(3)
     with c1:
-        area = st.selectbox("Área", list(areas.keys()))
+        area = st.selectbox("Área", list(areas.keys()), key="area")
     with c2:
-        monitor = st.selectbox("Persona que monitorea", areas[area]["monitores"])
+        monitor = st.selectbox("Persona que monitorea", areas[area]["monitores"], key="monitor")
     with c3:
-        asesor = st.selectbox("Asesor monitoreado", areas[area]["asesores"])
+        asesor = st.selectbox("Asesor monitoreado", areas[area]["asesores"], key="asesor")
 
-    codigo = st.text_input("Código de la interacción *")
-    fecha = st.date_input("Fecha de la interacción", date.today())
-    canal = st.selectbox("Canal", areas[area]["canales"])
-    error_critico = st.radio("¿Corresponde a un error crítico?", ["No", "Sí"], horizontal=True)
+    codigo = st.text_input("Código de la interacción *", key="codigo")
+    fecha = st.date_input("Fecha de la interacción", date.today(), key="fecha")
+    canal = st.selectbox("Canal", areas[area]["canales"], key="canal")
+    error_critico = st.radio("¿Corresponde a un error crítico?", ["No", "Sí"], horizontal=True, key="error")
 
-    # PREGUNTAS SEGÚN ÁREA Y CANAL
+    # Preguntas según canal
     preguntas_canal = []
     if area == "CASA UR":
         if canal in ["Presencial", "Contact Center", "Chat"]:
@@ -275,13 +253,17 @@ if pagina == "📝 Formulario de Monitoreo":
             resultados[q] = p if resp == "Cumple" else 0
             total += resultados[q]
 
-    positivos = st.text_area("Aspectos Positivos")
-    mejorar = st.text_area("Aspectos por Mejorar")
+    positivos = st.text_area("Aspectos Positivos *", key="positivos")
+    mejorar = st.text_area("Aspectos por Mejorar *", key="mejorar")
     st.metric("Puntaje Total", total)
 
     if st.button("💾 Guardar Monitoreo"):
         if not codigo.strip():
-            st.error("⚠️ Debes ingresar el código de la interacción antes de guardar.")
+            st.error("⚠️ Debes ingresar el código de la interacción.")
+        elif not positivos.strip():
+            st.error("⚠️ Debes ingresar los aspectos positivos antes de guardar.")
+        elif not mejorar.strip():
+            st.error("⚠️ Debes ingresar los aspectos por mejorar antes de guardar.")
         else:
             fila = {
                 "Área": area,
@@ -297,187 +279,5 @@ if pagina == "📝 Formulario de Monitoreo":
             }
             fila.update(resultados)
             guardar_datos_google_sheets(fila)
-
-# ===============================
-# DASHBOARD CON ANÁLISIS POR PREGUNTA
-# ===============================
-# ===============================
-# DASHBOARD CON PREGUNTAS DEPENDIENTES DEL CANAL
-# ===============================
-else:
-    df = cargar_datos_google_sheets()
-    if df.empty:
-        st.warning("📭 No hay registros para mostrar aún.")
-        st.stop()
-
-    df["Fecha"] = pd.to_datetime(df["Fecha"], errors="coerce")
-    df["Mes"] = df["Fecha"].dt.month
-    df["Año"] = df["Fecha"].dt.year
-    df["Total"] = pd.to_numeric(df["Total"], errors="coerce").fillna(0)
-
-    meses = {
-        1:"Enero",2:"Febrero",3:"Marzo",4:"Abril",5:"Mayo",6:"Junio",
-        7:"Julio",8:"Agosto",9:"Septiembre",10:"Octubre",11:"Noviembre",12:"Diciembre"
-    }
-
-    # === FILTROS ===
-    st.sidebar.subheader("Filtros")
-    area_f = st.sidebar.selectbox("Área:", ["Todas"] + sorted(df["Área"].dropna().unique()))
-    canal_f = st.sidebar.selectbox("Canal:", ["Todos"] + sorted(df["Canal"].dropna().unique()))
-    anio_f = st.sidebar.selectbox("Año:", ["Todos"] + sorted(df["Año"].dropna().unique().astype(int).tolist(), reverse=True))
-    mes_f = st.sidebar.selectbox("Mes:", ["Todos"] + [meses[m] for m in sorted(df["Mes"].dropna().unique().astype(int).tolist())])
-
-    # Aplicar filtros
-    if area_f != "Todas":
-        df = df[df["Área"] == area_f]
-    if canal_f != "Todos":
-        df = df[df["Canal"] == canal_f]
-    if anio_f != "Todos":
-        df = df[df["Año"] == int(anio_f)]
-    if mes_f != "Todos":
-        mes_num = [k for k, v in meses.items() if v == mes_f][0]
-        df = df[df["Mes"] == mes_num]
-
-    if df.empty:
-        st.warning("⚠️ No hay registros para los filtros seleccionados.")
-        st.stop()
-
-    st.caption(f"📅 Registros del periodo: {mes_f if mes_f!='Todos' else 'Todos los meses'} {anio_f if anio_f!='Todos' else ''}")
-
-    # === MÉTRICAS ===
-    c1, c2, c3 = st.columns(3)
-    c1.metric("Monitoreos Totales", len(df))
-    c2.metric("Promedio Puntaje", round(df["Total"].mean(), 2))
-    c3.metric("Errores Críticos", len(df[df["Error crítico"] == "Sí"]))
-
-    st.divider()
-    st.subheader("📊 Análisis General")
-
-    # === GRAFICOS PRINCIPALES ===
-    col1, col2 = st.columns(2)
-    with col1:
-        df_monitor = df.groupby(["Monitor", "Área"]).size().reset_index(name="Total Monitoreos")
-        fig1 = px.bar(df_monitor, x="Monitor", y="Total Monitoreos", color="Área",
-                      text="Total Monitoreos", title="Monitoreos por Monitor",
-                      color_discrete_sequence=["#9B0029", "#004E98", "#0077B6"])
-        fig1.update_traces(textposition="outside")
-        fig1.update_yaxes(dtick=1, title_text="Cantidad de Monitoreos")
-        st.plotly_chart(fig1, use_container_width=True)
-
-    with col2:
-        df_asesor = df.groupby(["Asesor", "Área"]).size().reset_index(name="Total Monitoreos")
-        fig2 = px.bar(df_asesor, x="Asesor", y="Total Monitoreos", color="Área",
-                      text="Total Monitoreos", title="Monitoreos por Asesor",
-                      color_discrete_sequence=["#9B0029", "#004E98", "#0077B6"])
-        fig2.update_traces(textposition="outside")
-        fig2.update_yaxes(dtick=1, title_text="Cantidad de Monitoreos")
-        st.plotly_chart(fig2, use_container_width=True)
-
-    st.divider()
-    st.subheader("✅ Cumplimiento por Pregunta")
-
-    # === DETERMINAR PREGUNTAS SEGÚN ÁREA Y CANAL ===
-    preguntas_canal = []
-    if area_f == "CASA UR":
-        if canal_f in ["Presencial", "Contact Center", "Chat"]:
-            preguntas_canal = [
-                "¿Atiende la interacción en el momento que se establece contacto con el(a) usuario(a)?",
-                "¿Saluda, se presenta de una forma amable y cortés, usando el dialogo de saludo y bienvenida?",
-                "¿Realiza la validación de identidad del usuario y personaliza la interacción de forma adecuada garantizando la confidencialidad de la información?",
-                "¿Escucha activamente al usuario y  realiza preguntas adicionales demostrando atención y concentración?",
-                "¿Consulta todas las herramientas disponibles para estructurar la posible respuesta que se le brindará al usuario?",
-                "¿Controla los tiempos de espera informando al usuario y realizando acompañamiento cada 2 minutos?",
-                "¿Brinda respuesta de forma precisa, completa y coherente, de acuerdo a la solicitado por el usuario?",
-                "¿Valida con el usuario si la información fue clara, completa o si requiere algún trámite adicional?",
-                "¿Documenta la atención de forma coherente según lo solicitado e informado al cliente; seleccionando las tipologías adecuadas y manejando correcta redacción y ortografía?",
-                "¿Finaliza la atención de forma amable, cortés utilizando el dialogo de cierre y despedida remitiendo al usuario a responder la encuesta de percepción?"
-            ]
-        elif canal_f == "Back Office":
-            preguntas_canal = [
-                "¿Cumple con el ANS establecido para el servicio?",
-                "¿Analiza correctamente la solicitud?",
-                "¿Gestiona adecuadamente en SAP/UXXI/Bizagi?",
-                "¿Respuestas eficaz de acuerdo a la solicitud radicada por el usuario?",
-                "¿Es empático al cerrar la solicitud?"
-            ]
-    elif area_f == "Servicios 2030":
-        if canal_f in ["Línea 2030", "Chat 2030"]:
-            preguntas_canal = [
-                "¿Atiende la interacción de forma oportuna en el momento que se establece el contacto?",
-                "¿Saluda y se presenta de manera amable y profesional, estableciendo un inicio cordial de la atención?",
-                "¿Realiza la validación de identidad del usuario garantizando confidencialidad y aplica protocolos de seguridad de la información?",
-                "¿Escucha activamente al usuario y formula preguntas pertinentes para un diagnóstico claro y completo?",
-                "¿Consulta y utiliza todas las herramientas de soporte disponibles (base de conocimiento, sistemas, documentación) para estructurar una respuesta adecuada?",
-                "¿Gestiona adecuadamente los tiempos de espera, manteniendo informado al usuario y realizando acompañamiento oportuno durante la interacción?",
-                "¿Sigue el flujo definido para solución o escalamiento, asegurando trazabilidad y cumplimiento de procesos internos?",
-                "¿Valida con el usuario que la información brindada es clara, completa y confirma si requiere trámites o pasos adicionales?",
-                "¿Documenta la atención en el sistema de tickets de manera coherente, seleccionando tipologías correctas y con redacción/ortografía adecuadas?",
-                "¿Finaliza la atención de forma amable y profesional, utilizando el cierre de interacción definido y remitiendo al usuario a la encuesta de satisfacción?"
-            ]
-        elif canal_f == "Sitio 2030":
-            preguntas_canal = [
-                "¿Cumple con el ANS/SLA establecido?",
-                "¿Realiza un análisis completo y pertinente de la solicitud, aplicando diagnóstico claro antes de ejecutar acciones?",
-                "¿Gestiona correctamente en las herramientas institucionales (SAP / UXXI / Salesforce u otras) garantizando trazabilidad y registro adecuado?",
-                "¿Brinda una respuesta eficaz y alineada a la solicitud radicada por el usuario, asegurando calidad técnica en la solución?",
-                "¿Comunica el cierre de la solicitud de manera empática y profesional, validando la satisfacción del usuario?"
-            ]
-
-    # Si no hay canal seleccionado o no aplica, usar todas las preguntas del DF
-    if not preguntas_canal:
-        preguntas_canal = [c for c in df.columns if "¿" in c or "?" in c]
-
-    # === MOSTRAR RESULTADOS DE LAS PREGUNTAS ===
-    for i, pregunta in enumerate(preguntas_canal):
-        if pregunta not in df.columns:
-            continue
-
-        st.markdown(f"### {pregunta}")
-        df_valid = df[df[pregunta].notna() & (df[pregunta] != "")]
-        if df_valid.empty:
-            st.info("Sin registros para esta pregunta en el canal seleccionado.")
-            continue
-
-        df_valid["Cumple_tmp"] = df_valid[pregunta].apply(lambda x: 1 if pd.to_numeric(x, errors="coerce") > 0 else 0)
-        resumen = (
-            df_valid.groupby("Asesor")["Cumple_tmp"]
-            .agg(["sum", "count"])
-            .reset_index()
-            .rename(columns={"sum": "Cumple", "count": "Total"})
-        )
-        resumen["% Cumplimiento"] = (resumen["Cumple"] / resumen["Total"]) * 100
-        resumen = resumen[resumen["Total"] > 0]
-
-        if resumen.empty:
-            st.info("No hay asesores con registros válidos para esta pregunta.")
-            continue
-
-        mejores = resumen.sort_values("% Cumplimiento", ascending=False).head(5)
-        peores = resumen.sort_values("% Cumplimiento", ascending=True).head(5)
-
-        colA, colB = st.columns(2)
-        with colA:
-            st.markdown("🟢 **Top 5 Asesores con Mayor Cumplimiento**")
-            fig_top = px.bar(
-                mejores, x="Asesor", y="% Cumplimiento",
-                text="% Cumplimiento", color="% Cumplimiento",
-                color_continuous_scale="greens", range_y=[0, 100]
-            )
-            fig_top.update_traces(texttemplate="%{text}%", textposition="outside")
-            fig_top.update_yaxes(dtick=10, title_text="% de Cumplimiento")
-            st.plotly_chart(fig_top, use_container_width=True)
-
-        with colB:
-            st.markdown("🔴 **Top 5 Asesores con Menor Cumplimiento**")
-            fig_low = px.bar(
-                peores, x="Asesor", y="% Cumplimiento",
-                text="% Cumplimiento", color="% Cumplimiento",
-                color_continuous_scale="reds", range_y=[0, 100]
-            )
-            fig_low.update_traces(texttemplate="%{text}%", textposition="outside")
-            fig_low.update_yaxes(dtick=10, title_text="% de Cumplimiento")
-            st.plotly_chart(fig_low, use_container_width=True)
-
-    st.divider()
-        else:
-            st.info("⚠️ No se encontraron preguntas registradas aún en los monitoreos.")
+            st.session_state.form_reset = True
+            st.success("✅ Registro guardado correctamente. El formulario se limpiará automáticamente.")
