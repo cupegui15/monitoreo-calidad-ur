@@ -272,32 +272,22 @@ else:
     if df.empty:
         st.warning("📭 No hay registros para mostrar aún.")
     else:
-        # Convertir fechas y crear columnas de tiempo
         df["Fecha"] = pd.to_datetime(df["Fecha"], errors="coerce")
         df["Mes"] = df["Fecha"].dt.month
         df["Año"] = df["Fecha"].dt.year
-
-        # Asegurar que Total sea numérico
         df["Total"] = pd.to_numeric(df["Total"], errors="coerce").fillna(0)
 
         meses = {
-            1: "Enero", 2: "Febrero", 3: "Marzo", 4: "Abril",
-            5: "Mayo", 6: "Junio", 7: "Julio", 8: "Agosto",
-            9: "Septiembre", 10: "Octubre", 11: "Noviembre", 12: "Diciembre"
+            1:"Enero",2:"Febrero",3:"Marzo",4:"Abril",5:"Mayo",6:"Junio",
+            7:"Julio",8:"Agosto",9:"Septiembre",10:"Octubre",11:"Noviembre",12:"Diciembre"
         }
 
-        # FILTROS
+        # === FILTROS ===
         st.sidebar.subheader("Filtros")
         area_f = st.sidebar.selectbox("Área:", ["Todas"] + sorted(df["Área"].dropna().unique()))
         canal_f = st.sidebar.selectbox("Canal:", ["Todos"] + sorted(df["Canal"].dropna().unique()))
-        anio_f = st.sidebar.selectbox(
-            "Año:",
-            ["Todos"] + sorted(df["Año"].dropna().unique().astype(int).tolist(), reverse=True)
-        )
-        mes_f = st.sidebar.selectbox(
-            "Mes:",
-            ["Todos"] + [meses[m] for m in sorted(df["Mes"].dropna().unique().astype(int).tolist())]
-        )
+        anio_f = st.sidebar.selectbox("Año:", ["Todos"] + sorted(df["Año"].dropna().unique().astype(int).tolist(), reverse=True))
+        mes_f = st.sidebar.selectbox("Mes:", ["Todos"] + [meses[m] for m in sorted(df["Mes"].dropna().unique().astype(int).tolist())])
 
         if area_f != "Todas":
             df = df[df["Área"] == area_f]
@@ -309,77 +299,49 @@ else:
             mes_num = [k for k, v in meses.items() if v == mes_f][0]
             df = df[df["Mes"] == mes_num]
 
-        st.caption(
-            f"📅 Registros del periodo: "
-            f"{mes_f if mes_f != 'Todos' else 'Todos los meses'} "
-            f"{anio_f if anio_f != 'Todos' else ''}"
-        )
+        st.caption(f"📅 Registros del periodo: {mes_f if mes_f!='Todos' else 'Todos los meses'} {anio_f if anio_f!='Todos' else ''}")
 
-        # MÉTRICAS
+        # === MÉTRICAS ===
         c1, c2, c3 = st.columns(3)
         c1.metric("Monitoreos Totales", len(df))
-        c2.metric("Promedio Puntaje", round(df["Total"].mean(), 2) if len(df) > 0 else 0)
+        c2.metric("Promedio Puntaje", round(df["Total"].mean(), 2) if not df.empty else 0)
         c3.metric("Errores Críticos", len(df[df["Error crítico"] == "Sí"]))
 
         st.divider()
         st.subheader("📊 Análisis General")
 
-        # GRÁFICOS PRINCIPALES
+        # === GRÁFICOS PRINCIPALES ===
         col1, col2 = st.columns(2)
         with col1:
             if not df.empty:
-                fig1 = px.bar(
-                    df,
-                    x="Monitor",
-                    color="Área",
-                    title="Monitoreos por Monitor",
-                    text_auto=True
-                )
-                st.plotly_chart(fig1, use_container_width=True)
-            else:
-                st.info("Sin datos para mostrar por monitor con los filtros actuales.")
+                fig1 = px.bar(df, x="Monitor", color="Área" if df["Área"].nunique() > 1 else None,
+                              title="Monitoreos por Monitor", text_auto=True)
+                fig1.update_yaxes(title_text="Cantidad de Monitoreos")
+                st.plotly_chart(fig1, use_container_width=True, key="grafico_monitor")
         with col2:
             if not df.empty:
-                fig2 = px.bar(
-                    df,
-                    x="Asesor",
-                    color="Área",
-                    title="Monitoreos por Asesor",
-                    text_auto=True
-                )
-                st.plotly_chart(fig2, use_container_width=True)
-            else:
-                st.info("Sin datos para mostrar por asesor con los filtros actuales.")
+                fig2 = px.bar(df, x="Asesor", color="Área" if df["Área"].nunique() > 1 else None,
+                              title="Monitoreos por Asesor", text_auto=True)
+                fig2.update_yaxes(title_text="Cantidad de Monitoreos")
+                st.plotly_chart(fig2, use_container_width=True, key="grafico_asesor")
 
         st.divider()
         st.subheader("✅ Cumplimiento por Pregunta")
 
         preguntas_cols = [c for c in df.columns if "¿" in c or "?" in c]
         if preguntas_cols:
-            for pregunta in preguntas_cols:
+            for i, pregunta in enumerate(preguntas_cols):
                 st.markdown(f"### {pregunta}")
 
                 df_p = df.groupby(["Asesor", pregunta]).size().reset_index(name="Cantidad")
                 if df_p.empty:
                     st.info("Sin datos para esta pregunta con los filtros actuales.")
-                    st.divider()
                     continue
 
-                resumen = df_p.pivot_table(
-                    index="Asesor",
-                    columns=pregunta,
-                    values="Cantidad",
-                    fill_value=0
-                ).reset_index()
-
-                if "Cumple" not in resumen.columns:
-                    resumen["Cumple"] = 0
-                if "No cumple" not in resumen.columns:
-                    resumen["No cumple"] = 0
-
-                resumen["% Cumplimiento"] = (
-                    (resumen["Cumple"] / (resumen["Cumple"] + resumen["No cumple"])) * 100
-                ).fillna(0).round(2)
+                resumen = df_p.pivot_table(index="Asesor", columns=pregunta, values="Cantidad", fill_value=0).reset_index()
+                resumen["Cumple"] = resumen.get("Cumple", 0)
+                resumen["No cumple"] = resumen.get("No cumple", 0)
+                resumen["% Cumplimiento"] = ((resumen["Cumple"] / (resumen["Cumple"] + resumen["No cumple"])) * 100).fillna(0).round(2)
 
                 mejores = resumen.sort_values("% Cumplimiento", ascending=False).head(5)
                 peores = resumen.sort_values("% Cumplimiento", ascending=True).head(5)
@@ -388,32 +350,22 @@ else:
                 with colA:
                     st.markdown("**🟢 Top 5 Asesores con Mayor Cumplimiento**")
                     if not mejores.empty:
-                        fig_top = px.bar(
-                            mejores,
-                            x="Asesor",
-                            y="% Cumplimiento",
-                            color="% Cumplimiento",
-                            text_auto=True,
-                            color_continuous_scale="greens"
-                        )
-                        st.plotly_chart(fig_top, use_container_width=True)
+                        fig_top = px.bar(mejores, x="Asesor", y="% Cumplimiento", color="% Cumplimiento",
+                                         text_auto=True, color_continuous_scale="greens")
+                        fig_top.update_yaxes(title_text="% de Cumplimiento")
+                        st.plotly_chart(fig_top, use_container_width=True, key=f"grafico_mejor_{i}")
                     else:
-                        st.info("No hay datos suficientes para mejores asesores en esta pregunta.")
+                        st.info("No hay datos suficientes.")
 
                 with colB:
                     st.markdown("**🔴 Top 5 Asesores con Menor Cumplimiento**")
                     if not peores.empty:
-                        fig_low = px.bar(
-                            peores,
-                            x="Asesor",
-                            y="% Cumplimiento",
-                            color="% Cumplimiento",
-                            text_auto=True,
-                            color_continuous_scale="reds"
-                        )
-                        st.plotly_chart(fig_low, use_container_width=True)
+                        fig_low = px.bar(peores, x="Asesor", y="% Cumplimiento", color="% Cumplimiento",
+                                         text_auto=True, color_continuous_scale="reds")
+                        fig_low.update_yaxes(title_text="% de Cumplimiento")
+                        st.plotly_chart(fig_low, use_container_width=True, key=f"grafico_peor_{i}")
                     else:
-                        st.info("No hay datos suficientes para peores asesores en esta pregunta.")
+                        st.info("No hay datos suficientes.")
 
                 st.divider()
         else:
