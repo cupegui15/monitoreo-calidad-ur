@@ -79,10 +79,9 @@ html, body, .stApp {
 """, unsafe_allow_html=True)
 
 # ===============================
-# FUNCIÓN PARA GUARDAR EN GOOGLE SHEETS
+# FUNCIONES GOOGLE SHEETS
 # ===============================
 def guardar_datos_google_sheets(data):
-    """Guarda los registros directamente en Google Sheets."""
     try:
         for k, v in data.items():
             if isinstance(v, (date,)):
@@ -103,11 +102,7 @@ def guardar_datos_google_sheets(data):
     except Exception as e:
         st.error(f"❌ Error al guardar en Google Sheets: {e}")
 
-# ===============================
-# FUNCIÓN PARA CARGAR DESDE GOOGLE SHEETS
-# ===============================
 def cargar_datos_google_sheets():
-    """Carga datos desde la hoja de Google Sheets."""
     try:
         creds_json = st.secrets["GCP_SERVICE_ACCOUNT"]
         creds_dict = json.loads(creds_json)
@@ -180,50 +175,51 @@ if pagina == "📝 Formulario de Monitoreo":
     canal = st.selectbox("Canal", areas[area]["canales"])
     error_critico = st.radio("¿Corresponde a un error crítico?", ["No", "Sí"], horizontal=True)
 
+    # PREGUNTAS SEGÚN ÁREA Y CANAL
     preguntas_canal = []
     if area == "CASA UR":
         if canal in ["Presencial", "Contact Center", "Chat"]:
             preguntas_canal = [
                 ("¿Atiende la interacción en el momento que se establece contacto con el(a) usuario(a)?", 9),
-                ("¿Saluda, se presenta de forma amable y cortés?", 9),
-                ("¿Valida identidad garantizando confidencialidad?", 9),
-                ("¿Escucha activamente?", 9),
-                ("¿Consulta herramientas disponibles?", 9),
-                ("¿Controla tiempos de espera informando al usuario?", 9),
-                ("¿Brinda respuesta coherente y completa?", 14),
-                ("¿Valida comprensión del usuario?", 8),
-                ("¿Documenta correctamente la atención?", 14),
-                ("¿Finaliza la atención amablemente remitiendo a encuesta?", 10)
+                ("¿Saluda, se presenta de una forma amable y cortés, usando el dialogo de saludo y bienvenida?", 9),
+                ("¿Realiza la validación de identidad del usuario y personaliza la interacción de forma adecuada garantizando la confidencialidad de la información?", 9),
+                ("¿Escucha activamente al usuario y  realiza preguntas adicionales demostrando atención y concentración?", 9),
+                ("¿Consulta todas las herramientas disponibles para estructurar la posible respuesta que se le brindará al usuario?", 9),
+                ("¿Controla los tiempos de espera informando al usuario y realizando acompañamiento cada 2 minutos?", 9),
+                ("¿Brinda respuesta de forma precisa, completa y coherente, de acuerdo a la solicitado por el usuario?", 14),
+                ("¿Valida con el usuario si la información fue clara, completa o si requiere algún trámite adicional?", 8),
+                ("¿Documenta la atención de forma coherente según lo solicitado e informado al cliente; seleccionando las tipologías adecuadas y manejando correcta redacción y ortografía?", 14),
+                ("¿Finaliza la atención de forma amable, cortés utilizando el dialogo de cierre y despedida remitiendo al usuario a responder la encuesta de percepción?", 10)
             ]
         elif canal == "Back Office":
             preguntas_canal = [
                 ("¿Cumple con el ANS establecido para el servicio?", 20),
                 ("¿Analiza correctamente la solicitud?", 20),
                 ("¿Gestiona adecuadamente en SAP/UXXI/Bizagi?", 20),
-                ("¿Responde eficazmente según solicitud?", 20),
+                ("¿Respuestas eficaz de acuerdo a la solicitud radicada por el usuario?", 20),
                 ("¿Es empático al cerrar la solicitud?", 20)
             ]
     elif area == "Servicios 2030":
         if canal in ["Línea 2030", "Chat 2030"]:
             preguntas_canal = [
-                ("¿Atiende la interacción de forma oportuna?", 9),
-                ("¿Saluda y se presenta profesionalmente?", 9),
-                ("¿Valida identidad garantizando confidencialidad?", 9),
-                ("¿Escucha activamente y formula preguntas pertinentes?", 9),
-                ("¿Consulta y utiliza herramientas de soporte?", 9),
-                ("¿Gestiona adecuadamente los tiempos de espera?", 9),
-                ("¿Sigue flujo definido para solución o escalamiento?", 14),
-                ("¿Valida claridad de la información brindada?", 8),
-                ("¿Documenta coherentemente?", 14),
-                ("¿Finaliza amablemente y remite a encuesta?", 10)
+                ("¿Atiende la interacción de forma oportuna en el momento que se establece el contacto?", 9),
+                ("¿Saluda y se presenta de manera amable y profesional, estableciendo un inicio cordial de la atención?", 9),
+                ("¿Realiza la validación de identidad del usuario garantizando confidencialidad y aplica protocolos de seguridad de la información?", 9),
+                ("¿Escucha activamente al usuario y formula preguntas pertinentes para un diagnóstico claro y completo?", 9),
+                ("¿Consulta y utiliza todas las herramientas de soporte disponibles (base de conocimiento, sistemas, documentación) para estructurar una respuesta adecuada?", 9),
+                ("¿Gestiona adecuadamente los tiempos de espera, manteniendo informado al usuario y realizando acompañamiento oportuno durante la interacción?", 9),
+                ("¿Sigue el flujo definido para solución o escalamiento, asegurando trazabilidad y cumplimiento de procesos internos?", 14),
+                ("¿Valida con el usuario que la información brindada es clara, completa y confirma si requiere trámites o pasos adicionales?", 8),
+                ("¿Documenta la atención en el sistema de tickets de manera coherente, seleccionando tipologías correctas y con redacción/ortografía adecuadas?", 14),
+                ("¿Finaliza la atención de forma amable y profesional, utilizando el cierre de interacción definido y remitiendo al usuario a la encuesta de satisfacción?", 10)
             ]
         elif canal == "Sitio 2030":
             preguntas_canal = [
                 ("¿Cumple con el ANS/SLA establecido?", 20),
-                ("¿Realiza análisis completo y pertinente?", 20),
-                ("¿Gestiona correctamente en SAP/UXXI/Salesforce?", 20),
-                ("¿Brinda respuesta eficaz y alineada a la solicitud?", 20),
-                ("¿Comunica el cierre de manera empática y profesional?", 20)
+                ("¿Realiza un análisis completo y pertinente de la solicitud, aplicando diagnóstico claro antes de ejecutar acciones?", 20),
+                ("¿Gestiona correctamente en las herramientas institucionales (SAP / UXXI / Salesforce u otras) garantizando trazabilidad y registro adecuado?", 20),
+                ("¿Brinda una respuesta eficaz y alineada a la solicitud radicada por el usuario, asegurando calidad técnica en la solución?", 20),
+                ("¿Comunica el cierre de la solicitud de manera empática y profesional, validando la satisfacción del usuario?", 20)
             ]
 
     resultados, total = {}, 0
@@ -252,30 +248,27 @@ if pagina == "📝 Formulario de Monitoreo":
             guardar_datos_google_sheets(fila)
 
 # ===============================
-# DASHBOARD
+# DASHBOARD CON ANÁLISIS POR PREGUNTA
 # ===============================
 else:
     df = cargar_datos_google_sheets()
     if df.empty:
         st.warning("📭 No hay registros para mostrar aún.")
     else:
-        # 🆕 Convertir fecha y crear columnas Mes/Año
+        # Convertir fechas y crear columnas
         df["Fecha"] = pd.to_datetime(df["Fecha"], errors="coerce")
         df["Mes"] = df["Fecha"].dt.month
         df["Año"] = df["Fecha"].dt.year
 
-        # 🆕 Diccionario de meses
-        meses = {1: "Enero", 2: "Febrero", 3: "Marzo", 4: "Abril", 5: "Mayo", 6: "Junio",
-                 7: "Julio", 8: "Agosto", 9: "Septiembre", 10: "Octubre", 11: "Noviembre", 12: "Diciembre"}
+        meses = {1:"Enero",2:"Febrero",3:"Marzo",4:"Abril",5:"Mayo",6:"Junio",7:"Julio",8:"Agosto",9:"Septiembre",10:"Octubre",11:"Noviembre",12:"Diciembre"}
 
-        # 🆕 Filtros
+        # FILTROS
         st.sidebar.subheader("Filtros")
         area_f = st.sidebar.selectbox("Área:", ["Todas"] + sorted(df["Área"].dropna().unique()))
         canal_f = st.sidebar.selectbox("Canal:", ["Todos"] + sorted(df["Canal"].dropna().unique()))
         anio_f = st.sidebar.selectbox("Año:", ["Todos"] + sorted(df["Año"].dropna().unique().astype(int).tolist(), reverse=True))
         mes_f = st.sidebar.selectbox("Mes:", ["Todos"] + [meses[m] for m in sorted(df["Mes"].dropna().unique().astype(int).tolist())])
 
-        # 🆕 Aplicar filtros
         if area_f != "Todas":
             df = df[df["Área"] == area_f]
         if canal_f != "Todos":
@@ -286,21 +279,54 @@ else:
             mes_num = [k for k, v in meses.items() if v == mes_f][0]
             df = df[df["Mes"] == mes_num]
 
-        # ===============================
+        st.caption(f"📅 Registros del periodo: {mes_f if mes_f != 'Todos' else 'Todos los meses'} {anio_f if anio_f != 'Todos' else ''}")
+
         # MÉTRICAS
-        # ===============================
         c1, c2, c3 = st.columns(3)
         c1.metric("Monitoreos Totales", len(df))
         c2.metric("Promedio Puntaje", round(df["Total"].mean(), 2))
         c3.metric("Errores Críticos", len(df[df["Error crítico"] == "Sí"]))
 
-        st.caption(f"📅 Registros del periodo: {mes_f if mes_f != 'Todos' else 'Todos los meses'} {anio_f if anio_f != 'Todos' else ''}")
+        st.divider()
+        st.subheader("📊 Análisis General")
 
-        # ===============================
-        # GRÁFICOS
-        # ===============================
-        fig1 = px.bar(df, x="Monitor", color="Área", title="Monitoreos por Monitor", text_auto=True)
-        st.plotly_chart(fig1, use_container_width=True)
+        # GRAFICOS PRINCIPALES
+        col1, col2 = st.columns(2)
+        with col1:
+            fig1 = px.bar(df, x="Monitor", color="Área", title="Monitoreos por Monitor", text_auto=True)
+            st.plotly_chart(fig1, use_container_width=True)
+        with col2:
+            fig2 = px.bar(df, x="Asesor", color="Área", title="Monitoreos por Asesor", text_auto=True)
+            st.plotly_chart(fig2, use_container_width=True)
 
-        fig2 = px.bar(df, x="Asesor", color="Área", title="Monitoreos por Asesor", text_auto=True)
-        st.plotly_chart(fig2, use_container_width=True)
+        st.divider()
+        st.subheader("✅ Cumplimiento por Pregunta")
+
+        preguntas_cols = [c for c in df.columns if "¿" in c or "?" in c]
+        if preguntas_cols:
+            for pregunta in preguntas_cols:
+                st.markdown(f"### {pregunta}")
+
+                df_p = df.groupby(["Asesor", pregunta]).size().reset_index(name="Cantidad")
+                resumen = df_p.pivot_table(index="Asesor", columns=pregunta, values="Cantidad", fill_value=0).reset_index()
+                if "Cumple" not in resumen.columns: resumen["Cumple"] = 0
+                if "No cumple" not in resumen.columns: resumen["No cumple"] = 0
+                resumen["% Cumplimiento"] = round((resumen["Cumple"] / (resumen["Cumple"] + resumen["No cumple"])) * 100, 2).fillna(0)
+
+                mejores = resumen.sort_values("% Cumplimiento", ascending=False).head(5)
+                peores = resumen.sort_values("% Cumplimiento", ascending=True).head(5)
+
+                colA, colB = st.columns(2)
+                with colA:
+                    st.markdown("**🟢 Top 5 Asesores con Mayor Cumplimiento**")
+                    fig_top = px.bar(mejores, x="Asesor", y="% Cumplimiento", color="% Cumplimiento",
+                                     text_auto=True, color_continuous_scale="greens")
+                    st.plotly_chart(fig_top, use_container_width=True)
+                with colB:
+                    st.markdown("**🔴 Top 5 Asesores con Menor Cumplimiento**")
+                    fig_low = px.bar(peores, x="Asesor", y="% Cumplimiento", color="% Cumplimiento",
+                                     text_auto=True, color_continuous_scale="reds")
+                    st.plotly_chart(fig_low, use_container_width=True)
+                st.divider()
+        else:
+            st.info("⚠️ No se encontraron preguntas registradas aún en los monitoreos.")
