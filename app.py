@@ -84,7 +84,6 @@ html, body, .stApp {
 def guardar_datos_google_sheets(data):
     """Guarda los registros directamente en Google Sheets."""
     try:
-        # Convertir fechas a texto antes de enviar
         for k, v in data.items():
             if isinstance(v, (date,)):
                 data[k] = v.strftime("%Y-%m-%d")
@@ -96,7 +95,6 @@ def guardar_datos_google_sheets(data):
         client = gspread.authorize(creds)
         sheet = client.open_by_key(st.secrets["GOOGLE_SHEETS_ID"]).sheet1
 
-        # Escribir encabezado si la hoja está vacía
         if not sheet.get_all_records():
             sheet.append_row(list(data.keys()))
         sheet.append_row(list(data.values()))
@@ -261,19 +259,46 @@ else:
     if df.empty:
         st.warning("📭 No hay registros para mostrar aún.")
     else:
+        # 🆕 Convertir fecha y crear columnas Mes/Año
+        df["Fecha"] = pd.to_datetime(df["Fecha"], errors="coerce")
+        df["Mes"] = df["Fecha"].dt.month
+        df["Año"] = df["Fecha"].dt.year
+
+        # 🆕 Diccionario de meses
+        meses = {1: "Enero", 2: "Febrero", 3: "Marzo", 4: "Abril", 5: "Mayo", 6: "Junio",
+                 7: "Julio", 8: "Agosto", 9: "Septiembre", 10: "Octubre", 11: "Noviembre", 12: "Diciembre"}
+
+        # 🆕 Filtros
         st.sidebar.subheader("Filtros")
-        area_f = st.sidebar.selectbox("Área:", ["Todas"] + sorted(df["Área"].unique()))
-        canal_f = st.sidebar.selectbox("Canal:", ["Todos"] + sorted(df["Canal"].unique()))
+        area_f = st.sidebar.selectbox("Área:", ["Todas"] + sorted(df["Área"].dropna().unique()))
+        canal_f = st.sidebar.selectbox("Canal:", ["Todos"] + sorted(df["Canal"].dropna().unique()))
+        anio_f = st.sidebar.selectbox("Año:", ["Todos"] + sorted(df["Año"].dropna().unique().astype(int).tolist(), reverse=True))
+        mes_f = st.sidebar.selectbox("Mes:", ["Todos"] + [meses[m] for m in sorted(df["Mes"].dropna().unique().astype(int).tolist())])
+
+        # 🆕 Aplicar filtros
         if area_f != "Todas":
             df = df[df["Área"] == area_f]
         if canal_f != "Todos":
             df = df[df["Canal"] == canal_f]
+        if anio_f != "Todos":
+            df = df[df["Año"] == int(anio_f)]
+        if mes_f != "Todos":
+            mes_num = [k for k, v in meses.items() if v == mes_f][0]
+            df = df[df["Mes"] == mes_num]
 
+        # ===============================
+        # MÉTRICAS
+        # ===============================
         c1, c2, c3 = st.columns(3)
         c1.metric("Monitoreos Totales", len(df))
         c2.metric("Promedio Puntaje", round(df["Total"].mean(), 2))
         c3.metric("Errores Críticos", len(df[df["Error crítico"] == "Sí"]))
 
+        st.caption(f"📅 Registros del periodo: {mes_f if mes_f != 'Todos' else 'Todos los meses'} {anio_f if anio_f != 'Todos' else ''}")
+
+        # ===============================
+        # GRÁFICOS
+        # ===============================
         fig1 = px.bar(df, x="Monitor", color="Área", title="Monitoreos por Monitor", text_auto=True)
         st.plotly_chart(fig1, use_container_width=True)
 
