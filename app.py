@@ -329,8 +329,7 @@ else:
             fig2.update_yaxes(dtick=1, title_text="Cantidad de Monitoreos")
             fig2.update_layout(showlegend=True, margin=dict(t=40,b=40,l=40,r=40))
             st.plotly_chart(fig2, use_container_width=True, key="grafico_asesor")
-
-                st.divider()
+        st.divider()
         st.subheader("✅ Cumplimiento por Pregunta")
 
         preguntas_cols = [c for c in df.columns if "¿" in c or "?" in c]
@@ -338,18 +337,8 @@ else:
             for i, pregunta in enumerate(preguntas_cols):
                 st.markdown(f"### {pregunta}")
 
-                # Determinar el puntaje máximo posible de esa pregunta
-                # (buscando entre CASA UR y 2030)
+                # Determinar el puntaje máximo posible (seguridad)
                 max_puntaje = 20
-                for bloque in ["CASA UR", "Servicios 2030"]:
-                    for canal_data in areas[bloque]["canales"]:
-                        for q, p in [
-                            (preg, pts)
-                            for canal in areas[bloque]["canales"]
-                            for preg, pts in []
-                        ]:
-                            if pregunta.strip() == q.strip():
-                                max_puntaje = p
 
                 # Crear columna binaria de cumplimiento
                 df["Cumple_tmp"] = df[pregunta].apply(lambda x: 1 if pd.to_numeric(x, errors="coerce") > 0 else 0)
@@ -381,7 +370,7 @@ else:
                             range_y=[0, 100]
                         )
                         fig_top.update_traces(
-                            texttemplate="%{text}%", 
+                            texttemplate="%{text}%",
                             textposition="outside",
                             hovertemplate="Asesor: %{x}<br>% Cumplimiento: %{y:.1f}%"
                         )
@@ -408,7 +397,7 @@ else:
                             range_y=[0, 100]
                         )
                         fig_low.update_traces(
-                            texttemplate="%{text}%", 
+                            texttemplate="%{text}%",
                             textposition="outside",
                             hovertemplate="Asesor: %{x}<br>% Cumplimiento: %{y:.1f}%"
                         )
@@ -422,6 +411,7 @@ else:
                     else:
                         st.info("No hay datos suficientes.")
 
-                st.divider()
+            # este divider debe ir aquí, no dentro del for
+            st.divider()
         else:
             st.info("⚠️ No se encontraron preguntas registradas aún en los monitoreos.")
