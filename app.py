@@ -265,7 +265,7 @@ if pagina == "📝 Formulario de Monitoreo":
             guardar_datos_google_sheets(fila)
 
 # ===============================
-# DASHBOARD CON ANÁLISIS POR PREGUNTA
+# DASHBOARD CON ANÁLISIS POR PREGUNTA (OPTIMIZADO VISUALMENTE)
 # ===============================
 else:
     df = cargar_datos_google_sheets()
@@ -310,20 +310,25 @@ else:
         st.divider()
         st.subheader("📊 Análisis General")
 
-        # === GRÁFICOS PRINCIPALES ===
+        # === GRAFICOS PRINCIPALES ===
         col1, col2 = st.columns(2)
         with col1:
-            if not df.empty:
-                fig1 = px.bar(df, x="Monitor", color="Área" if df["Área"].nunique() > 1 else None,
-                              title="Monitoreos por Monitor", text_auto=True)
-                fig1.update_yaxes(title_text="Cantidad de Monitoreos")
-                st.plotly_chart(fig1, use_container_width=True, key="grafico_monitor")
+            df_monitor = df.groupby(["Monitor", "Área"]).size().reset_index(name="Total Monitoreos")
+            fig1 = px.bar(df_monitor, x="Monitor", y="Total Monitoreos", color="Área" if df_monitor["Área"].nunique() > 1 else None,
+                          text="Total Monitoreos", title="Monitoreos por Monitor", color_discrete_sequence=["#9B0029", "#004E98", "#0077B6"])
+            fig1.update_traces(textposition="outside")
+            fig1.update_yaxes(dtick=1, title_text="Cantidad de Monitoreos")
+            fig1.update_layout(showlegend=True, margin=dict(t=40,b=40,l=40,r=40))
+            st.plotly_chart(fig1, use_container_width=True, key="grafico_monitor")
+
         with col2:
-            if not df.empty:
-                fig2 = px.bar(df, x="Asesor", color="Área" if df["Área"].nunique() > 1 else None,
-                              title="Monitoreos por Asesor", text_auto=True)
-                fig2.update_yaxes(title_text="Cantidad de Monitoreos")
-                st.plotly_chart(fig2, use_container_width=True, key="grafico_asesor")
+            df_asesor = df.groupby(["Asesor", "Área"]).size().reset_index(name="Total Monitoreos")
+            fig2 = px.bar(df_asesor, x="Asesor", y="Total Monitoreos", color="Área" if df_asesor["Área"].nunique() > 1 else None,
+                          text="Total Monitoreos", title="Monitoreos por Asesor", color_discrete_sequence=["#9B0029", "#004E98", "#0077B6"])
+            fig2.update_traces(textposition="outside")
+            fig2.update_yaxes(dtick=1, title_text="Cantidad de Monitoreos")
+            fig2.update_layout(showlegend=True, margin=dict(t=40,b=40,l=40,r=40))
+            st.plotly_chart(fig2, use_container_width=True, key="grafico_asesor")
 
         st.divider()
         st.subheader("✅ Cumplimiento por Pregunta")
@@ -334,10 +339,6 @@ else:
                 st.markdown(f"### {pregunta}")
 
                 df_p = df.groupby(["Asesor", pregunta]).size().reset_index(name="Cantidad")
-                if df_p.empty:
-                    st.info("Sin datos para esta pregunta con los filtros actuales.")
-                    continue
-
                 resumen = df_p.pivot_table(index="Asesor", columns=pregunta, values="Cantidad", fill_value=0).reset_index()
                 resumen["Cumple"] = resumen.get("Cumple", 0)
                 resumen["No cumple"] = resumen.get("No cumple", 0)
@@ -348,24 +349,24 @@ else:
 
                 colA, colB = st.columns(2)
                 with colA:
-                    st.markdown("**🟢 Top 5 Asesores con Mayor Cumplimiento**")
-                    if not mejores.empty:
-                        fig_top = px.bar(mejores, x="Asesor", y="% Cumplimiento", color="% Cumplimiento",
-                                         text_auto=True, color_continuous_scale="greens")
-                        fig_top.update_yaxes(title_text="% de Cumplimiento")
-                        st.plotly_chart(fig_top, use_container_width=True, key=f"grafico_mejor_{i}")
-                    else:
-                        st.info("No hay datos suficientes.")
+                    st.markdown("🟢 **Top 5 Asesores con Mayor Cumplimiento**")
+                    fig_top = px.bar(mejores, x="Asesor", y="% Cumplimiento", text="% Cumplimiento",
+                                     color="% Cumplimiento", color_continuous_scale="greens",
+                                     range_y=[0, 100], title="")
+                    fig_top.update_traces(texttemplate="%{text}%", textposition="outside")
+                    fig_top.update_yaxes(dtick=10, title_text="% de Cumplimiento")
+                    fig_top.update_layout(margin=dict(t=20,b=30,l=40,r=40))
+                    st.plotly_chart(fig_top, use_container_width=True, key=f"grafico_mejor_{i}")
 
                 with colB:
-                    st.markdown("**🔴 Top 5 Asesores con Menor Cumplimiento**")
-                    if not peores.empty:
-                        fig_low = px.bar(peores, x="Asesor", y="% Cumplimiento", color="% Cumplimiento",
-                                         text_auto=True, color_continuous_scale="reds")
-                        fig_low.update_yaxes(title_text="% de Cumplimiento")
-                        st.plotly_chart(fig_low, use_container_width=True, key=f"grafico_peor_{i}")
-                    else:
-                        st.info("No hay datos suficientes.")
+                    st.markdown("🔴 **Top 5 Asesores con Menor Cumplimiento**")
+                    fig_low = px.bar(peores, x="Asesor", y="% Cumplimiento", text="% Cumplimiento",
+                                     color="% Cumplimiento", color_continuous_scale="reds",
+                                     range_y=[0, 100], title="")
+                    fig_low.update_traces(texttemplate="%{text}%", textposition="outside")
+                    fig_low.update_yaxes(dtick=10, title_text="% de Cumplimiento")
+                    fig_low.update_layout(margin=dict(t=20,b=30,l=40,r=40))
+                    st.plotly_chart(fig_low, use_container_width=True, key=f"grafico_peor_{i}")
 
                 st.divider()
         else:
