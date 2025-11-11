@@ -268,7 +268,6 @@ if pagina == "📝 Formulario de Monitoreo":
             guardar_datos_google_sheets(fila)
             st.session_state.form_reset = True
             st.rerun()
-            
 # ===============================
 # DASHBOARD
 # ===============================
@@ -277,13 +276,16 @@ else:
     if df.empty:
         st.warning("📭 No hay registros para mostrar aún.")
     else:
+        # === LIMPIEZA Y PREPARACIÓN ===
         df["Fecha"] = pd.to_datetime(df["Fecha"], errors="coerce")
         df["Mes"] = df["Fecha"].dt.month
         df["Año"] = df["Fecha"].dt.year
         df["Total"] = pd.to_numeric(df["Total"], errors="coerce").fillna(0)
 
-        meses = {1:"Enero",2:"Febrero",3:"Marzo",4:"Abril",5:"Mayo",6:"Junio",
-                 7:"Julio",8:"Agosto",9:"Septiembre",10:"Octubre",11:"Noviembre",12:"Diciembre"}
+        meses = {
+            1:"Enero",2:"Febrero",3:"Marzo",4:"Abril",5:"Mayo",6:"Junio",
+            7:"Julio",8:"Agosto",9:"Septiembre",10:"Octubre",11:"Noviembre",12:"Diciembre"
+        }
 
         # === FILTROS ===
         st.sidebar.subheader("Filtros")
@@ -292,154 +294,89 @@ else:
         anio_f = st.sidebar.selectbox("Año:", ["Todos"] + sorted(df["Año"].dropna().unique().astype(int).tolist(), reverse=True))
         mes_f = st.sidebar.selectbox("Mes:", ["Todos"] + [meses[m] for m in sorted(df["Mes"].dropna().unique().astype(int).tolist())])
 
+        # Aplicar filtros
+        df_filtrado = df.copy()
         if area_f != "Todas":
-            df = df[df["Área"] == area_f]
+            df_filtrado = df_filtrado[df_filtrado["Área"] == area_f]
         if canal_f != "Todos":
-            df = df[df["Canal"] == canal_f]
+            df_filtrado = df_filtrado[df_filtrado["Canal"] == canal_f]
         if anio_f != "Todos":
-            df = df[df["Año"] == int(anio_f)]
+            df_filtrado = df_filtrado[df_filtrado["Año"] == int(anio_f)]
         if mes_f != "Todos":
             mes_num = [k for k, v in meses.items() if v == mes_f][0]
-            df = df[df["Mes"] == mes_num]
+            df_filtrado = df_filtrado[df_filtrado["Mes"] == mes_num]
 
-        st.caption(f"📅 Registros del periodo: {mes_f if mes_f!='Todos' else 'Todos los meses'} {anio_f if anio_f!='Todos' else ''}")
+        st.caption(
+            f"📅 Registros del periodo: "
+            f"{mes_f if mes_f!='Todos' else 'Todos los meses'} "
+            f"{anio_f if anio_f!='Todos' else ''}"
+        )
 
         # === MÉTRICAS ===
         c1, c2, c3 = st.columns(3)
-        c1.metric("Monitoreos Totales", len(df))
-        c2.metric("Promedio Puntaje", round(df["Total"].mean(), 2) if not df.empty else 0)
-        c3.metric("Errores Críticos", len(df[df["Error crítico"] == "Sí"]))
+        c1.metric("Monitoreos Totales", len(df_filtrado))
+        c2.metric("Promedio Puntaje", round(df_filtrado["Total"].mean(), 2) if not df_filtrado.empty else 0)
+        c3.metric("Errores Críticos", len(df_filtrado[df_filtrado["Error crítico"] == "Sí"]))
 
         st.divider()
         st.subheader("📊 Análisis General")
 
-        # === GRAFICOS PRINCIPALES ===
+        # === GRAFICOS GENERALES ===
         col1, col2 = st.columns(2)
         with col1:
-            df_monitor = df.groupby(["Monitor", "Área"]).size().reset_index(name="Total Monitoreos")
-            fig1 = px.bar(df_monitor, x="Monitor", y="Total Monitoreos",
-                          color="Área", text="Total Monitoreos",
-                          title="Monitoreos por Monitor",
-                          color_discrete_sequence=["#9B0029", "#004E98"])
-            fig1.update_traces(textposition="outside")
-            st.plotly_chart(fig1, use_container_width=True)
-
+            if not df_filtrado.empty:
+                df_monitor = df_filtrado.groupby(["Monitor", "Área"]).size().reset_index(name="Total Monitoreos")
+                fig1 = px.bar(
+                    df_monitor, x="Monitor", y="Total Monitoreos",
+                    color="Área", text="Total Monitoreos",
+                    title="Monitoreos por Monitor",
+                    color_discrete_sequence=["#9B0029", "#004E98"]
+                )
+                fig1.update_traces(textposition="outside")
+                st.plotly_chart(fig1, use_container_width=True)
         with col2:
-            df_asesor = df.groupby(["Asesor", "Área"]).size().reset_index(name="Total Monitoreos")
-            fig2 = px.bar(df_asesor, x="Asesor", y="Total Monitoreos",
-                          color="Área", text="Total Monitoreos",
-                          title="Monitoreos por Asesor",
-                          color_discrete_sequence=["#9B0029", "#004E98"])
-            fig2.update_traces(textposition="outside")
-            st.plotly_chart(fig2, use_container_width=True)
+            if not df_filtrado.empty:
+                df_asesor = df_filtrado.groupby(["Asesor", "Área"]).size().reset_index(name="Total Monitoreos")
+                fig2 = px.bar(
+                    df_asesor, x="Asesor", y="Total Monitoreos",
+                    color="Área", text="Total Monitoreos",
+                    title="Monitoreos por Asesor",
+                    color_discrete_sequence=["#9B0029", "#004E98"]
+                )
+                fig2.update_traces(textposition="outside")
+                st.plotly_chart(fig2, use_container_width=True)
 
         # ===============================
-        # ✅ Cumplimiento por Pregunta (corregido y canalizado)
+        # ✅ CUMPLIMIENTO POR PREGUNTA (DINÁMICO)
         # ===============================
         st.divider()
         st.subheader("✅ Cumplimiento por Pregunta")
 
-        # Diccionario con las preguntas activas del formulario
-        preguntas_por_canal = {
-            "CASA UR": {
-                "Presencial": [
-                    "¿Atiende la interacción en el momento que se establece contacto con el(a) usuario(a)?",
-                    "¿Saluda, se presenta de una forma amable y cortés, usando el dialogo de saludo y bienvenida?",
-                    "¿Realiza la validación de identidad del usuario y personaliza la interacción de forma adecuada garantizando la confidencialidad de la información?",
-                    "¿Escucha activamente al usuario y  realiza preguntas adicionales demostrando atención y concentración?",
-                    "¿Consulta todas las herramientas disponibles para estructurar la posible respuesta que se le brindará al usuario?",
-                    "¿Controla los tiempos de espera informando al usuario y realizando acompañamiento cada 2 minutos?",
-                    "¿Brinda respuesta de forma precisa, completa y coherente, de acuerdo a la solicitado por el usuario?",
-                    "¿Valida con el usuario si la información fue clara, completa o si requiere algún trámite adicional?",
-                    "¿Documenta la atención de forma coherente según lo solicitado e informado al cliente; seleccionando las tipologías adecuadas y manejando correcta redacción y ortografía?",
-                    "¿Finaliza la atención de forma amable, cortés utilizando el dialogo de cierre y despedida remitiendo al usuario a responder la encuesta de percepción?"
-                ],
-                "Back Office": [
-                    "¿Cumple con el ANS establecido para el servicio?",
-                    "¿Analiza correctamente la solicitud?",
-                    "¿Gestiona adecuadamente en SAP/UXXI/Bizagi?",
-                    "¿Respuestas eficaz de acuerdo a la solicitud radicada por el usuario?",
-                    "¿Es empático al cerrar la solicitud?"
-                ],
-                "Contact Center": [
-                    "¿Atiende la interacción en el momento que se establece contacto con el(a) usuario(a)?",
-                    "¿Saluda, se presenta de una forma amable y cortés, usando el dialogo de saludo y bienvenida?",
-                    "¿Realiza la validación de identidad del usuario y personaliza la interacción de forma adecuada garantizando la confidencialidad de la información?",
-                    "¿Escucha activamente al usuario y  realiza preguntas adicionales demostrando atención y concentración?",
-                    "¿Consulta todas las herramientas disponibles para estructurar la posible respuesta que se le brindará al usuario?",
-                    "¿Controla los tiempos de espera informando al usuario y realizando acompañamiento cada 2 minutos?",
-                    "¿Brinda respuesta de forma precisa, completa y coherente, de acuerdo a la solicitado por el usuario?",
-                    "¿Valida con el usuario si la información fue clara, completa o si requiere algún trámite adicional?",
-                    "¿Documenta la atención de forma coherente según lo solicitado e informado al cliente; seleccionando las tipologías adecuadas y manejando correcta redacción y ortografía?",
-                    "¿Finaliza la atención de forma amable, cortés utilizando el dialogo de cierre y despedida remitiendo al usuario a responder la encuesta de percepción?"
-                ],
-                "Chat": [
-                    "¿Atiende la interacción en el momento que se establece contacto con el(a) usuario(a)?",
-                    "¿Saluda, se presenta de una forma amable y cortés, usando el dialogo de saludo y bienvenida?",
-                    "¿Realiza la validación de identidad del usuario y personaliza la interacción de forma adecuada garantizando la confidencialidad de la información?",
-                    "¿Escucha activamente al usuario y  realiza preguntas adicionales demostrando atención y concentración?",
-                    "¿Consulta todas las herramientas disponibles para estructurar la posible respuesta que se le brindará al usuario?",
-                    "¿Controla los tiempos de espera informando al usuario y realizando acompañamiento cada 2 minutos?",
-                    "¿Brinda respuesta de forma precisa, completa y coherente, de acuerdo a la solicitado por el usuario?",
-                    "¿Valida con el usuario si la información fue clara, completa o si requiere algún trámite adicional?",
-                    "¿Documenta la atención de forma coherente según lo solicitado e informado al cliente; seleccionando las tipologías adecuadas y manejando correcta redacción y ortografía?",
-                    "¿Finaliza la atención de forma amable, cortés utilizando el dialogo de cierre y despedida remitiendo al usuario a responder la encuesta de percepción?"
-                ]
-            },
-            "Servicios 2030": {
-                "Línea 2030": [
-                    "¿Atiende la interacción de forma oportuna en el momento que se establece el contacto?",
-                    "¿Saluda y se presenta de manera amable y profesional, estableciendo un inicio cordial de la atención?",
-                    "¿Realiza la validación de identidad del usuario garantizando confidencialidad y aplica protocolos de seguridad de la información?",
-                    "¿Escucha activamente al usuario y formula preguntas pertinentes para un diagnóstico claro y completo?",
-                    "¿Consulta y utiliza todas las herramientas de soporte disponibles (base de conocimiento, sistemas, documentación) para estructurar una respuesta adecuada?",
-                    "¿Gestiona adecuadamente los tiempos de espera, manteniendo informado al usuario y realizando acompañamiento oportuno durante la interacción?",
-                    "¿Sigue el flujo definido para solución o escalamiento, asegurando trazabilidad y cumplimiento de procesos internos?",
-                    "¿Valida con el usuario que la información brindada es clara, completa y confirma si requiere trámites o pasos adicionales?",
-                    "¿Documenta la atención en el sistema de tickets de manera coherente, seleccionando tipologías correctas y con redacción/ortografía adecuadas?",
-                    "¿Finaliza la atención de forma amable y profesional, utilizando el cierre de interacción definido y remitiendo al usuario a la encuesta de satisfacción?"
-                ],
-                "Chat 2030": [
-                    "¿Atiende la interacción de forma oportuna en el momento que se establece el contacto?",
-                    "¿Saluda y se presenta de manera amable y profesional, estableciendo un inicio cordial de la atención?",
-                    "¿Realiza la validación de identidad del usuario garantizando confidencialidad y aplica protocolos de seguridad de la información?",
-                    "¿Escucha activamente al usuario y formula preguntas pertinentes para un diagnóstico claro y completo?",
-                    "¿Consulta y utiliza todas las herramientas de soporte disponibles (base de conocimiento, sistemas, documentación) para estructurar una respuesta adecuada?",
-                    "¿Gestiona adecuadamente los tiempos de espera, manteniendo informado al usuario y realizando acompañamiento oportuno durante la interacción?",
-                    "¿Sigue el flujo definido para solución o escalamiento, asegurando trazabilidad y cumplimiento de procesos internos?",
-                    "¿Valida con el usuario que la información brindada es clara, completa y confirma si requiere trámites o pasos adicionales?",
-                    "¿Documenta la atención en el sistema de tickets de manera coherente, seleccionando tipologías correctas y con redacción/ortografía adecuadas?",
-                    "¿Finaliza la atención de forma amable y profesional, utilizando el cierre de interacción definido y remitiendo al usuario a la encuesta de satisfacción?"
-                ],
-                "Sitio 2030": [
-                    "¿Cumple con el ANS/SLA establecido?",
-                    "¿Realiza un análisis completo y pertinente de la solicitud, aplicando diagnóstico claro antes de ejecutar acciones?",
-                    "¿Gestiona correctamente en las herramientas institucionales (SAP / UXXI / Salesforce u otras) garantizando trazabilidad y registro adecuado?",
-                    "¿Brinda una respuesta eficaz y alineada a la solicitud radicada por el usuario, asegurando calidad técnica en la solución?",
-                    "¿Comunica el cierre de la solicitud de manera empática y profesional, validando la satisfacción del usuario?"
-                ]
-            }
-        }
-
-        # --- Mostrar análisis por canal ---
-        for area, canales in preguntas_por_canal.items():
-            for canal, preguntas in canales.items():
-                df_canal = df[(df["Área"] == area) & (df["Canal"] == canal)]
-                if df_canal.empty:
+        # Detectar columnas que son preguntas
+        preguntas_cols = [c for c in df_filtrado.columns if "¿" in c or "?" in c]
+        if not preguntas_cols:
+            st.info("⚠️ No se encontraron preguntas en los datos cargados.")
+        else:
+            # Agrupar análisis por área y canal
+            for (area, canal), grupo in df_filtrado.groupby(["Área", "Canal"]):
+                if grupo.empty:
                     continue
 
                 st.markdown(f"## 🧩 {area} — {canal}")
-                st.caption(f"Total de monitoreos: {len(df_canal)}")
+                st.caption(f"Total de monitoreos: {len(grupo)}")
 
-                for i, pregunta in enumerate(preguntas):
-                    if pregunta not in df_canal.columns:
+                for i, pregunta in enumerate(preguntas_cols):
+                    if pregunta not in grupo.columns:
                         continue
 
+                    # Mostrar todas las preguntas
                     st.markdown(f"### {pregunta}")
 
-                    df_canal["Cumple_tmp"] = df_canal[pregunta].apply(lambda x: 1 if pd.to_numeric(x, errors="coerce") > 0 else 0)
+                    # Calcular cumplimiento
+                    grupo_tmp = grupo.copy()
+                    grupo_tmp["Cumple_tmp"] = grupo_tmp[pregunta].apply(lambda x: 1 if pd.to_numeric(x, errors="coerce") > 0 else 0)
                     resumen = (
-                        df_canal.groupby("Asesor")["Cumple_tmp"]
+                        grupo_tmp.groupby("Asesor")["Cumple_tmp"]
                         .agg(["sum", "count"])
                         .reset_index()
                         .rename(columns={"sum": "Cumple", "count": "Total"})
@@ -447,28 +384,43 @@ else:
                     resumen["% Cumplimiento"] = (resumen["Cumple"] / resumen["Total"]) * 100
                     resumen["% Cumplimiento"] = resumen["% Cumplimiento"].fillna(0).round(2)
 
+                    # Separar quienes no cumplen
                     no_cumplen = resumen[resumen["% Cumplimiento"] < 100]
                     cumplen_todos = no_cumplen.empty
 
+                    # --- Gráficas ---
                     colA, colB = st.columns(2)
                     with colA:
                         st.markdown("🟢 **Asesores que Cumplen 100%**")
                         top = resumen[resumen["% Cumplimiento"] == 100]
                         if not top.empty:
-                            fig_top = px.bar(top, x="Asesor", y="% Cumplimiento", text="% Cumplimiento",
-                                             color="% Cumplimiento", color_continuous_scale="greens", range_y=[0, 100])
+                            fig_top = px.bar(
+                                top, x="Asesor", y="% Cumplimiento", text="% Cumplimiento",
+                                color="% Cumplimiento", color_continuous_scale="greens", range_y=[0, 100]
+                            )
                             fig_top.update_traces(texttemplate="%{text}%", textposition="outside")
-                            st.plotly_chart(fig_top, use_container_width=True)
+                            fig_top.update_layout(
+                                margin=dict(t=20, b=30, l=40, r=40),
+                                showlegend=False, height=400
+                            )
+                            st.plotly_chart(fig_top, use_container_width=True, key=f"ok_{area}_{canal}_{i}")
                         else:
                             st.info("Ningún asesor cumple al 100% esta pregunta.")
 
                     with colB:
                         if not cumplen_todos:
                             st.markdown("🔴 **Asesores con Menor Cumplimiento**")
-                            fig_low = px.bar(no_cumplen, x="Asesor", y="% Cumplimiento", text="% Cumplimiento",
-                                             color="% Cumplimiento", color_continuous_scale="reds", range_y=[0, 100])
+                            fig_low = px.bar(
+                                no_cumplen, x="Asesor", y="% Cumplimiento", text="% Cumplimiento",
+                                color="% Cumplimiento", color_continuous_scale="reds", range_y=[0, 100]
+                            )
                             fig_low.update_traces(texttemplate="%{text}%", textposition="outside")
-                            st.plotly_chart(fig_low, use_container_width=True)
+                            fig_low.update_layout(
+                                margin=dict(t=20, b=30, l=40, r=40),
+                                showlegend=False, height=400
+                            )
+                            st.plotly_chart(fig_low, use_container_width=True, key=f"fail_{area}_{canal}_{i}")
                         else:
                             st.success("✅ Todos los asesores cumplen esta pregunta.")
+
                 st.divider()
