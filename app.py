@@ -276,16 +276,20 @@ else:
     if df.empty:
         st.warning("📭 No hay registros para mostrar aún.")
     else:
-        # === LIMPIEZA Y PREPARACIÓN ===
+        # === LIMPIEZA DE DATOS ===
+        df = df.dropna(how="all")  # eliminar filas totalmente vacías
+        df = df.loc[:, df.columns.notna()]  # eliminar columnas sin nombre
+        df = df.loc[:, df.columns != ""]  # eliminar columnas vacías
+        df = df.replace("", pd.NA)
+        df = df.dropna(subset=["Área", "Canal", "Asesor"], how="any")
+
         df["Fecha"] = pd.to_datetime(df["Fecha"], errors="coerce")
         df["Mes"] = df["Fecha"].dt.month
         df["Año"] = df["Fecha"].dt.year
         df["Total"] = pd.to_numeric(df["Total"], errors="coerce").fillna(0)
 
-        meses = {
-            1:"Enero",2:"Febrero",3:"Marzo",4:"Abril",5:"Mayo",6:"Junio",
-            7:"Julio",8:"Agosto",9:"Septiembre",10:"Octubre",11:"Noviembre",12:"Diciembre"
-        }
+        meses = {1:"Enero",2:"Febrero",3:"Marzo",4:"Abril",5:"Mayo",6:"Junio",
+                 7:"Julio",8:"Agosto",9:"Septiembre",10:"Octubre",11:"Noviembre",12:"Diciembre"}
 
         # === FILTROS ===
         st.sidebar.subheader("Filtros")
@@ -294,7 +298,6 @@ else:
         anio_f = st.sidebar.selectbox("Año:", ["Todos"] + sorted(df["Año"].dropna().unique().astype(int).tolist(), reverse=True))
         mes_f = st.sidebar.selectbox("Mes:", ["Todos"] + [meses[m] for m in sorted(df["Mes"].dropna().unique().astype(int).tolist())])
 
-        # Aplicar filtros
         df_filtrado = df.copy()
         if area_f != "Todas":
             df_filtrado = df_filtrado[df_filtrado["Área"] == area_f]
@@ -321,106 +324,23 @@ else:
         st.divider()
         st.subheader("📊 Análisis General")
 
-        # === GRAFICOS GENERALES ===
+        # === GRAFICOS PRINCIPALES ===
         col1, col2 = st.columns(2)
-        with col1:
-            if not df_filtrado.empty:
+        if not df_filtrado.empty:
+            with col1:
                 df_monitor = df_filtrado.groupby(["Monitor", "Área"]).size().reset_index(name="Total Monitoreos")
-                fig1 = px.bar(
-                    df_monitor, x="Monitor", y="Total Monitoreos",
-                    color="Área", text="Total Monitoreos",
-                    title="Monitoreos por Monitor",
-                    color_discrete_sequence=["#9B0029", "#004E98"]
-                )
+                fig1 = px.bar(df_monitor, x="Monitor", y="Total Monitoreos",
+                              color="Área", text="Total Monitoreos",
+                              title="Monitoreos por Monitor",
+                              color_discrete_sequence=["#9B0029", "#004E98"])
                 fig1.update_traces(textposition="outside")
                 st.plotly_chart(fig1, use_container_width=True)
-        with col2:
-            if not df_filtrado.empty:
+
+            with col2:
                 df_asesor = df_filtrado.groupby(["Asesor", "Área"]).size().reset_index(name="Total Monitoreos")
-                fig2 = px.bar(
-                    df_asesor, x="Asesor", y="Total Monitoreos",
-                    color="Área", text="Total Monitoreos",
-                    title="Monitoreos por Asesor",
-                    color_discrete_sequence=["#9B0029", "#004E98"]
-                )
+                fig2 = px.bar(df_asesor, x="Asesor", y="Total Monitoreos",
+                              color="Área", text="Total Monitoreos",
+                              title="Monitoreos por Asesor",
+                              color_discrete_sequence=["#9B0029", "#004E98"])
                 fig2.update_traces(textposition="outside")
                 st.plotly_chart(fig2, use_container_width=True)
-
-        # ===============================
-        # ✅ CUMPLIMIENTO POR PREGUNTA (DINÁMICO)
-        # ===============================
-        st.divider()
-        st.subheader("✅ Cumplimiento por Pregunta")
-
-        # Detectar columnas que son preguntas
-        preguntas_cols = [c for c in df_filtrado.columns if "¿" in c or "?" in c]
-        if not preguntas_cols:
-            st.info("⚠️ No se encontraron preguntas en los datos cargados.")
-        else:
-            # Agrupar análisis por área y canal
-            for (area, canal), grupo in df_filtrado.groupby(["Área", "Canal"]):
-                if grupo.empty:
-                    continue
-
-                st.markdown(f"## 🧩 {area} — {canal}")
-                st.caption(f"Total de monitoreos: {len(grupo)}")
-
-                for i, pregunta in enumerate(preguntas_cols):
-                    if pregunta not in grupo.columns:
-                        continue
-
-                    # Mostrar todas las preguntas
-                    st.markdown(f"### {pregunta}")
-
-                    # Calcular cumplimiento
-                    grupo_tmp = grupo.copy()
-                    grupo_tmp["Cumple_tmp"] = grupo_tmp[pregunta].apply(lambda x: 1 if pd.to_numeric(x, errors="coerce") > 0 else 0)
-                    resumen = (
-                        grupo_tmp.groupby("Asesor")["Cumple_tmp"]
-                        .agg(["sum", "count"])
-                        .reset_index()
-                        .rename(columns={"sum": "Cumple", "count": "Total"})
-                    )
-                    resumen["% Cumplimiento"] = (resumen["Cumple"] / resumen["Total"]) * 100
-                    resumen["% Cumplimiento"] = resumen["% Cumplimiento"].fillna(0).round(2)
-
-                    # Separar quienes no cumplen
-                    no_cumplen = resumen[resumen["% Cumplimiento"] < 100]
-                    cumplen_todos = no_cumplen.empty
-
-                    # --- Gráficas ---
-                    colA, colB = st.columns(2)
-                    with colA:
-                        st.markdown("🟢 **Asesores que Cumplen 100%**")
-                        top = resumen[resumen["% Cumplimiento"] == 100]
-                        if not top.empty:
-                            fig_top = px.bar(
-                                top, x="Asesor", y="% Cumplimiento", text="% Cumplimiento",
-                                color="% Cumplimiento", color_continuous_scale="greens", range_y=[0, 100]
-                            )
-                            fig_top.update_traces(texttemplate="%{text}%", textposition="outside")
-                            fig_top.update_layout(
-                                margin=dict(t=20, b=30, l=40, r=40),
-                                showlegend=False, height=400
-                            )
-                            st.plotly_chart(fig_top, use_container_width=True, key=f"ok_{area}_{canal}_{i}")
-                        else:
-                            st.info("Ningún asesor cumple al 100% esta pregunta.")
-
-                    with colB:
-                        if not cumplen_todos:
-                            st.markdown("🔴 **Asesores con Menor Cumplimiento**")
-                            fig_low = px.bar(
-                                no_cumplen, x="Asesor", y="% Cumplimiento", text="% Cumplimiento",
-                                color="% Cumplimiento", color_continuous_scale="reds", range_y=[0, 100]
-                            )
-                            fig_low.update_traces(texttemplate="%{text}%", textposition="outside")
-                            fig_low.update_layout(
-                                margin=dict(t=20, b=30, l=40, r=40),
-                                showlegend=False, height=400
-                            )
-                            st.plotly_chart(fig_low, use_container_width=True, key=f"fail_{area}_{canal}_{i}")
-                        else:
-                            st.success("✅ Todos los asesores cumplen esta pregunta.")
-
-                st.divider()
