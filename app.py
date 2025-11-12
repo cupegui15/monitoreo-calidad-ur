@@ -272,16 +272,15 @@ if pagina == "📝 Formulario de Monitoreo":
 # DASHBOARD
 # ===============================
 else:
-    import difflib
-
     df = cargar_datos_google_sheets()
+
     if df.empty:
         st.warning("📭 No hay registros para mostrar aún.")
     else:
         # === LIMPIEZA DE DATOS ===
         df = df.dropna(how="all")
         df = df.loc[:, df.columns.notna()]
-        df.columns = [str(c).strip() for c in df.columns]  # limpiar encabezados
+        df.columns = [str(c).strip() for c in df.columns]
         df = df.loc[:, df.columns != ""]
         df = df.dropna(subset=["Área", "Canal", "Asesor"], how="any")
 
@@ -290,8 +289,10 @@ else:
         df["Año"] = df["Fecha"].dt.year
         df["Total"] = pd.to_numeric(df["Total"], errors="coerce").fillna(0)
 
-        meses = {1:"Enero",2:"Febrero",3:"Marzo",4:"Abril",5:"Mayo",6:"Junio",
-                 7:"Julio",8:"Agosto",9:"Septiembre",10:"Octubre",11:"Noviembre",12:"Diciembre"}
+        meses = {
+            1:"Enero",2:"Febrero",3:"Marzo",4:"Abril",5:"Mayo",6:"Junio",
+            7:"Julio",8:"Agosto",9:"Septiembre",10:"Octubre",11:"Noviembre",12:"Diciembre"
+        }
 
         # === FILTROS ===
         st.sidebar.subheader("Filtros")
@@ -300,7 +301,6 @@ else:
         anio_f = st.sidebar.selectbox("Año:", ["Todos"] + sorted(df["Año"].dropna().unique().astype(int).tolist(), reverse=True))
         mes_f = st.sidebar.selectbox("Mes:", ["Todos"] + [meses[m] for m in sorted(df["Mes"].dropna().unique().astype(int).tolist())])
 
-        # === APLICAR FILTROS ===
         df_filtrado = df.copy()
         if area_f != "Todas":
             df_filtrado = df_filtrado[df_filtrado["Área"] == area_f]
@@ -318,145 +318,94 @@ else:
             f"{anio_f if anio_f!='Todos' else ''}"
         )
 
-        # === MÉTRICAS GLOBALES ===
-        c1, c2, c3 = st.columns(3)
-        c1.metric("Monitoreos Totales", len(df_filtrado))
-        c2.metric("Promedio Puntaje", round(df_filtrado["Total"].mean(), 2) if not df_filtrado.empty else 0)
-        c3.metric("Errores Críticos", len(df_filtrado[df_filtrado["Error crítico"] == "Sí"]))
-
-        st.divider()
-        st.subheader("📊 Análisis General")
-
-        # === GRAFICOS GENERALES ===
-        if not df_filtrado.empty:
-            col1, col2 = st.columns(2)
-            with col1:
-                df_monitor = df_filtrado.groupby(["Monitor", "Área"]).size().reset_index(name="Total Monitoreos")
-                fig1 = px.bar(df_monitor, x="Monitor", y="Total Monitoreos",
-                              color="Área", text="Total Monitoreos",
-                              title="Monitoreos por Monitor",
-                              color_discrete_sequence=["#9B0029", "#004E98"])
-                fig1.update_traces(textposition="outside")
-                st.plotly_chart(fig1, use_container_width=True)
-            with col2:
-                df_asesor = df_filtrado.groupby(["Asesor", "Área"]).size().reset_index(name="Total Monitoreos")
-                fig2 = px.bar(df_asesor, x="Asesor", y="Total Monitoreos",
-                              color="Área", text="Total Monitoreos",
-                              title="Monitoreos por Asesor",
-                              color_discrete_sequence=["#9B0029", "#004E98"])
-                fig2.update_traces(textposition="outside")
-                st.plotly_chart(fig2, use_container_width=True)
-
-        # ===============================
-        # ✅ CUMPLIMIENTO POR PREGUNTA (MULTICANAL)
-        # ===============================
-        st.divider()
-        st.subheader("✅ Cumplimiento por Pregunta")
-
-        # Función para traer las preguntas correctas del formulario
-        def preguntas_formulario(area, canal):
-            if area == "CASA UR":
-                if canal in ["Presencial", "Contact Center", "Chat"]:
-                    return [
-                        "¿Atiende la interacción en el momento que se establece contacto con el(a) usuario(a)?",
-                        "¿Saluda, se presenta de una forma amable y cortés, usando el dialogo de saludo y bienvenida?",
-                        "¿Realiza la validación de identidad del usuario y personaliza la interacción de forma adecuada garantizando la confidencialidad de la información?",
-                        "¿Escucha activamente al usuario y  realiza preguntas adicionales demostrando atención y concentración?",
-                        "¿Consulta todas las herramientas disponibles para estructurar la posible respuesta que se le brindará al usuario?",
-                        "¿Controla los tiempos de espera informando al usuario y realizando acompañamiento cada 2 minutos?",
-                        "¿Brinda respuesta de forma precisa, completa y coherente, de acuerdo a la solicitado por el usuario?",
-                        "¿Valida con el usuario si la información fue clara, completa o si requiere algún trámite adicional?",
-                        "¿Documenta la atención de forma coherente según lo solicitado e informado al cliente; seleccionando las tipologías adecuadas y manejando correcta redacción y ortografía?",
-                        "¿Finaliza la atención de forma amable, cortés utilizando el dialogo de cierre y despedida remitiendo al usuario a responder la encuesta de percepción?"
-                    ]
-                elif canal == "Back Office":
-                    return [
-                        "¿Cumple con el ANS establecido para el servicio?",
-                        "¿Analiza correctamente la solicitud?",
-                        "¿Gestiona adecuadamente en SAP/UXXI/Bizagi?",
-                        "¿Respuestas eficaz de acuerdo a la solicitud radicada por el usuario?",
-                        "¿Es empático al cerrar la solicitud?"
-                    ]
-            elif area == "Servicios 2030":
-                if canal in ["Línea 2030", "Chat 2030"]:
-                    return [
-                        "¿Atiende la interacción de forma oportuna en el momento que se establece el contacto?",
-                        "¿Saluda y se presenta de manera amable y profesional, estableciendo un inicio cordial de la atención?",
-                        "¿Realiza la validación de identidad del usuario garantizando confidencialidad y aplica protocolos de seguridad de la información?",
-                        "¿Escucha activamente al usuario y formula preguntas pertinentes para un diagnóstico claro y completo?",
-                        "¿Consulta y utiliza todas las herramientas de soporte disponibles (base de conocimiento, sistemas, documentación) para estructurar una respuesta adecuada?",
-                        "¿Gestiona adecuadamente los tiempos de espera, manteniendo informado al usuario y realizando acompañamiento oportuno durante la interacción?",
-                        "¿Sigue el flujo definido para solución o escalamiento, asegurando trazabilidad y cumplimiento de procesos internos?",
-                        "¿Valida con el usuario que la información brindada es clara, completa y confirma si requiere trámites o pasos adicionales?",
-                        "¿Documenta la atención en el sistema de tickets de manera coherente, seleccionando tipologías correctas y con redacción/ortografía adecuadas?",
-                        "¿Finaliza la atención de forma amable y profesional, utilizando el cierre de interacción definido y remitiendo al usuario a la encuesta de satisfacción?"
-                    ]
-                elif canal == "Sitio 2030":
-                    return [
-                        "¿Cumple con el ANS/SLA establecido?",
-                        "¿Realiza un análisis completo y pertinente de la solicitud, aplicando diagnóstico claro antes de ejecutar acciones?",
-                        "¿Gestiona correctamente en las herramientas institucionales (SAP / UXXI / Salesforce u otras) garantizando trazabilidad y registro adecuado?",
-                        "¿Brinda una respuesta eficaz y alineada a la solicitud radicada por el usuario, asegurando calidad técnica en la solución?",
-                        "¿Comunica el cierre de la solicitud de manera empática y profesional, validando la satisfacción del usuario?"
-                    ]
-            return []
-
-        # === Mostrar resultados por área y canal ===
         if df_filtrado.empty:
-            st.warning("No hay registros disponibles para los filtros seleccionados.")
+            st.warning("⚠️ No hay registros disponibles para los filtros seleccionados.")
         else:
-            # Agrupar dinámicamente todos los canales y áreas disponibles
-            for (area, canal), grupo in df_filtrado.groupby(["Área", "Canal"]):
-                preguntas_ref = preguntas_formulario(area, canal)
-                if not preguntas_ref or grupo.empty:
-                    continue
+            # ===============================
+            # MÉTRICAS GLOBALES
+            # ===============================
+            c1, c2, c3 = st.columns(3)
+            c1.metric("Monitoreos Totales", len(df_filtrado))
+            c2.metric("Promedio Puntaje", round(df_filtrado["Total"].mean(), 2))
+            c3.metric("Errores Críticos", len(df_filtrado[df_filtrado["Error crítico"] == "Sí"]))
 
-                st.markdown(f"## 🧩 {area} — {canal}")
-                st.caption(f"Total de monitoreos: {len(grupo)}")
+            st.divider()
+            st.subheader("📊 Dashboard General de Cumplimiento")
 
-                columnas_actuales = list(grupo.columns)
+            # ===============================
+            # 1️⃣ Cumplimiento promedio por pregunta
+            # ===============================
+            preguntas_cols = [c for c in df_filtrado.columns if "¿" in c or "?" in c]
+            df_preguntas = pd.DataFrame(columns=["Pregunta", "Cumplimiento Promedio"])
 
-                for idx, pregunta_ref in enumerate(preguntas_ref):
-                    match = difflib.get_close_matches(pregunta_ref, columnas_actuales, n=1, cutoff=0.75)
-                    if not match:
-                        continue
-                    pregunta_col = match[0]
+            for col in preguntas_cols:
+                valores = pd.to_numeric(df_filtrado[col], errors="coerce").fillna(0)
+                peso_max = valores.max() if valores.max() > 0 else 10  # ajuste por si hay pesos
+                porcentaje = (valores / peso_max) * 100
+                df_preguntas.loc[len(df_preguntas)] = [col, porcentaje.mean()]
 
-                    st.markdown(f"### {pregunta_ref}")
+            df_preguntas = df_preguntas.sort_values("Cumplimiento Promedio", ascending=True)
 
-                    grupo_tmp = grupo.copy()
-                    grupo_tmp["Cumple_tmp"] = grupo_tmp[pregunta_col].apply(lambda x: 1 if pd.to_numeric(x, errors="coerce") > 0 else 0)
-                    resumen = (
-                        grupo_tmp.groupby("Asesor")["Cumple_tmp"]
-                        .agg(["sum", "count"])
-                        .reset_index()
-                        .rename(columns={"sum": "Cumple", "count": "Total"})
-                    )
-                    resumen["% Cumplimiento"] = (resumen["Cumple"] / resumen["Total"]) * 100
-                    resumen["% Cumplimiento"] = resumen["% Cumplimiento"].fillna(0).round(2)
+            fig_preguntas = px.bar(
+                df_preguntas, y="Pregunta", x="Cumplimiento Promedio",
+                orientation="h", text="Cumplimiento Promedio",
+                title="📈 Cumplimiento Promedio por Pregunta",
+                color="Cumplimiento Promedio", color_continuous_scale="blugrn",
+                range_x=[0, 100]
+            )
+            fig_preguntas.update_traces(texttemplate="%{text:.1f}%", textposition="outside")
+            st.plotly_chart(fig_preguntas, use_container_width=True)
 
-                    no_cumplen = resumen[resumen["% Cumplimiento"] < 100]
-                    cumplen_todos = no_cumplen.empty
+            # ===============================
+            # 2️⃣ Cumplimiento promedio por asesor
+            # ===============================
+            asesores = df_filtrado["Asesor"].unique()
+            df_asesores = pd.DataFrame(columns=["Asesor", "Cumplimiento Promedio"])
 
-                    colA, colB = st.columns(2)
-                    with colA:
-                        st.markdown("🟢 **Asesores que Cumplen 100%**")
-                        top = resumen[resumen["% Cumplimiento"] == 100]
-                        if not top.empty:
-                            fig_top = px.bar(top, x="Asesor", y="% Cumplimiento", text="% Cumplimiento",
-                                             color="% Cumplimiento", color_continuous_scale="greens", range_y=[0, 100])
-                            fig_top.update_traces(texttemplate="%{text}%", textposition="outside")
-                            st.plotly_chart(fig_top, use_container_width=True, key=f"ok_{area}_{canal}_{idx}")
-                        else:
-                            st.info("Ningún asesor cumple al 100% esta pregunta.")
+            for asesor in asesores:
+                sub = df_filtrado[df_filtrado["Asesor"] == asesor]
+                total_puntos = sub[preguntas_cols].apply(pd.to_numeric, errors="coerce").fillna(0).sum(axis=1)
+                max_puntos = sub[preguntas_cols].apply(pd.to_numeric, errors="coerce").fillna(0).max(axis=1)
+                pct = (total_puntos / max_puntos) * 100
+                df_asesores.loc[len(df_asesores)] = [asesor, pct.mean()]
 
-                    with colB:
-                        if not cumplen_todos:
-                            st.markdown("🔴 **Asesores con Menor Cumplimiento**")
-                            fig_low = px.bar(no_cumplen, x="Asesor", y="% Cumplimiento", text="% Cumplimiento",
-                                             color="% Cumplimiento", color_continuous_scale="reds", range_y=[0, 100])
-                            fig_low.update_traces(texttemplate="%{text}%", textposition="outside")
-                            st.plotly_chart(fig_low, use_container_width=True, key=f"fail_{area}_{canal}_{idx}")
-                        else:
-                            st.success("✅ Todos los asesores cumplen esta pregunta.")
-                st.divider()
+            df_asesores = df_asesores.sort_values("Cumplimiento Promedio", ascending=False)
+
+            fig_asesores = px.bar(
+                df_asesores, x="Asesor", y="Cumplimiento Promedio",
+                title="👥 Cumplimiento Promedio por Asesor",
+                color="Cumplimiento Promedio", color_continuous_scale="tealgrn",
+                range_y=[0, 100]
+            )
+            fig_asesores.update_traces(texttemplate="%{y:.1f}%", textposition="outside")
+            st.plotly_chart(fig_asesores, use_container_width=True)
+
+            # ===============================
+            # 3️⃣ Cumplimiento promedio por canal
+            # ===============================
+            df_canal = df_filtrado.groupby("Canal")[preguntas_cols].apply(
+                lambda x: (x.apply(pd.to_numeric, errors="coerce").fillna(0).mean().mean())
+            ).reset_index(name="Cumplimiento Promedio")
+
+            fig_canal = px.bar(
+                df_canal, x="Canal", y="Cumplimiento Promedio",
+                text="Cumplimiento Promedio",
+                title="🎧 Cumplimiento Promedio por Canal",
+                color="Cumplimiento Promedio", color_continuous_scale="burgyl",
+                range_y=[0, 100]
+            )
+            fig_canal.update_traces(texttemplate="%{text:.1f}%", textposition="outside")
+            st.plotly_chart(fig_canal, use_container_width=True)
+
+            # ===============================
+            # 4️⃣ Distribución de monitoreos por área
+            # ===============================
+            df_area = df_filtrado.groupby("Área").size().reset_index(name="Total Monitoreos")
+
+            fig_area = px.pie(
+                df_area, values="Total Monitoreos", names="Área",
+                title="🏢 Distribución de Monitoreos por Área",
+                color_discrete_sequence=px.colors.sequential.RdPu
+            )
+            fig_area.update_traces(textposition="inside", textinfo="percent+label")
+            st.plotly_chart(fig_area, use_container_width=True)
