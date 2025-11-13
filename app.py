@@ -151,7 +151,7 @@ areas = {
 # SIDEBAR Y BANNER
 # ===============================
 st.sidebar.image(URL_LOGO_UR, width=150)
-pagina = st.sidebar.radio("Menú:", ["📝 Formulario de Monitoreo", "📊 Dashboard de Análisis"])
+pagina = st.sidebar.radio("Menú:", ["📝 Formulario de Monitoreo", "📊 Dashboard de Análisis" "🎯 Dashboard por Asesor"])
 
 st.markdown(f"""
 <div class="banner">
@@ -409,3 +409,134 @@ else:
             )
             fig_area.update_traces(textposition="inside", textinfo="percent+label")
             st.plotly_chart(fig_area, use_container_width=True)
+
+            # ============================================================
+# 🎯 NUEVO DASHBOARD POR ASESOR – ANÁLISIS INDIVIDUAL
+# ============================================================
+if pagina == "🎯 Dashboard por Asesor":
+
+    df = cargar_datos_google_sheets()
+
+    if df.empty:
+        st.warning("📭 No hay registros para mostrar aún.")
+        st.stop()
+    
+    # Limpieza estándar
+    df = df.dropna(how="all")
+    df = df.loc[:, df.columns.notna()]
+    df.columns = [str(c).strip() for c in df.columns]
+    df = df.loc[:, df.columns != ""]
+    df = df.dropna(subset=["Área","Asesor","Canal"], how="any")
+
+    df["Fecha"] = pd.to_datetime(df["Fecha"], errors="coerce")
+    df["Mes"]   = df["Fecha"].dt.month
+    df["Año"]   = df["Fecha"].dt.year
+
+    meses = {
+        1:"Enero",2:"Febrero",3:"Marzo",4:"Abril",5:"Mayo",6:"Junio",
+        7:"Julio",8:"Agosto",9:"Septiembre",10:"Octubre",11:"Noviembre",12:"Diciembre"
+    }
+
+    # ===============================
+    # 🎚️ FILTROS – mantienen exactamente los mismos
+    # ===============================
+    st.sidebar.subheader("Filtros Asesor")
+
+    area_f = st.sidebar.selectbox("Área:", ["Todas"] + sorted(df["Área"].unique()))
+    canal_f = st.sidebar.selectbox("Canal:", ["Todos"] + sorted(df["Canal"].unique()))
+    anio_f = st.sidebar.selectbox("Año:", ["Todos"] + sorted(df["Año"].dropna().unique().astype(int)))
+    mes_f = st.sidebar.selectbox("Mes:", ["Todos"] + [meses[m] for m in sorted(df["Mes"].dropna().unique())])
+
+    df_f = df.copy()
+    if area_f != "Todas":
+        df_f = df_f[df_f["Área"] == area_f]
+    if canal_f != "Todos":
+        df_f = df_f[df_f["Canal"] == canal_f]
+    if anio_f != "Todos":
+        df_f = df_f[df_f["Año"] == int(anio_f)]
+    if mes_f != "Todos":
+        mes_num = [k for k,v in meses.items() if v == mes_f][0]
+        df_f = df_f[df_f["Mes"] == mes_num]
+
+    if df_f.empty:
+        st.warning("No hay datos con los filtros seleccionados.")
+        st.stop()
+
+    # Selector de asesor (filtro dinámico)
+    asesor_sel = st.selectbox("Seleccione un asesor para analizar:", sorted(df_f["Asesor"].unique()))
+
+    df_asesor = df_f[df_f["Asesor"] == asesor_sel]
+
+    st.markdown(f"## 👤 Análisis del Asesor: **{asesor_sel}**")
+
+    # ===============================
+    # 🔢 MÉTRICAS INDIVIDUALES
+    # ===============================
+    c1, c2, c3 = st.columns(3)
+    c1.metric("Monitoreos realizados", len(df_asesor))
+    c2.metric("Promedio general", round(df_asesor["Total"].mean(), 2))
+    c3.metric("Errores críticos", len(df_asesor[df_asesor["Error crítico"]=="Sí"]))
+
+    st.divider()
+
+    # ===============================
+    # 🧠 Análisis por pregunta
+    # ===============================
+    preguntas_cols = [c for c in df.columns if "¿" in c]
+
+    df_long = df_asesor.melt(
+        id_vars=["Área","Asesor","Canal","Fecha"],
+        value_vars=preguntas_cols,
+        var_name="Pregunta",
+        value_name="Puntaje"
+    )
+
+    df_long["Puntaje"] = pd.to_numeric(df_long["Puntaje"], errors="coerce").fillna(0)
+
+    # ===== PROMEDIO DE CADA PREGUNTA DEL ASESOR =====
+    df_preg = df_long.groupby("Pregunta")["Puntaje"].mean().reset_index(name="Promedio")
+
+    fig = px.bar(
+        df_preg, x="Promedio", y="Pregunta", orientation="h",
+        title="📌 Cumplimiento por pregunta (asesor)",
+        color="Promedio", color_continuous_scale="agsunset", range_x=[0,20]
+    )
+    fig.update_traces(texttemplate="%{x:.1f}", textposition="outside")
+    st.plotly_chart(fig, use_container_width=True)
+
+    st.divider()
+
+    # ===============================
+    # 🔥 Heatmap individual (pregunta vs. fecha)
+    # ===============================
+    df_heat = df_long.copy()
+    df_heat["Fecha_str"] = df_heat["Fecha"].dt.strftime("%Y-%m-%d")
+
+    fig_h = px.density_heatmap(
+        df_heat, x="Fecha_str", y="Pregunta", z="Puntaje",
+        color_continuous_scale="RdYlGn",
+        title="🔥 Mapa de calor de desempeño del asesor"
+    )
+    st.plotly_chart(fig_h, use_container_width=True)
+
+    st.divider()
+
+    # ===============================
+    # 🆚 Comparación del asesor vs promedio general
+    # ===============================
+    df_general_long = df_f.melt(
+        id_vars=["Área","Asesor","Canal","Fecha"],
+        value_vars=preguntas_cols,
+        var_name="Pregunta",
+        value_name="Puntaje"
+    )
+
+    df_comparativo = df_general_long.groupby("Pregunta")["Puntaje"].mean().reset_index(name="Promedio General")
+    df_comparativo["Asesor"] = df_preg["Promedio"]
+
+    fig_comp = px.line(
+        df_comparativo, x="Pregunta", y=["Promedio General","Asesor"],
+        title="📊 Comparación Asesor vs. Promedio General",
+        markers=True
+    )
+    st.plotly_chart(fig_comp, use_container_width=True)
