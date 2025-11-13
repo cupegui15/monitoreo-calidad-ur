@@ -151,7 +151,7 @@ areas = {
 # SIDEBAR Y BANNER
 # ===============================
 st.sidebar.image(URL_LOGO_UR, width=150)
-pagina = st.sidebar.radio("Menú:", ["📝 Formulario de Monitoreo", "📊 Dashboard de Análisis" "🎯 Dashboard por Asesor"])
+pagina = st.sidebar.radio("Menú:", ["📝 Formulario de Monitoreo", "📊 Dashboard de Análisis", "🎯 Dashboard por Asesor"])
 
 st.markdown(f"""
 <div class="banner">
