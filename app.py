@@ -503,25 +503,27 @@ elif pagina == "📊 Dashboard de Análisis":
     st.plotly_chart(fig_cf, use_container_width=True)
 
     # Heatmap asesor vs criterio (SIN entrar a análisis por asesor)
-    df_long = df_filtrado.melt(
-        id_vars=["Asesor"],
-        value_vars=preguntas_cols,
-        var_name="Pregunta",
-        value_name="Valor"
-    )
-    df_long["Cumple"] = (pd.to_numeric(df_long["Valor"], errors="coerce").fillna(0) > 0).astype(int)
+df_long = df_filtrado.melt(
+    id_vars=["Asesor"],
+    value_vars=preguntas_cols,
+    var_name="Pregunta",
+    value_name="Valor"
+)
+df_long["Cumple"] = (pd.to_numeric(df_long["Valor"], errors="coerce").fillna(0) > 0).astype(int)
 
-    df_heat = (
-        df_long.groupby(["Asesor","Pregunta"])["Cumple"].mean().mul(100).reset_index()
-    )
+df_heat = (
+    df_long.groupby(["Asesor","Pregunta"])["Cumple"]
+    .mean()
+    .mul(100)
+    .reset_index(name="% Cumplimiento")
+)
 
-    fig_heat = px.density_heatmap(
-        df_heat,
-        x="Asesor", y="Pregunta", z="% Cumplimiento",
-        color_continuous_scale="RdYlGn",
-        title="Mapa de Calor – Asesor vs Pregunta (General)"
-    )
-    st.plotly_chart(fig_heat, use_container_width=True)
+fig_heat = px.density_heatmap(
+    df_heat,
+    x="Asesor", y="Pregunta", z="% Cumplimiento",
+    color_continuous_scale="RdYlGn",
+    title="Mapa de Calor – Asesor vs Pregunta (General)"
+)
 
 # =====================================================================
 # 🎯 DASHBOARD POR ASESOR
