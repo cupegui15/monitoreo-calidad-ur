@@ -402,55 +402,87 @@ elif pagina == "📊 Dashboard de Análisis":
         mes_num = [k for k,v in meses.items() if v == mes_f][0]
         df_filtrado = df_filtrado[df_filtrado["Mes"] == mes_num]
 
-    # ---------------------------------
-    # LÓGICA A → NO HAY FILTROS
-    # ---------------------------------
-    no_filtros = (area_f=="Todas" and canal_f=="Todos" and anio_f=="Todos" and mes_f=="Todos")
+# ---------------------------------
+# LÓGICA A → NO HAY FILTROS
+# ---------------------------------
+no_filtros = (area_f=="Todas" and canal_f=="Todos" and anio_f=="Todos" and mes_f=="Todos")
 
-    if no_filtros:
-        st.subheader("📊 Dashboard Global – Sin filtros")
+if no_filtros:
+    st.subheader("📊 Dashboard Global – Sin filtros")
 
-        c1, c2, c3 = st.columns(3)
-        c1.metric("Monitoreos Totales", len(df))
-        c2.metric("Promedio General (%)", round(((df.filter(like="¿") > 0).mean().mean())*100,2))
-        c3.metric("Errores Críticos", len(df[df["Error crítico"]=="Sí"]))
+    # ===============================
+    # 🔢 MÉTRICAS CORREGIDAS
+    # ===============================
+    c1, c2, c3 = st.columns(3)
 
-        # Distribución por Área
-        df_area = df.groupby("Área").size().reset_index(name="Total")
-        fig_a = px.pie(df_area, names="Área", values="Total", title="Distribución por Área")
-        st.plotly_chart(fig_a, use_container_width=True)
+    c1.metric("Monitoreos Totales", len(df))
 
-        # Distribución por Canal
-        df_canal = df.groupby("Canal").size().reset_index(name="Total")
-        fig_c = px.pie(df_canal, names="Canal", values="Total", title="Distribución por Canal")
-        st.plotly_chart(fig_c, use_container_width=True)
+    # 🟢 Promedio general basado en TOTAL (0–100)
+    if "Total" in df.columns:
+        promedio_general = df["Total"].mean()
+    else:
+        promedio_general = (df.filter(like="¿") > 0).mean().mean()*100  # fallback
 
-        # ===============================
-        # HEATMAP GLOBAL (Opción A)
-        # ===============================
-        preguntas_cols = [c for c in df.columns if "¿" in c]
+    c2.metric("Promedio General (%)", f"{promedio_general:.2f}")
 
-        df_global = []
+    c3.metric("Errores Críticos", len(df[df["Error crítico"]=="Sí"]))
+
+    # ===============================
+    # 📍 Distribución por Área
+    # ===============================
+    df_area = df.groupby("Área").size().reset_index(name="Total")
+    fig_a = px.pie(df_area, names="Área", values="Total", title="Distribución por Área")
+    st.plotly_chart(fig_a, use_container_width=True)
+
+    # ===============================
+    # 📍 Distribución por Canal
+    # ===============================
+    df_canal = df.groupby("Canal").size().reset_index(name="Total")
+    fig_c = px.pie(df_canal, names="Canal", values="Total", title="Distribución por Canal")
+    st.plotly_chart(fig_c, use_container_width=True)
+
+    # ===============================
+    # 🔥 Cumplimiento Global por Pregunta – Separado por Canal
+    # ===============================
+    st.subheader("🔥 Cumplimiento Global por Pregunta (separado por Canal)")
+
+    canales_unicos = df["Canal"].unique()
+
+    for canal_actual in canales_unicos:
+
+        st.markdown(f"### 📌 Canal: **{canal_actual}**")
+
+        df_c = df[df["Canal"] == canal_actual]
+
+        # Tomar solo las preguntas que existan para este canal
+        preguntas_cols = [c for c in df_c.columns if "¿" in c]
+
+        if not preguntas_cols:
+            st.info("Este canal no tiene preguntas registradas.")
+            continue
+
+        cumplimiento_canal = []
+
         for col in preguntas_cols:
-            valores = pd.to_numeric(df[col], errors="coerce").fillna(0)
+            valores = pd.to_numeric(df_c[col], errors="coerce").fillna(0)
             pct = (valores > 0).mean() * 100
-            df_global.append({"Pregunta": col, "Cumplimiento": pct})
+            cumplimiento_canal.append({"Pregunta": col, "Cumplimiento": pct})
 
-        df_global = pd.DataFrame(df_global).sort_values("Cumplimiento")
+        df_preg_canal = pd.DataFrame(cumplimiento_canal).sort_values("Cumplimiento")
 
         fig_h = px.bar(
-            df_global,
+            df_preg_canal,
             x="Cumplimiento", y="Pregunta",
             orientation="h",
             color="Cumplimiento",
             color_continuous_scale="RdYlGn",
-            title="🔥 Cumplimiento Global por Pregunta"
+            title=f"Cumplimiento por Pregunta – {canal_actual}"
         )
+
         fig_h.update_traces(texttemplate="%{x:.1f}%", textposition="outside")
         st.plotly_chart(fig_h, use_container_width=True)
 
-        st.stop()
-
+    st.stop()
     # --------------------------------------------------------------------
     # SI HAY ALGÚN FILTRO → Dashboard detallado por Área / Canal / Mes
     # --------------------------------------------------------------------
