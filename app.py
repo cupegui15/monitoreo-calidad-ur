@@ -794,9 +794,4 @@ elif pagina == "🎯 Dashboard por Asesor":
     fig_heat.update_layout(height=650)
 
     st.plotly_chart(fig_heat, use_container_width=True)
-# =====================================================================
-# 🚫 CONTROL DE EJECUCIÓN FUERA DE MENÚ
-# =====================================================================
 
-else:
-    st.error("❌ Ocurrió un error inesperado. Por favor selecciona una opción válida del menú.")
