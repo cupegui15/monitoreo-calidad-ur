@@ -1,7 +1,3 @@
-# -----------------------------------------------
-#  MONITOREO DE CALIDAD UR - CÓDIGO COMPLETO FINAL
-# -----------------------------------------------
-
 import os
 import streamlit as st
 import pandas as pd
@@ -49,6 +45,7 @@ html, body, .stApp {
 [data-testid="stSidebar"] div[data-baseweb="select"] * {
     color: #000 !important;
     background-color: #fff !important;
+    font-weight: 500 !important;
 }
 .banner {
     background-color: var(--rojo-ur);
@@ -57,6 +54,7 @@ html, body, .stApp {
     border-radius: 8px;
     margin-bottom: 1.2rem;
     display: flex;
+    align-items: center;
     justify-content: space-between;
 }
 .section-title {
@@ -66,7 +64,6 @@ html, body, .stApp {
 }
 </style>
 """, unsafe_allow_html=True)
-
 
 # ===============================
 # CONFIGURACIÓN DE ÁREAS Y PREGUNTAS
@@ -100,34 +97,36 @@ areas = {
 # ===============================
 def guardar_datos_google_sheets(data):
     try:
-        # Convertir fechas a texto
+        # Convertir fechas
         for k, v in data.items():
             if isinstance(v, (date,)):
                 data[k] = v.strftime("%Y-%m-%d")
 
         creds_json = st.secrets["GCP_SERVICE_ACCOUNT"]
         creds_dict = json.loads(creds_json)
-        scope = ["https://spreadsheets.google.com/feeds", "https://www.googleapis.com/auth/drive"]
+        scope = [
+            "https://spreadsheets.google.com/feeds",
+            "https://www.googleapis.com/auth/drive"
+        ]
         creds = ServiceAccountCredentials.from_json_keyfile_dict(creds_dict, scope)
         client = gspread.authorize(creds)
 
         sh = client.open_by_key(st.secrets["GOOGLE_SHEETS_ID"])
 
-        # NOMBRE DE HOJA CORRECTO → ÁREA – Canal (con EN DASH)
+        # IMPORTANTE: en-dash "–"
         nombre_hoja = f"{data['Área']} – {data['Canal']}"
 
-        # Abre o crea hoja
+        # Buscar o crear la hoja
         try:
             hoja = sh.worksheet(nombre_hoja)
         except:
             hoja = sh.add_worksheet(title=nombre_hoja, rows=5000, cols=200)
             hoja.append_row(list(data.keys()))
 
-        # Encabezados existentes
+        # Verificar encabezados existentes
         encabezados = hoja.row_values(1)
-        nuevos = False
 
-        # Agregar nuevas columnas si aparecen nuevas preguntas
+        nuevos = False
         for col in data.keys():
             if col not in encabezados:
                 encabezados.append(col)
@@ -137,14 +136,13 @@ def guardar_datos_google_sheets(data):
             hoja.resize(cols=len(encabezados))
             hoja.update("1:1", [encabezados])
 
-        # Crear la fila alineada
         fila = [data.get(col, "") for col in encabezados]
         hoja.append_row(fila)
 
-        st.success(f"Registro guardado correctamente en la hoja: {nombre_hoja}")
+        st.success(f"✅ Registro guardado correctamente en '{nombre_hoja}'.")
 
     except Exception as e:
-        st.error(f"Error al guardar: {e}")
+        st.error(f"❌ Error al guardar: {e}")
 
 # ===============================
 # GOOGLE SHEETS – CARGAR TODAS LAS HOJAS
@@ -153,7 +151,10 @@ def cargar_todas_las_hojas_google_sheets():
     try:
         creds_json = st.secrets["GCP_SERVICE_ACCOUNT"]
         creds_dict = json.loads(creds_json)
-        scope = ["https://spreadsheets.google.com/feeds", "https://www.googleapis.com/auth/drive"]
+        scope = [
+            "https://spreadsheets.google.com/feeds",
+            "https://www.googleapis.com/auth/drive"
+        ]
         creds = ServiceAccountCredentials.from_json_keyfile_dict(creds_dict, scope)
         client = gspread.authorize(creds)
         sh = client.open_by_key(st.secrets["GOOGLE_SHEETS_ID"])
@@ -161,26 +162,24 @@ def cargar_todas_las_hojas_google_sheets():
         dfs = []
 
         for ws in sh.worksheets():
-
             title = ws.title
 
-            # Solo hojas válidas formateadas como Área – Canal
+            # Solo hojas con formato "Área – Canal"
             if " – " not in title:
                 continue
 
             area_name, canal_name = [x.strip() for x in title.split(" – ", 1)]
 
-            # Verificación de área/canal válido
             if area_name not in areas:
                 continue
             if canal_name not in areas[area_name]["canales"]:
                 continue
 
-            registros = ws.get_all_records()
-            if not registros:
+            records = ws.get_all_records()
+            if not records:
                 continue
 
-            df_temp = pd.DataFrame(registros)
+            df_temp = pd.DataFrame(records)
             df_temp["Área"] = area_name
             df_temp["Canal"] = canal_name
 
@@ -192,18 +191,33 @@ def cargar_todas_las_hojas_google_sheets():
         return pd.concat(dfs, ignore_index=True)
 
     except Exception as e:
-        st.error(f"Error cargando datos: {e}")
+        st.error(f"⚠️ Error cargando datos: {e}")
         return pd.DataFrame()
 
 # ===============================
-# MENÚ
+# SIDEBAR Y MENÚ
 # ===============================
-
 st.sidebar.image(URL_LOGO_UR, width=150)
 pagina = st.sidebar.radio(
     "Menú:",
-    ["📝 Formulario de Monitoreo", "📊 Dashboard de Análisis", "🎯 Dashboard por Asesor"]
+    [
+        "📝 Formulario de Monitoreo",
+        "📊 Dashboard de Análisis",
+        "🎯 Dashboard por Asesor"
+    ]
 )
+
+# ===============================
+# BANNER
+# ===============================
+st.markdown(f"""
+<div class="banner">
+    <div><h2>Monitoreo de Calidad - Universidad del Rosario</h2>
+    <p>Comprometidos con la excelencia en la atención al usuario</p></div>
+    <div><img src="{URL_BANNER_IMG}" width="130" style="border-radius:6px;"></div>
+</div>
+""", unsafe_allow_html=True)
+
 # =====================================================================
 # 📝 FORMULARIO DE MONITOREO
 # =====================================================================
@@ -211,7 +225,6 @@ if pagina == "📝 Formulario de Monitoreo":
 
     st.markdown('<div class="section-title">🧾 Registro de Monitoreo</div>', unsafe_allow_html=True)
 
-    # Reinicio del formulario
     if "form_reset" not in st.session_state:
         st.session_state.form_reset = False
 
@@ -219,9 +232,6 @@ if pagina == "📝 Formulario de Monitoreo":
         st.session_state.clear()
         st.session_state.form_reset = False
 
-    # -------------------------------
-    # SELECCIÓN DE ÁREA, MONITOR Y ASESOR
-    # -------------------------------
     c1, c2, c3 = st.columns(3)
 
     with c1:
@@ -230,41 +240,27 @@ if pagina == "📝 Formulario de Monitoreo":
     with c2:
         monitor = st.selectbox(
             "Persona que monitorea",
-            ["Seleccione una opción"] + (areas[area]["monitores"] if area != "Seleccione una opción" else [])
+            ["Seleccione una opción"] + (areas[area]["monitores"] if area != "Seleccione una opción" else []),
         )
 
     with c3:
         asesor = st.selectbox(
             "Asesor monitoreado",
-            ["Seleccione una opción"] + (areas[area]["asesores"] if area != "Seleccione una opción" else [])
+            ["Seleccione una opción"] + (areas[area]["asesores"] if area != "Seleccione una opción" else []),
         )
 
-    # -------------------------------
-    # DATOS GENERALES
-    # -------------------------------
     codigo = st.text_input("Código de la interacción *")
     fecha = st.date_input("Fecha de la interacción", date.today())
+    canal = st.selectbox("Canal", (areas[area]["canales"] if area != "Seleccione una opción" else []))
+    error_critico = st.radio("¿Corresponde a un error crítico?", ["No", "Sí"], horizontal=True)
 
-    canal = st.selectbox(
-        "Canal",
-        (areas[area]["canales"] if area != "Seleccione una opción" else [])
-    )
-
-    error_critico = st.radio(
-        "¿Corresponde a un error crítico?",
-        ["No", "Sí"],
-        horizontal=True
-    )
-
-    # -------------------------------
-    # PREGUNTAS DINÁMICAS SEGÚN ÁREA Y CANAL
-    # -------------------------------
+    # ===============================
+    # PREGUNTAS DINÁMICAS
+    # ===============================
     preguntas_canal = []
 
     if area == "CASA UR":
-
         if canal in ["Presencial", "Contact Center", "Chat"]:
-
             preguntas_canal = [
                 ("¿Atiende la interacción en el momento que se establece contacto con el(a) usuario(a)?", 9),
                 ("¿Saluda, se presenta de una forma amable y cortés, usando el dialogo de saludo y bienvenida?", 9),
@@ -277,9 +273,7 @@ if pagina == "📝 Formulario de Monitoreo":
                 ("¿Documenta la atención de forma coherente según lo solicitado e informado al cliente; seleccionando las tipologías adecuadas y manejando correcta redacción y ortografía?", 14),
                 ("¿Finaliza la atención de forma amable, cortés utilizando el dialogo de cierre y despedida remitiendo al usuario a responder la encuesta de percepción?", 10)
             ]
-
         elif canal == "Back Office":
-
             preguntas_canal = [
                 ("¿Cumple con el ANS establecido para el servicio?", 20),
                 ("¿Analiza correctamente la solicitud?", 20),
@@ -291,7 +285,6 @@ if pagina == "📝 Formulario de Monitoreo":
     elif area == "Servicios 2030":
 
         if canal in ["Línea 2030", "Chat 2030"]:
-
             preguntas_canal = [
                 ("¿Atiende la interacción de forma oportuna en el momento que se establece el contacto?", 9),
                 ("¿Saluda y se presenta de manera amable y profesional, estableciendo un inicio cordial de la atención?", 9),
@@ -304,9 +297,7 @@ if pagina == "📝 Formulario de Monitoreo":
                 ("¿Documenta la atención en el sistema de tickets de manera coherente, seleccionando tipologías correctas y con redacción/ortografía adecuadas?", 14),
                 ("¿Finaliza la atención de forma amable y profesional, utilizando el cierre de interacción definido y remitiendo al usuario a la encuesta de satisfacción?", 10)
             ]
-
         elif canal == "Sitio 2030":
-
             preguntas_canal = [
                 ("¿Cumple con el ANS/SLA establecido?", 20),
                 ("¿Realiza un análisis completo y pertinente de la solicitud, aplicando diagnóstico claro antes de ejecutar acciones?", 20),
@@ -315,9 +306,6 @@ if pagina == "📝 Formulario de Monitoreo":
                 ("¿Comunica el cierre de la solicitud de manera empática y profesional, validando la satisfacción del usuario?", 20)
             ]
 
-    # -------------------------------
-    # CAPTURA DE RESPUESTAS
-    # -------------------------------
     resultados = {}
     total = 0
 
@@ -325,33 +313,26 @@ if pagina == "📝 Formulario de Monitoreo":
         st.error("❌ Error crítico: puntaje total = 0")
         for q, _ in preguntas_canal:
             resultados[q] = 0
-
     else:
         for idx, (q, p) in enumerate(preguntas_canal):
-            resp = st.radio(q, ["Cumple", "No cumple"], horizontal=True, key=f"{idx}-{q}")
+            resp = st.radio(q, ["Cumple", "No cumple"], horizontal=True)
             resultados[q] = p if resp == "Cumple" else 0
             total += resultados[q]
 
-    st.metric("Puntaje Total", total)
-
-    # -------------------------------
-    # CAMPOS DE TEXTO
-    # -------------------------------
     positivos = st.text_area("Aspectos Positivos *")
     mejorar = st.text_area("Aspectos por Mejorar *")
 
-    # -------------------------------
-    # BOTÓN GUARDAR
-    # -------------------------------
-    if st.button("💾 Guardar Monitoreo"):
+    st.metric("Puntaje Total", total)
 
+    if st.button("💾 Guardar Monitoreo"):
         if area == "Seleccione una opción" or monitor == "Seleccione una opción" or asesor == "Seleccione una opción":
-            st.error("⚠️ Debes completar todos los campos obligatorios.")
+            st.error("⚠️ Debes completar todos los campos.")
         elif not codigo.strip():
-            st.error("⚠️ Debes ingresar el código de la interacción.")
+            st.error("⚠️ Código obligatorio.")
         elif not positivos.strip() or not mejorar.strip():
-            st.error("⚠️ Los campos de aspectos positivos y por mejorar son obligatorios.")
+            st.error("⚠️ Debes diligenciar los aspectos positivos y por mejorar.")
         else:
+
             fila = {
                 "Área": area,
                 "Monitor": monitor,
@@ -365,15 +346,15 @@ if pagina == "📝 Formulario de Monitoreo":
                 "Aspectos por Mejorar": mejorar
             }
 
-            # Agregar respuestas
             for q, v in resultados.items():
                 fila[q] = v
 
             guardar_datos_google_sheets(fila)
             st.session_state.form_reset = True
             st.rerun()
+
 # =====================================================================
-# 📊 DASHBOARD GENERAL – LÓGICA COMPLETA
+# 📊 DASHBOARD GENERAL – LÓGICA TIPO A
 # =====================================================================
 elif pagina == "📊 Dashboard de Análisis":
 
@@ -383,13 +364,10 @@ elif pagina == "📊 Dashboard de Análisis":
         st.warning("📭 No hay datos para mostrar aún.")
         st.stop()
 
-    # ------------------------------------
-    # LIMPIEZA
-    # ------------------------------------
+    # Limpieza
     df = df.dropna(how="all")
     df.columns = [str(c).strip() for c in df.columns]
-    df = df.dropna(subset=["Área", "Canal", "Asesor"], how="any")
-
+    df = df.dropna(subset=["Área","Canal","Asesor"])
     df["Fecha"] = pd.to_datetime(df["Fecha"], errors="coerce")
     df["Mes"] = df["Fecha"].dt.month
     df["Año"] = df["Fecha"].dt.year
@@ -399,12 +377,9 @@ elif pagina == "📊 Dashboard de Análisis":
         7:"Julio",8:"Agosto",9:"Septiembre",10:"Octubre",11:"Noviembre",12:"Diciembre"
     }
 
-    # Extraer columnas de preguntas reales
-    preguntas_cols = [c for c in df.columns if "¿" in c]
-
-    # ------------------------------------
-    # FILTROS LATERALES
-    # ------------------------------------
+    # ===============================
+    # FILTROS
+    # ===============================
     st.sidebar.subheader("Filtros")
 
     area_f = st.sidebar.selectbox("Área:", ["Todas"] + sorted(df["Área"].unique()))
@@ -424,189 +399,112 @@ elif pagina == "📊 Dashboard de Análisis":
         df_filtrado = df_filtrado[df_filtrado["Año"] == int(anio_f)]
 
     if mes_f != "Todos":
-        mes_num = [k for k, v in meses.items() if v == mes_f][0]
+        mes_num = [k for k,v in meses.items() if v == mes_f][0]
         df_filtrado = df_filtrado[df_filtrado["Mes"] == mes_num]
 
-    # ------------------------------------
-    # Detectar si NO hay filtros → "Dashboard Global"
-    # ------------------------------------
-    no_filtros = (
-        area_f == "Todas" and
-        canal_f == "Todos" and
-        anio_f == "Todos" and
-        mes_f == "Todos"
-    )
+    # ---------------------------------
+    # LÓGICA A → NO HAY FILTROS
+    # ---------------------------------
+    no_filtros = (area_f=="Todas" and canal_f=="Todos" and anio_f=="Todos" and mes_f=="Todos")
 
-    # =====================================================================
-    # 🟦 DASHBOARD GLOBAL (SIN FILTROS) — LÓGICA A
-    # =====================================================================
     if no_filtros:
-
-        st.subheader("🌍 Dashboard Global – Sin Filtros")
+        st.subheader("📊 Dashboard Global – Sin filtros")
 
         c1, c2, c3 = st.columns(3)
         c1.metric("Monitoreos Totales", len(df))
-        c2.metric("Promedio General (%)", round(((df[preguntas_cols] > 0).mean().mean()) * 100, 2))
-        c3.metric("Errores Críticos", len(df[df["Error crítico"] == "Sí"]))
+        c2.metric("Promedio General (%)", round(((df.filter(like="¿") > 0).mean().mean())*100,2))
+        c3.metric("Errores Críticos", len(df[df["Error crítico"]=="Sí"]))
 
-        # ---------------------------------------------------
-        # DISTRIBUCIÓN POR ÁREA
-        # ---------------------------------------------------
+        # Distribución por Área
         df_area = df.groupby("Área").size().reset_index(name="Total")
-
-        fig_a = px.pie(
-            df_area, names="Área", values="Total",
-            title="Distribución de Monitoreos por Área",
-            color_discrete_sequence=px.colors.sequential.RdPu
-        )
+        fig_a = px.pie(df_area, names="Área", values="Total", title="Distribución por Área")
         st.plotly_chart(fig_a, use_container_width=True)
 
-        # ---------------------------------------------------
-        # DISTRIBUCIÓN POR CANAL
-        # ---------------------------------------------------
+        # Distribución por Canal
         df_canal = df.groupby("Canal").size().reset_index(name="Total")
-
-        fig_c = px.pie(
-            df_canal, names="Canal", values="Total",
-            title="Distribución de Monitoreos por Canal",
-            color_discrete_sequence=px.colors.sequential.Blues
-        )
+        fig_c = px.pie(df_canal, names="Canal", values="Total", title="Distribución por Canal")
         st.plotly_chart(fig_c, use_container_width=True)
 
-        # ---------------------------------------------------
-        # 🔥 CUMPLIMIENTO GLOBAL POR PREGUNTA (SEPARADO POR CANAL)
-        # ---------------------------------------------------
-        st.subheader("🔥 Cumplimiento Global por Pregunta — Separado por Canal")
+        # ===============================
+        # HEATMAP GLOBAL (Opción A)
+        # ===============================
+        preguntas_cols = [c for c in df.columns if "¿" in c]
 
         df_global = []
+        for col in preguntas_cols:
+            valores = pd.to_numeric(df[col], errors="coerce").fillna(0)
+            pct = (valores > 0).mean() * 100
+            df_global.append({"Pregunta": col, "Cumplimiento": pct})
 
-        for canal_temp, grupo in df.groupby("Canal"):
-
-            for col in preguntas_cols:
-                pct = (pd.to_numeric(grupo[col], errors="coerce").fillna(0) > 0).mean() * 100
-
-                df_global.append({
-                    "Canal": canal_temp,
-                    "Pregunta": col,
-                    "Cumplimiento (%)": pct
-                })
-
-        df_global = pd.DataFrame(df_global).sort_values("Cumplimiento (%)")
+        df_global = pd.DataFrame(df_global).sort_values("Cumplimiento")
 
         fig_h = px.bar(
             df_global,
-            x="Cumplimiento (%)",
-            y="Pregunta",
-            color="Canal",
-            barmode="group",
+            x="Cumplimiento", y="Pregunta",
             orientation="h",
-            title="🔥 Cumplimiento Global por Pregunta (Organizado por Canal)",
-            color_discrete_sequence=px.colors.qualitative.Set2
+            color="Cumplimiento",
+            color_continuous_scale="RdYlGn",
+            title="🔥 Cumplimiento Global por Pregunta"
         )
-
         fig_h.update_traces(texttemplate="%{x:.1f}%", textposition="outside")
         st.plotly_chart(fig_h, use_container_width=True)
 
-        st.stop()  # FIN MODO GLOBAL
-
-    # =====================================================================
-    # 🟩 DASHBOARD FILTRADO — Vista detallada
-    # =====================================================================
-    st.subheader("📊 Dashboard General con Filtros Aplicados")
-
-    if df_filtrado.empty:
-        st.warning("⚠ No hay registros para los filtros seleccionados.")
         st.stop()
 
-    # ---------------------------------------------------
-    # MÉTRICAS SUPERIORES
-    # ---------------------------------------------------
+    # --------------------------------------------------------------------
+    # SI HAY ALGÚN FILTRO → Dashboard detallado por Área / Canal / Mes
+    # --------------------------------------------------------------------
+    if df_filtrado.empty:
+        st.warning("No hay datos con los filtros seleccionados.")
+        st.stop()
+
+    st.subheader("📊 Dashboard General con Filtros")
+
     c1, c2, c3 = st.columns(3)
     c1.metric("Monitoreos", len(df_filtrado))
-    c2.metric("Promedio (%)", round(((df_filtrado[preguntas_cols] > 0).mean().mean()) * 100, 2))
-    c3.metric("Errores Críticos", len(df_filtrado[df_filtrado["Error crítico"] == "Sí"]))
+    c2.metric("Promedio (%)", round(((df_filtrado.filter(like="¿")>0).mean().mean())*100,2))
+    c3.metric("Errores Críticos", len(df_filtrado[df_filtrado["Error crítico"]=="Sí"]))
 
-    # ---------------------------------------------------
-    # CUMPLIMIENTO POR PREGUNTA (FILTRADO)
-    # ---------------------------------------------------
-    df_preg = []
+    # Cumplimiento por pregunta
+    preguntas_cols = [c for c in df.columns if "¿" in c]
 
+    df_preg_f = []
     for col in preguntas_cols:
-        pct = (
-            pd.to_numeric(df_filtrado[col], errors="coerce").fillna(0) > 0
-        ).mean() * 100
+        valores = pd.to_numeric(df_filtrado[col], errors="coerce").fillna(0)
+        pct = (valores > 0).mean() * 100
+        df_preg_f.append({"Pregunta": col, "Cumplimiento": pct})
 
-        df_preg.append({"Pregunta": col, "Cumplimiento": pct})
-
-    df_preg = pd.DataFrame(df_preg).sort_values("Cumplimiento")
+    df_preg_f = pd.DataFrame(df_preg_f).sort_values("Cumplimiento")
 
     fig_pf = px.bar(
-        df_preg,
-        x="Cumplimiento",
-        y="Pregunta",
-        title="📌 Cumplimiento por Pregunta (Filtrado)",
-        color="Cumplimiento",
+        df_preg_f, x="Cumplimiento", y="Pregunta",
         orientation="h",
+        color="Cumplimiento",
         color_continuous_scale="RdYlGn",
-        range_x=[0, 100]
+        title="Cumplimiento por Pregunta (Filtrado)"
     )
     fig_pf.update_traces(texttemplate="%{x:.1f}%", textposition="outside")
     st.plotly_chart(fig_pf, use_container_width=True)
 
-    # ---------------------------------------------------
-    # CUMPLIMIENTO POR CANAL
-    # ---------------------------------------------------
+    # Cumplimiento por Canal
     df_canal_f = []
-    for canal_temp, grupo in df_filtrado.groupby("Canal"):
-        pct = ((grupo[preguntas_cols] > 0).mean().mean()) * 100
-        df_canal_f.append({"Canal": canal_temp, "Cumplimiento": pct})
+    for canal_name, grupo in df_filtrado.groupby("Canal"):
+        pct = ((grupo.filter(like="¿")>0).mean().mean())*100
+        df_canal_f.append({"Canal": canal_name, "Cumplimiento": pct})
 
     df_canal_f = pd.DataFrame(df_canal_f)
 
     fig_cf = px.bar(
-        df_canal_f,
-        x="Canal",
-        y="Cumplimiento",
-        title="🎧 Cumplimiento por Canal",
+        df_canal_f, x="Canal", y="Cumplimiento",
         color="Cumplimiento",
         color_continuous_scale="tealgrn",
-        range_y=[0, 100]
+        title="Cumplimiento por Canal"
     )
     st.plotly_chart(fig_cf, use_container_width=True)
 
-    # ---------------------------------------------------
-    # HEATMAP GENERAL — ASESOR VS PREGUNTA
-    # ---------------------------------------------------
-    df_long = df_filtrado.melt(
-        id_vars=["Asesor"],
-        value_vars=preguntas_cols,
-        var_name="Pregunta",
-        value_name="Valor"
-    )
-
-    df_long["Cumple"] = (
-        pd.to_numeric(df_long["Valor"], errors="coerce").fillna(0) > 0
-    ).astype(int)
-
-    df_heatmap = (
-        df_long.groupby(["Asesor", "Pregunta"])["Cumple"]
-        .mean().mul(100)
-        .reset_index(name="% Cumplimiento")
-    )
-
-    fig_heat = px.density_heatmap(
-        df_heatmap,
-        x="Asesor",
-        y="Pregunta",
-        z="% Cumplimiento",
-        color_continuous_scale="RdYlGn",
-        title="Mapa de Calor – Asesor vs Pregunta (General)"
-    )
-
-    st.plotly_chart(fig_heat, use_container_width=True)
-# =====================================================================
-# 🎯 DASHBOARD POR ASESOR – ANÁLISIS INDIVIDUAL
-# =====================================================================
+# ============================================================
+# 🎯 DASHBOARD POR ASESOR – SOLO CUMPLIMIENTO POR PREGUNTA
+# ============================================================
 elif pagina == "🎯 Dashboard por Asesor":
 
     df = cargar_todas_las_hojas_google_sheets()
@@ -614,53 +512,46 @@ elif pagina == "🎯 Dashboard por Asesor":
     if df.empty:
         st.warning("📭 No hay registros para mostrar aún.")
         st.stop()
-
-    # ----------------------------------------------
-    # LIMPIEZA BÁSICA
-    # ----------------------------------------------
+    
+    # Limpieza estándar
     df = df.dropna(how="all")
+    df = df.loc[:, df.columns.notna()]
     df.columns = [str(c).strip() for c in df.columns]
-    df = df.dropna(subset=["Área", "Asesor", "Canal"], how="any")
+    df = df.loc[:, df.columns != ""]
+    df = df.dropna(subset=["Área","Asesor","Canal"], how="any")
 
     df["Fecha"] = pd.to_datetime(df["Fecha"], errors="coerce")
-    df["Mes"] = df["Fecha"].dt.month
-    df["Año"] = df["Fecha"].dt.year
+    df["Mes"]   = df["Fecha"].dt.month
+    df["Año"]   = df["Fecha"].dt.year
 
     meses = {
         1:"Enero",2:"Febrero",3:"Marzo",4:"Abril",5:"Mayo",6:"Junio",
         7:"Julio",8:"Agosto",9:"Septiembre",10:"Octubre",11:"Noviembre",12:"Diciembre"
     }
 
-    # Preguntas formales del formulario
-    preguntas_cols = [c for c in df.columns if "¿" in c]
-
-    # ----------------------------------------------
-    # FILTROS
-    # ----------------------------------------------
+    # ===============================
+    # 🎚️ FILTROS
+    # ===============================
     st.sidebar.subheader("Filtros Asesor")
 
     area_f = st.sidebar.selectbox("Área:", ["Todas"] + sorted(df["Área"].unique()))
     canal_f = st.sidebar.selectbox("Canal:", ["Todos"] + sorted(df["Canal"].unique()))
     anio_f = st.sidebar.selectbox("Año:", ["Todos"] + sorted(df["Año"].dropna().unique().astype(int)))
-    mes_f = st.sidebar.selectbox("Mes:", ["Todas"] + [meses[m] for m in sorted(df["Mes"].dropna().unique())])
+    mes_f = st.sidebar.selectbox("Mes:", ["Todos"] + [meses[m] for m in sorted(df["Mes"].dropna().unique())])
 
     df_f = df.copy()
-
     if area_f != "Todas":
         df_f = df_f[df_f["Área"] == area_f]
-
     if canal_f != "Todos":
         df_f = df_f[df_f["Canal"] == canal_f]
-
     if anio_f != "Todos":
         df_f = df_f[df_f["Año"] == int(anio_f)]
-
     if mes_f != "Todos":
-        mes_num = [k for k, v in meses.items() if v == mes_f][0]
+        mes_num = [k for k,v in meses.items() if v == mes_f][0]
         df_f = df_f[df_f["Mes"] == mes_num]
 
     if df_f.empty:
-        st.warning("⚠ No hay registros con los filtros seleccionados.")
+        st.warning("No hay datos con los filtros seleccionados.")
         st.stop()
 
     asesor_sel = st.selectbox("Seleccione un asesor para analizar:", sorted(df_f["Asesor"].unique()))
@@ -669,25 +560,23 @@ elif pagina == "🎯 Dashboard por Asesor":
 
     st.markdown(f"## 👤 Análisis del Asesor: **{asesor_sel}**")
 
-    # ----------------------------------------------
-    # MÉTRICAS INDIVIDUALES
-    # ----------------------------------------------
+    # ===============================
+    # 🔢 MÉTRICAS INDIVIDUALES
+    # ===============================
     c1, c2, c3 = st.columns(3)
-
     c1.metric("Monitoreos realizados", len(df_asesor))
-
-    promedio_general = round(((df_asesor[preguntas_cols] > 0).mean().mean()) * 100, 2)
-    c2.metric("Promedio general", promedio_general)
-
-    c3.metric("Errores críticos", len(df_asesor[df_asesor["Error crítico"] == "Sí"]))
+    c2.metric("Promedio general", round((df_asesor.filter(like="¿") > 0).mean().mean()*100, 2))
+    c3.metric("Errores críticos", len(df_asesor[df_asesor["Error crítico"]=="Sí"]))
 
     st.divider()
 
-    # ----------------------------------------------
-    # PREGUNTAS APLICABLES SOLO AL ASESOR
-    # ----------------------------------------------
+    # ===============================
+    # 🧠 Preguntas aplicables SOLO al asesor
+    # ===============================
+    todas_preguntas = [c for c in df.columns if "¿" in c]
+
     preguntas_cols_asesor = [
-        col for col in preguntas_cols
+        col for col in todas_preguntas 
         if df_asesor[col].notna().sum() > 0
     ]
 
@@ -695,11 +584,11 @@ elif pagina == "🎯 Dashboard por Asesor":
         st.info("Este asesor no tiene preguntas registradas.")
         st.stop()
 
-    # ----------------------------------------------
-    # CUMPLIMIENTO POR PREGUNTA
-    # ----------------------------------------------
+    # ===============================
+    # 📌 CUMPLIMIENTO POR PREGUNTA
+    # ===============================
     df_long = df_asesor.melt(
-        id_vars=["Área", "Asesor", "Canal", "Fecha"],
+        id_vars=["Área","Asesor","Canal","Fecha"],
         value_vars=preguntas_cols_asesor,
         var_name="Pregunta",
         value_name="Puntaje"
@@ -707,45 +596,14 @@ elif pagina == "🎯 Dashboard por Asesor":
 
     df_long["Puntaje"] = pd.to_numeric(df_long["Puntaje"], errors="coerce").fillna(0)
 
-    df_preg = (
-        df_long.groupby("Pregunta")["Puntaje"]
-        .apply(lambda x: (x > 0).mean() * 100)
-        .reset_index(name="Cumplimiento (%)")
-    )
-
-    # ORDENAR DE MENOR A MAYOR
-    df_preg = df_preg.sort_values("Cumplimiento (%)")
+    df_preg = df_long.groupby("Pregunta")["Puntaje"].apply(lambda x: (x>0).mean()*100).reset_index(name="Cumplimiento")
 
     fig = px.bar(
-        df_preg,
-        x="Cumplimiento (%)",
-        y="Pregunta",
-        orientation="h",
-        title="📌 Cumplimiento por Pregunta – Asesor",
-        color="Cumplimiento (%)",
-        color_continuous_scale="agsunset",
-        range_x=[0, 100]
+        df_preg, x="Cumplimiento", y="Pregunta", orientation="h",
+        title="📌 Cumplimiento por pregunta (asesor)",
+        color="Cumplimiento", 
+        color_continuous_scale="agsunset", 
+        range_x=[0,100]
     )
     fig.update_traces(texttemplate="%{x:.1f}%", textposition="outside")
-
     st.plotly_chart(fig, use_container_width=True)
-
-    st.divider()
-
-    # ----------------------------------------------
-    # 🔥 HEATMAP INDIVIDUAL (PREGUNTA VS FECHA)
-    # ----------------------------------------------
-    df_heat = df_long.copy()
-    df_heat["Fecha_str"] = df_heat["Fecha"].dt.strftime("%Y-%m-%d")
-
-    fig_h = px.density_heatmap(
-        df_heat,
-        x="Fecha_str",
-        y="Pregunta",
-        z="Puntaje",
-        color_continuous_scale="RdYlGn",
-        title="🔥 Mapa de Calor – Desempeño del Asesor por Pregunta"
-    )
-
-    st.plotly_chart(fig_h, use_container_width=True)
-
