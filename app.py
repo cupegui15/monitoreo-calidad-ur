@@ -83,6 +83,33 @@ html, body, .stApp {
 """, unsafe_allow_html=True)
 
 # ===============================
+# CONFIGURACIÓN DE ÁREAS Y PREGUNTAS
+# ===============================
+areas = {
+    "CASA UR": {
+        "canales": ["Presencial", "Contact Center", "Chat", "Back Office"],
+        "monitores": ["Mauricio Ramirez Cubillos", "Alejandro Parra Sánchez", "Cristian Alberto Upegui M"],
+        "asesores": [
+            "Adela Bogotá Cagua","David Esteban Puerto Salgado","Diana Marcela Sánchez Cano",
+            "Diana Milena Nieto Perez","Jenny Lorena Quintero","Jhon Caballero","Jose Edwin Navarro Rondon",
+            "Jose Efrain Arguello","Laura Alejandra Bernal Perez","Leidy Johanna Alonso Rincón",
+            "Leyner Anyul Silva Avila","Martha Soraya Monsalve Fonseca","Nancy Viviana Bulla Bustos",
+            "Nelson Peña Ramírez","Solangel Milena Rodriguez Quitian","Leidy Sofia Ramirez Paez"
+        ]
+    },
+    "Servicios 2030": {
+        "canales": ["Línea 2030", "Chat 2030", "Sitio 2030"],
+        "monitores": ["Johanna Rueda Cuvajante", "Cristian Alberto Upegui M"],
+        "asesores": [
+            "Juan Sebastian Silva Gomez","Jennyfer Caicedo Alfonso","Jerly Durley Mendez Fontecha",
+            "Addison Rodriguez Casallas","Gabriel Ferney Martinez Lopez","Juan David Gonzalez Jimenez",
+            "Miguel Angel Rico Acevedo","Juan Camilo Ortega Clavijo","Andres Fernando Galindo Algarra",
+            "Adrian Jose Sosa Gil","Andrea Katherine Torres Junco","Leidi Daniela Arias Rodriguez"
+        ]
+    }
+}
+
+# ===============================
 # FUNCIONES GOOGLE SHEETS
 # ===============================
 def guardar_datos_google_sheets(data):
@@ -132,6 +159,7 @@ def guardar_datos_google_sheets(data):
     except Exception as e:
         st.error(f"❌ Error al guardar en Google Sheets: {e}")
 
+
 def cargar_todas_las_hojas_google_sheets():
     """
     Carga y consolida todas las hojas del Google Sheet cuyo nombre tenga el formato:
@@ -166,7 +194,7 @@ def cargar_todas_las_hojas_google_sheets():
 
             df_temp = pd.DataFrame(records)
 
-            # Aseguramos que el Área y Canal sean los correctos (aunque vengan en el archivo)
+            # Aseguramos que el Área y Canal sean los correctos
             df_temp["Área"] = area_name
             df_temp["Canal"] = canal_name
 
@@ -182,32 +210,14 @@ def cargar_todas_las_hojas_google_sheets():
         st.error(f"⚠️ No se pudieron cargar los datos de todas las hojas: {e}")
         return pd.DataFrame()
 
-# ===============================
-# CONFIGURACIÓN DE ÁREAS Y PREGUNTAS
-# ===============================
-areas = {
-    "CASA UR": {
-        "canales": ["Presencial", "Contact Center", "Chat", "Back Office"],
-        "monitores": ["Mauricio Ramirez Cubillos", "Alejandro Parra Sánchez", "Cristian Alberto Upegui M"],
-        "asesores": [
-            "Adela Bogotá Cagua","David Esteban Puerto Salgado","Diana Marcela Sánchez Cano",
-            "Diana Milena Nieto Perez","Jenny Lorena Quintero","Jhon Caballero","Jose Edwin Navarro Rondon",
-            "Jose Efrain Arguello","Laura Alejandra Bernal Perez","Leidy Johanna Alonso Rincón",
-            "Leyner Anyul Silva Avila","Martha Soraya Monsalve Fonseca","Nancy Viviana Bulla Bustos",
-            "Nelson Peña Ramírez","Solangel Milena Rodriguez Quitian","Leidy Sofia Ramirez Paez"
-        ]
-    },
-    "Servicios 2030": {
-        "canales": ["Línea 2030", "Chat 2030", "Sitio 2030"],
-        "monitores": ["Johanna Rueda Cuvajante", "Cristian Alberto Upegui M"],
-        "asesores": [
-            "Juan Sebastian Silva Gomez","Jennyfer Caicedo Alfonso","Jerly Durley Mendez Fontecha",
-            "Addison Rodriguez Casallas","Gabriel Ferney Martinez Lopez","Juan David Gonzalez Jimenez",
-            "Miguel Angel Rico Acevedo","Juan Camilo Ortega Clavijo","Andres Fernando Galindo Algarra",
-            "Adrian Jose Sosa Gil","Andrea Katherine Torres Junco","Leidi Daniela Arias Rodriguez"
-        ]
-    }
-}
+
+def cargar_datos_google_sheets():
+    """
+    Compatibilidad: usa el consolidado de todas las hojas.
+    Se mantiene el nombre original para reutilizar el resto del código.
+    """
+    return cargar_todas_las_hojas_google_sheets()
+
 
 # ===============================
 # SIDEBAR Y BANNER
@@ -215,7 +225,12 @@ areas = {
 st.sidebar.image(URL_LOGO_UR, width=150)
 pagina = st.sidebar.radio(
     "Menú:",
-    ["📝 Formulario de Monitoreo", "📊 Dashboard de Análisis", "🎯 Dashboard por Asesor", "📞 Monitoreo de Llamadas"]
+    [
+        "📝 Formulario de Monitoreo",
+        "📊 Dashboard de Análisis",
+        "🎯 Dashboard por Asesor",
+        "📞 Monitoreo de Llamadas",
+    ]
 )
 
 st.markdown(f"""
@@ -230,7 +245,6 @@ st.markdown(f"""
 # FORMULARIO DE MONITOREO
 # ===============================
 if pagina == "📝 Formulario de Monitoreo":
-    from datetime import date
     st.markdown('<div class="section-title">🧾 Registro de Monitoreo</div>', unsafe_allow_html=True)
 
     if "form_reset" not in st.session_state:
@@ -245,9 +259,15 @@ if pagina == "📝 Formulario de Monitoreo":
     with c1:
         area = st.selectbox("Área", ["Seleccione una opción"] + list(areas.keys()))
     with c2:
-        monitor = st.selectbox("Persona que monitorea", ["Seleccione una opción"] + (areas[area]["monitores"] if area != "Seleccione una opción" else []))
+        monitor = st.selectbox(
+            "Persona que monitorea",
+            ["Seleccione una opción"] + (areas[area]["monitores"] if area != "Seleccione una opción" else []),
+        )
     with c3:
-        asesor = st.selectbox("Asesor monitoreado", ["Seleccione una opción"] + (areas[area]["asesores"] if area != "Seleccione una opción" else []))
+        asesor = st.selectbox(
+            "Asesor monitoreado",
+            ["Seleccione una opción"] + (areas[area]["asesores"] if area != "Seleccione una opción" else []),
+        )
 
     codigo = st.text_input("Código de la interacción *")
     fecha = st.date_input("Fecha de la interacción", date.today())
@@ -333,10 +353,11 @@ if pagina == "📝 Formulario de Monitoreo":
             guardar_datos_google_sheets(fila)
             st.session_state.form_reset = True
             st.rerun()
+
 # ===============================
-# DASHBOARD
+# 📊 DASHBOARD GENERAL DE ANÁLISIS
 # ===============================
-else:
+elif pagina == "📊 Dashboard de Análisis":
     df = cargar_todas_las_hojas_google_sheets()
 
     if df.empty:
@@ -398,16 +419,16 @@ else:
             st.subheader("📊 Dashboard General de Cumplimiento")
 
             # ===============================
-            # 1️⃣ Cumplimiento promedio por pregunta
+            # 1️⃣ Cumplimiento promedio por pregunta (como % de veces que cumple)
             # ===============================
             preguntas_cols = [c for c in df_filtrado.columns if "¿" in c or "?" in c]
             df_preguntas = pd.DataFrame(columns=["Pregunta", "Cumplimiento Promedio"])
 
             for col in preguntas_cols:
                 valores = pd.to_numeric(df_filtrado[col], errors="coerce").fillna(0)
-                peso_max = valores.max() if valores.max() > 0 else 10  # ajuste por si hay pesos
-                porcentaje = (valores / peso_max) * 100
-                df_preguntas.loc[len(df_preguntas)] = [col, porcentaje.mean()]
+                # Cumple si el puntaje es > 0
+                cumple_pct = (valores > 0).mean() * 100
+                df_preguntas.loc[len(df_preguntas)] = [col, cumple_pct]
 
             df_preguntas = df_preguntas.sort_values("Cumplimiento Promedio", ascending=True)
 
@@ -422,19 +443,20 @@ else:
             st.plotly_chart(fig_preguntas, use_container_width=True)
 
             # ===============================
-            # 2️⃣ Cumplimiento promedio por asesor
+            # 2️⃣ Cumplimiento promedio por asesor (porcentaje de criterios cumplidos)
             # ===============================
             asesores = df_filtrado["Asesor"].unique()
-            df_asesores = pd.DataFrame(columns=["Asesor", "Cumplimiento Promedio"])
+            df_asesores = []
 
             for asesor in asesores:
                 sub = df_filtrado[df_filtrado["Asesor"] == asesor]
-                total_puntos = sub[preguntas_cols].apply(pd.to_numeric, errors="coerce").fillna(0).sum(axis=1)
-                max_puntos = sub[preguntas_cols].apply(pd.to_numeric, errors="coerce").fillna(0).max(axis=1)
-                pct = (total_puntos / max_puntos) * 100
-                df_asesores.loc[len(df_asesores)] = [asesor, pct.mean()]
+                if sub.empty:
+                    continue
+                valores = sub[preguntas_cols].apply(pd.to_numeric, errors="coerce").fillna(0)
+                cumple_pct = (valores > 0).mean(axis=1).mean() * 100
+                df_asesores.append({"Asesor": asesor, "Cumplimiento Promedio": cumple_pct})
 
-            df_asesores = df_asesores.sort_values("Cumplimiento Promedio", ascending=False)
+            df_asesores = pd.DataFrame(df_asesores).sort_values("Cumplimiento Promedio", ascending=False)
 
             fig_asesores = px.bar(
                 df_asesores, x="Asesor", y="Cumplimiento Promedio",
@@ -448,9 +470,14 @@ else:
             # ===============================
             # 3️⃣ Cumplimiento promedio por canal
             # ===============================
-            df_canal = df_filtrado.groupby("Canal")[preguntas_cols].apply(
-                lambda x: (x.apply(pd.to_numeric, errors="coerce").fillna(0).mean().mean())
-            ).reset_index(name="Cumplimiento Promedio")
+            df_canal = []
+            for canal_name, grupo in df_filtrado.groupby("Canal"):
+                if grupo.empty:
+                    continue
+                valores = grupo[preguntas_cols].apply(pd.to_numeric, errors="coerce").fillna(0)
+                cumple_pct = (valores > 0).mean().mean() * 100
+                df_canal.append({"Canal": canal_name, "Cumplimiento Promedio": cumple_pct})
+            df_canal = pd.DataFrame(df_canal)
 
             fig_canal = px.bar(
                 df_canal, x="Canal", y="Cumplimiento Promedio",
@@ -475,154 +502,41 @@ else:
             fig_area.update_traces(textposition="inside", textinfo="percent+label")
             st.plotly_chart(fig_area, use_container_width=True)
 
-                        # ===============================
-            # 5️⃣ Dashboard Asesor a Asesor
+            # ===============================
+            # 5️⃣ Vista rápida tipo Asesor vs Criterio (mapa de calor)
             # ===============================
             st.divider()
-            st.subheader("🧑‍💼 Dashboard Asesor a Asesor")
+            st.subheader("🧑‍💼 Vista rápida: Asesor vs Criterio")
 
-            # Reutilizamos los mismos filtros y df_filtrado
-            # Filtro adicional: Asesor
-            asesores_disp = sorted(df_filtrado["Asesor"].dropna().unique())
-            asesor_f = st.sidebar.selectbox("Asesor (vista detallada):", ["Todos"] + asesores_disp)
+            df_long = df_filtrado.melt(
+                id_vars=["Área", "Canal", "Asesor"],
+                value_vars=preguntas_cols,
+                var_name="Pregunta",
+                value_name="Valor"
+            )
+            df_long["Valor"] = pd.to_numeric(df_long["Valor"], errors="coerce").fillna(0)
+            df_long["Cumple"] = (df_long["Valor"] > 0).astype(int)
 
-            df_asesor_filtrado = df_filtrado.copy()
-            if asesor_f != "Todos":
-                df_asesor_filtrado = df_asesor_filtrado[df_asesor_filtrado["Asesor"] == asesor_f]
+            resumen_heat = (
+                df_long
+                .groupby(["Asesor", "Pregunta"])["Cumple"]
+                .mean()
+                .mul(100)
+                .reset_index(name="% Cumplimiento")
+            )
 
-            # Identificar columnas de preguntas (criterios)
-            preguntas_cols = [c for c in df_asesor_filtrado.columns if "¿" in c or "?" in c]
-
-            if not preguntas_cols:
-                st.info("⚠️ No se encontraron columnas de preguntas para el conjunto filtrado.")
-            else:
-                # Pasar a formato largo para facilitar análisis tipo Power BI
-                df_long = df_asesor_filtrado.melt(
-                    id_vars=["Área", "Canal", "Asesor", "Fecha"],
-                    value_vars=preguntas_cols,
-                    var_name="Pregunta",
-                    value_name="Valor"
-                )
-
-                df_long["Valor"] = pd.to_numeric(df_long["Valor"], errors="coerce").fillna(0)
-                df_long["Cumple"] = (df_long["Valor"] > 0).astype(int)  # 1 = cumple, 0 = no cumple
-
-                # ===============================
-                # 5.1 Vista general por criterio (todas las personas)
-                # ===============================
-                st.markdown("### 📋 Cumplimiento general por criterio (todas las personas con filtros actuales)")
-
-                resumen_criterio_global = (
-                    df_long
-                    .groupby("Pregunta")["Cumple"]
-                    .mean()
-                    .mul(100)
-                    .reset_index(name="% Cumplimiento")
-                    .sort_values("% Cumplimiento", ascending=True)
-                )
-
-                fig_crit_global = px.bar(
-                    resumen_criterio_global,
-                    y="Pregunta", x="% Cumplimiento",
-                    orientation="h",
-                    text="% Cumplimiento",
-                    title="Cumplimiento promedio por criterio (global)",
-                    color="% Cumplimiento",
-                    color_continuous_scale="blugrn",
-                    range_x=[0, 100]
-                )
-                fig_crit_global.update_traces(texttemplate="%{text:.1f}%", textposition="outside")
-                st.plotly_chart(fig_crit_global, use_container_width=True)
-
-                # ===============================
-                # 5.2 Vista específica del asesor seleccionado
-                # ===============================
-                st.markdown("### 🧑‍💻 Análisis detallado del asesor")
-
-                if asesor_f == "Todos":
-                    st.info("Selecciona un asesor específico en el filtro lateral para ver su detalle por criterio.")
-                else:
-                    df_asesor_long = df_long[df_long["Asesor"] == asesor_f]
-
-                    resumen_asesor_criterio = (
-                        df_asesor_long
-                        .groupby("Pregunta")["Cumple"]
-                        .mean()
-                        .mul(100)
-                        .reset_index(name="% Cumplimiento")
-                        .sort_values("% Cumplimiento", ascending=True)
-                    )
-
-                    col_a1, col_a2 = st.columns(2)
-
-                    with col_a1:
-                        st.markdown(f"#### 📊 Cumplimiento de {asesor_f} por criterio")
-                        fig_asesor_crit = px.bar(
-                            resumen_asesor_criterio,
-                            y="Pregunta", x="% Cumplimiento",
-                            orientation="h",
-                            text="% Cumplimiento",
-                            color="% Cumplimiento",
-                            color_continuous_scale="burgyl",
-                            range_x=[0, 100]
-                        )
-                        fig_asesor_crit.update_traces(texttemplate="%{text:.1f}%", textposition="outside")
-                        st.plotly_chart(fig_asesor_crit, use_container_width=True)
-
-                    with col_a2:
-                        # Comparar asesor vs promedio global por criterio
-                        comp = resumen_asesor_criterio.merge(
-                            resumen_criterio_global,
-                            on="Pregunta",
-                            suffixes=("_Asesor", "_Global")
-                        )
-                        comp["Diferencia"] = comp["% Cumplimiento_Asesor"] - comp["% Cumplimiento_Global"]
-
-                        st.markdown(f"#### ⚖️ Comparación {asesor_f} vs promedio global")
-                        fig_comp = px.bar(
-                            comp,
-                            y="Pregunta", x="Diferencia",
-                            orientation="h",
-                            text="Diferencia",
-                            color="Diferencia",
-                            color_continuous_scale="RdYlGn",
-                            title="Diferencia en puntos porcentuales (asesor - global)"
-                        )
-                        fig_comp.update_traces(texttemplate="%{text:.1f}", textposition="outside")
-                        st.plotly_chart(fig_comp, use_container_width=True)
-
-                    # Mostrar tabla de criterios donde más falla
-                    st.markdown("#### 🔍 Criterios más críticos para el asesor (menor cumplimiento)")
-                    criticos = resumen_asesor_criterio.sort_values("% Cumplimiento", ascending=True).head(5)
-                    st.dataframe(criticos, use_container_width=True)
-
-                # ===============================
-                # 5.3 Heatmap Asesor vs Criterio (para ver de un vistazo dónde fallan)
-                # ===============================
-                st.markdown("### 🔥 Mapa de calor Asesor vs Criterio")
-
-                resumen_heat = (
-                    df_long
-                    .groupby(["Asesor", "Pregunta"])["Cumple"]
-                    .mean()
-                    .mul(100)
-                    .reset_index(name="% Cumplimiento")
-                )
-
-                fig_heat = px.density_heatmap(
-                    resumen_heat,
-                    x="Asesor",
-                    y="Pregunta",
-                    z="% Cumplimiento",
-                    color_continuous_scale="RdYlGn",
-                    title="Cumplimiento (%) por Asesor y Criterio"
-                )
-                st.plotly_chart(fig_heat, use_container_width=True)
+            fig_heat = px.density_heatmap(
+                resumen_heat,
+                x="Asesor", y="Pregunta", z="% Cumplimiento",
+                color_continuous_scale="RdYlGn",
+                title="Mapa de calor: % de cumplimiento por Asesor y Criterio"
+            )
+            st.plotly_chart(fig_heat, use_container_width=True)
 
 # ============================================================
 # 🎯 NUEVO DASHBOARD POR ASESOR – ANÁLISIS INDIVIDUAL
 # ============================================================
-if pagina == "🎯 Dashboard por Asesor":
+elif pagina == "🎯 Dashboard por Asesor":
 
     df = cargar_datos_google_sheets()
 
@@ -647,14 +561,14 @@ if pagina == "🎯 Dashboard por Asesor":
     }
 
     # ===============================
-    # 🎚️ FILTROS – mantienen exactamente los mismos
+    # 🎚️ FILTROS – mismo esquema
     # ===============================
     st.sidebar.subheader("Filtros Asesor")
 
-    area_f = st.sidebar.selectbox("Área:", ["Todas"] + sorted(df["Área"].unique()))
-    canal_f = st.sidebar.selectbox("Canal:", ["Todos"] + sorted(df["Canal"].unique()))
-    anio_f = st.sidebar.selectbox("Año:", ["Todos"] + sorted(df["Año"].dropna().unique().astype(int)))
-    mes_f = st.sidebar.selectbox("Mes:", ["Todos"] + [meses[m] for m in sorted(df["Mes"].dropna().unique())])
+    area_f = st.sidebar.selectbox("Área (asesor):", ["Todas"] + sorted(df["Área"].unique()))
+    canal_f = st.sidebar.selectbox("Canal (asesor):", ["Todos"] + sorted(df["Canal"].unique()))
+    anio_f = st.sidebar.selectbox("Año (asesor):", ["Todos"] + sorted(df["Año"].dropna().unique().astype(int)))
+    mes_f = st.sidebar.selectbox("Mes (asesor):", ["Todos"] + [meses[m] for m in sorted(df["Mes"].dropna().unique())])
 
     df_f = df.copy()
     if area_f != "Todas":
@@ -691,7 +605,7 @@ if pagina == "🎯 Dashboard por Asesor":
     # ===============================
     # 🧠 Análisis por pregunta
     # ===============================
-    preguntas_cols = [c for c in df.columns if "¿" in c]
+    preguntas_cols = [c for c in df_f.columns if "¿" in c]
 
     df_long = df_asesor.melt(
         id_vars=["Área","Asesor","Canal","Fecha"],
@@ -731,7 +645,7 @@ if pagina == "🎯 Dashboard por Asesor":
     st.divider()
 
     # ===============================
-    # 🆚 Comparación del asesor vs promedio general
+    # 🆚 Comparación del asesor vs promedio general (mismo filtro)
     # ===============================
     df_general_long = df_f.melt(
         id_vars=["Área","Asesor","Canal","Fecha"],
@@ -740,19 +654,23 @@ if pagina == "🎯 Dashboard por Asesor":
         value_name="Puntaje"
     )
 
+    df_general_long["Puntaje"] = pd.to_numeric(df_general_long["Puntaje"], errors="coerce").fillna(0)
+
     df_comparativo = df_general_long.groupby("Pregunta")["Puntaje"].mean().reset_index(name="Promedio General")
-    df_comparativo["Asesor"] = df_preg["Promedio"]
+    df_comparativo = df_comparativo.merge(df_preg, on="Pregunta", how="left")
+    df_comparativo = df_comparativo.rename(columns={"Promedio":"Promedio Asesor"})
 
     fig_comp = px.line(
-        df_comparativo, x="Pregunta", y=["Promedio General","Asesor"],
-        title="📊 Comparación Asesor vs. Promedio General",
+        df_comparativo, x="Pregunta", y=["Promedio General","Promedio Asesor"],
+        title="📊 Comparación Asesor vs. Promedio General (mismo filtro)",
         markers=True
     )
     st.plotly_chart(fig_comp, use_container_width=True)
+
 # =====================================================================
 # 📞 NUEVO MÓDULO – MONITOREO DE LLAMADAS POR CRITERIO
 # =====================================================================
-if pagina == "📞 Monitoreo de Llamadas":
+elif pagina == "📞 Monitoreo de Llamadas":
 
     st.title("📞 Monitoreo de Llamadas – Cumplimiento por Criterio")
     st.caption("Análisis de desempeño por cada uno de los criterios establecidos en la evaluación de llamadas")
@@ -768,6 +686,14 @@ if pagina == "📞 Monitoreo de Llamadas":
     df.columns = [str(c).strip() for c in df.columns]
     df = df.dropna(subset=["Área", "Asesor"], how="any")
 
+    # Filtros básicos aquí también (opcional: solo canales de llamadas)
+    canales_llamadas = ["Contact Center", "Línea 2030"]
+    st.sidebar.subheader("Filtros Llamadas")
+    canal_llam_f = st.sidebar.selectbox("Canal de llamadas:", ["Todos"] + canales_llamadas)
+
+    if canal_llam_f != "Todos":
+        df = df[df["Canal"] == canal_llam_f]
+
     # Identificar criterios (preguntas)
     criterios = [c for c in df.columns if "¿" in c]
 
@@ -781,7 +707,7 @@ if pagina == "📞 Monitoreo de Llamadas":
     data_criterios = []
 
     for crit in criterios:
-        valores = df[crit].fillna(0)
+        valores = pd.to_numeric(df[crit], errors="coerce").fillna(0)
         cumple = (valores > 0).sum()
         total = len(valores)
         pct = (cumple / total) * 100 if total > 0 else 0
