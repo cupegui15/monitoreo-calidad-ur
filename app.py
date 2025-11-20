@@ -442,47 +442,98 @@ if no_filtros:
     st.plotly_chart(fig_c, use_container_width=True)
 
     # ===============================
-    # 🔥 Cumplimiento Global por Pregunta – Separado por Canal
-    # ===============================
-    st.subheader("🔥 Cumplimiento Global por Pregunta (separado por Canal)")
+# 🔥 Cumplimiento Global por Pregunta – Separado por Canal
+# ===============================
+st.subheader("🔥 Cumplimiento Global por Pregunta (separado por Canal)")
 
-    canales_unicos = df["Canal"].unique()
+canales_unicos = df["Canal"].unique()
 
-    for canal_actual in canales_unicos:
+for canal_actual in canales_unicos:
 
-        st.markdown(f"### 📌 Canal: **{canal_actual}**")
+    st.markdown(f"### 📌 Canal: **{canal_actual}**")
 
-        df_c = df[df["Canal"] == canal_actual]
+    df_c = df[df["Canal"] == canal_actual]
 
-        # Tomar solo las preguntas que existan para este canal
-        preguntas_cols = [c for c in df_c.columns if "¿" in c]
+    # Obtener el área del canal actual
+    area_canal = df_c["Área"].iloc[0]
 
-        if not preguntas_cols:
-            st.info("Este canal no tiene preguntas registradas.")
-            continue
+    # Obtener preguntas correctas
+    preguntas_definidas = []
 
-        cumplimiento_canal = []
+    if canal_actual in areas[area_canal]["canales"]:
 
-        for col in preguntas_cols:
-            valores = pd.to_numeric(df_c[col], errors="coerce").fillna(0)
-            pct = (valores > 0).mean() * 100
-            cumplimiento_canal.append({"Pregunta": col, "Cumplimiento": pct})
+        # CASA UR
+        if area_canal == "CASA UR":
+            if canal_actual in ["Presencial", "Contact Center", "Chat"]:
+                preguntas_definidas = [
+                    "¿Atiende la interacción en el momento que se establece contacto con el(a) usuario(a)?",
+                    "¿Saluda, se presenta de una forma amable y cortés, usando el dialogo de saludo y bienvenida?",
+                    "¿Realiza la validación de identidad del usuario y personaliza la interacción de forma adecuada garantizando la confidencialidad de la información?",
+                    "¿Escucha activamente al usuario y  realiza preguntas adicionales demostrando atención y concentración?",
+                    "¿Consulta todas las herramientas disponibles para estructurar la posible respuesta que se le brindará al usuario?",
+                    "¿Controla los tiempos de espera informando al usuario y realizando acompañamiento cada 2 minutos?",
+                    "¿Brinda respuesta de forma precisa, completa y coherente, de acuerdo a la solicitado por el usuario?",
+                    "¿Valida con el usuario si la información fue clara, completa o si requiere algún trámite adicional?",
+                    "¿Documenta la atención de forma coherente según lo solicitado e informado al cliente; seleccionando las tipologías adecuadas y manejando correcta redacción y ortografía?",
+                    "¿Finaliza la atención de forma amable, cortés utilizando el dialogo de cierre y despedida remitiendo al usuario a responder la encuesta de percepción?"
+                ]
+            elif canal_actual == "Back Office":
+                preguntas_definidas = [
+                    "¿Cumple con el ANS establecido para el servicio?",
+                    "¿Analiza correctamente la solicitud?",
+                    "¿Gestiona adecuadamente en SAP/UXXI/Bizagi?",
+                    "¿Respuestas eficaz de acuerdo a la solicitud radicada por el usuario?",
+                    "¿Es empático al cerrar la solicitud?"
+                ]
 
-        df_preg_canal = pd.DataFrame(cumplimiento_canal).sort_values("Cumplimiento")
+        # SERVICIOS 2030
+        elif area_canal == "Servicios 2030":
+            if canal_actual in ["Línea 2030", "Chat 2030"]:
+                preguntas_definidas = [
+                    "¿Atiende la interacción de forma oportuna en el momento que se establece el contacto?",
+                    "¿Saluda y se presenta de manera amable y profesional, estableciendo un inicio cordial de la atención?",
+                    "¿Realiza la validación de identidad del usuario garantizando confidencialidad y aplica protocolos de seguridad de la información?",
+                    "¿Escucha activamente al usuario y formula preguntas pertinentes para un diagnóstico claro y completo?",
+                    "¿Consulta y utiliza todas las herramientas de soporte disponibles (base de conocimiento, sistemas, documentación) para estructurar una respuesta adecuada?",
+                    "¿Gestiona adecuadamente los tiempos de espera, manteniendo informado al usuario y realizando acompañamiento oportuno durante la interacción?",
+                    "¿Sigue el flujo definido para solución o escalamiento, asegurando trazabilidad y cumplimiento de procesos internos?",
+                    "¿Valida con el usuario que la información brindada es clara, completa y confirma si requiere trámites o pasos adicionales?",
+                    "¿Documenta la atención en el sistema de tickets de manera coherente, seleccionando tipologías correctas y con redacción/ortografía adecuadas?",
+                    "¿Finaliza la atención de forma amable y profesional, utilizando el cierre de interacción definido y remitiendo al usuario a la encuesta de satisfacción?"
+                ]
+            elif canal_actual == "Sitio 2030":
+                preguntas_definidas = [
+                    "¿Cumple con el ANS/SLA establecido?",
+                    "¿Realiza un análisis completo y pertinente de la solicitud, aplicando diagnóstico claro antes de ejecutar acciones?",
+                    "¿Gestiona correctamente en las herramientas institucionales (SAP / UXXI / Salesforce u otras) garantizando trazabilidad y registro adecuado?",
+                    "¿Brinda una respuesta eficaz y alineada a la solicitud radicada por el usuario, asegurando calidad técnica en la solución?",
+                    "¿Comunica el cierre de la solicitud de manera empática y profesional, validando la satisfacción del usuario?"
+                ]
 
-        fig_h = px.bar(
-            df_preg_canal,
-            x="Cumplimiento", y="Pregunta",
-            orientation="h",
-            color="Cumplimiento",
-            color_continuous_scale="RdYlGn",
-            title=f"Cumplimiento por Pregunta – {canal_actual}"
-        )
+    # Preguntas presentes en columnas del DF
+    preguntas_cols = [c for c in preguntas_definidas if c in df_c.columns]
 
-        fig_h.update_traces(texttemplate="%{x:.1f}%", textposition="outside")
-        st.plotly_chart(fig_h, use_container_width=True)
+    cumplimiento_canal = []
 
-    st.stop()
+    for col in preguntas_cols:
+        valores = pd.to_numeric(df_c[col], errors="coerce").fillna(0)
+        pct = (valores > 0).mean() * 100
+        cumplimiento_canal.append({"Pregunta": col, "Cumplimiento": pct})
+
+    df_preg_canal = pd.DataFrame(cumplimiento_canal).sort_values("Cumplimiento")
+
+    fig_h = px.bar(
+        df_preg_canal,
+        x="Cumplimiento", y="Pregunta",
+        orientation="h",
+        color="Cumplimiento",
+        color_continuous_scale="RdYlGn",
+        title=f"Cumplimiento por Pregunta – {canal_actual}"
+    )
+
+    fig_h.update_traces(texttemplate="%{x:.1f}%", textposition="outside")
+    st.plotly_chart(fig_h, use_container_width=True)
+
     # --------------------------------------------------------------------
     # SI HAY ALGÚN FILTRO → Dashboard detallado por Área / Canal / Mes
     # --------------------------------------------------------------------
