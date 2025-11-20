@@ -87,22 +87,48 @@ html, body, .stApp {
 # ===============================
 def guardar_datos_google_sheets(data):
     try:
+        # Convertir fechas
         for k, v in data.items():
             if isinstance(v, (date,)):
                 data[k] = v.strftime("%Y-%m-%d")
 
+        # Credenciales
         creds_json = st.secrets["GCP_SERVICE_ACCOUNT"]
         creds_dict = json.loads(creds_json)
         scope = ["https://spreadsheets.google.com/feeds", "https://www.googleapis.com/auth/drive"]
         creds = ServiceAccountCredentials.from_json_keyfile_dict(creds_dict, scope)
         client = gspread.authorize(creds)
-        sheet = client.open_by_key(st.secrets["GOOGLE_SHEETS_ID"]).sheet1
 
-        if not sheet.get_all_records():
-            sheet.append_row(list(data.keys()))
-        sheet.append_row(list(data.values()))
+        # Abrir archivo
+        sh = client.open_by_key(st.secrets["GOOGLE_SHEETS_ID"])
 
-        st.success("✅ Monitoreo guardado correctamente en Google Sheets.")
+        # Crear nombre de hoja dinámico
+        nombre_hoja = f"{data['Área']} - {data['Canal']}"
+
+        # Validar si existe la hoja, si no crearla
+        try:
+            hoja = sh.worksheet(nombre_hoja)
+        except gspread.exceptions.WorksheetNotFound:
+            hoja = sh.add_worksheet(title=nombre_hoja, rows=5000, cols=100)
+            hoja.append_row(list(data.keys()))  # encabezados
+
+        # Obtener encabezados actuales
+        encabezados = hoja.row_values(1)
+
+        # Si faltan columnas nuevas (cuando se actualiza formulario)
+        for col in data.keys():
+            if col not in encabezados:
+                encabezados.append(col)
+                hoja.resize(cols=len(encabezados))
+                hoja.update('1:1', [encabezados])
+
+        # Ordenar valores acorde a los encabezados de la hoja
+        fila_ordenada = [data.get(col, "") for col in encabezados]
+
+        hoja.append_row(fila_ordenada)
+
+        st.success(f"✅ Monitoreo guardado correctamente en la hoja '{nombre_hoja}'.")
+
     except Exception as e:
         st.error(f"❌ Error al guardar en Google Sheets: {e}")
 
@@ -151,7 +177,10 @@ areas = {
 # SIDEBAR Y BANNER
 # ===============================
 st.sidebar.image(URL_LOGO_UR, width=150)
-pagina = st.sidebar.radio("Menú:", ["📝 Formulario de Monitoreo", "📊 Dashboard de Análisis", "🎯 Dashboard por Asesor"])
+pagina = st.sidebar.radio(
+    "Menú:",
+    ["📝 Formulario de Monitoreo", "📊 Dashboard de Análisis", "🎯 Dashboard por Asesor", "📞 Monitoreo de Llamadas"]
+)
 
 st.markdown(f"""
 <div class="banner">
@@ -540,3 +569,95 @@ if pagina == "🎯 Dashboard por Asesor":
         markers=True
     )
     st.plotly_chart(fig_comp, use_container_width=True)
+# =====================================================================
+# 📞 NUEVO MÓDULO – MONITOREO DE LLAMADAS POR CRITERIO
+# =====================================================================
+if pagina == "📞 Monitoreo de Llamadas":
+
+    st.title("📞 Monitoreo de Llamadas – Cumplimiento por Criterio")
+    st.caption("Análisis de desempeño por cada uno de los criterios establecidos en la evaluación de llamadas")
+
+    df = cargar_datos_google_sheets()
+
+    if df.empty:
+        st.warning("📭 No hay registros de llamadas aún.")
+        st.stop()
+
+    # ========== LIMPIEZA BÁSICA ==========
+    df = df.dropna(how="all")
+    df.columns = [str(c).strip() for c in df.columns]
+    df = df.dropna(subset=["Área", "Asesor"], how="any")
+
+    # Identificar criterios (preguntas)
+    criterios = [c for c in df.columns if "¿" in c]
+
+    if not criterios:
+        st.error("⚠️ No se encontraron criterios en la base de datos.")
+        st.stop()
+
+    # ===============================
+    # 📊 Cálculo de cumplimiento por criterio
+    # ===============================
+    data_criterios = []
+
+    for crit in criterios:
+        valores = df[crit].fillna(0)
+        cumple = (valores > 0).sum()
+        total = len(valores)
+        pct = (cumple / total) * 100 if total > 0 else 0
+
+        data_criterios.append({
+            "Criterio": crit,
+            "Cumple": cumple,
+            "No cumple": total - cumple,
+            "Cumplimiento (%)": pct
+        })
+
+    df_criterios = pd.DataFrame(data_criterios)
+    df_criterios = df_criterios.sort_values("Cumplimiento (%)", ascending=True)
+
+    # ===============================
+    # 📈 Gráfica general de cumplimiento por criterio
+    # ===============================
+    st.subheader("📈 Cumplimiento total por criterio")
+
+    fig = px.bar(
+        df_criterios,
+        x="Cumplimiento (%)",
+        y="Criterio",
+        orientation="h",
+        color="Cumplimiento (%)",
+        color_continuous_scale="RdYlGn",
+        text="Cumplimiento (%)",
+        range_x=[0, 100]
+    )
+    fig.update_traces(texttemplate="%{x:.1f}%", textposition="outside")
+    st.plotly_chart(fig, use_container_width=True)
+
+    st.divider()
+
+    # ===============================
+    # 🥧 Gráfica individual por criterio
+    # ===============================
+    st.subheader("🥧 Cumple vs No cumple por criterio")
+
+    criterio_sel = st.selectbox("Seleccione un criterio:", criterios)
+
+    df_sel = df_criterios[df_criterios["Criterio"] == criterio_sel].iloc[0]
+
+    fig2 = px.pie(
+        names=["Cumple", "No cumple"],
+        values=[df_sel["Cumple"], df_sel["No cumple"]],
+        title=f"Desglose de cumplimiento – {criterio_sel}",
+        color_discrete_sequence=px.colors.sequential.RdPu
+    )
+    fig2.update_traces(textposition="inside", textinfo="percent+label")
+    st.plotly_chart(fig2, use_container_width=True)
+
+    st.divider()
+
+    # ===============================
+    # 📄 Tabla detallada
+    # ===============================
+    st.subheader("📄 Tabla detallada de cumplimiento por criterio")
+    st.dataframe(df_criterios, use_container_width=True)
