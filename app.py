@@ -502,7 +502,7 @@ elif pagina == "📊 Dashboard de Análisis":
     )
     st.plotly_chart(fig_cf, use_container_width=True)
 
-# ============================================================
+    # ============================================================
 # 🎯 DASHBOARD POR ASESOR – SOLO CUMPLIMIENTO POR PREGUNTA
 # ============================================================
 elif pagina == "🎯 Dashboard por Asesor":
@@ -565,7 +565,15 @@ elif pagina == "🎯 Dashboard por Asesor":
     # ===============================
     c1, c2, c3 = st.columns(3)
     c1.metric("Monitoreos realizados", len(df_asesor))
-    c2.metric("Promedio general", round((df_asesor.filter(like="¿") > 0).mean().mean()*100, 2))
+
+    # 🟢 Promedio general basado en TOTAL (0–100)
+    if "Total" in df_asesor.columns:
+        promedio_general = df_asesor["Total"].mean()
+    else:
+        promedio_general = (df_asesor.filter(like="¿") > 0).mean().mean()*100  
+
+    c2.metric("Promedio general", f"{promedio_general:.2f}")
+
     c3.metric("Errores críticos", len(df_asesor[df_asesor["Error crítico"]=="Sí"]))
 
     st.divider()
@@ -573,10 +581,10 @@ elif pagina == "🎯 Dashboard por Asesor":
     # ===============================
     # 🧠 Preguntas aplicables SOLO al asesor
     # ===============================
-    todas_preguntas = [c for c in df.columns if "¿" in c]
+    todas_preguntas = [c for c in df_asesor.columns if "¿" in c]
 
     preguntas_cols_asesor = [
-        col for col in todas_preguntas 
+        col for col in todas_preguntas
         if df_asesor[col].notna().sum() > 0
     ]
 
@@ -588,15 +596,25 @@ elif pagina == "🎯 Dashboard por Asesor":
     # 📌 CUMPLIMIENTO POR PREGUNTA
     # ===============================
     df_long = df_asesor.melt(
-        id_vars=["Área","Asesor","Canal","Fecha"],
+        id_vars=["Área", "Asesor", "Canal", "Fecha"],
         value_vars=preguntas_cols_asesor,
         var_name="Pregunta",
         value_name="Puntaje"
     )
 
-    df_long["Puntaje"] = pd.to_numeric(df_long["Puntaje"], errors="coerce").fillna(0)
+    df_long["Puntaje"] = pd.to_numeric(df_long["Puntaje"], errors="coerce")
 
-    df_preg = df_long.groupby("Pregunta")["Puntaje"].apply(lambda x: (x>0).mean()*100).reset_index(name="Cumplimiento")
+    df_long_aplica = df_long.dropna(subset=["Puntaje"]).copy()
+
+    df_preg = (
+        df_long_aplica
+        .assign(Cumple=lambda d: d["Puntaje"] > 0)
+        .groupby("Pregunta")["Cumple"]
+        .mean()
+        .reset_index(name="Cumplimiento")
+    )
+
+    df_preg["Cumplimiento"] *= 100
 
     fig = px.bar(
         df_preg, x="Cumplimiento", y="Pregunta", orientation="h",
