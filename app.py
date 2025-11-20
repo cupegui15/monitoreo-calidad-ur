@@ -114,75 +114,83 @@ areas = {
 # ===============================
 def guardar_datos_google_sheets(data):
     try:
-        # Convertir fechas
+        # Convertir fechas en texto
         for k, v in data.items():
             if isinstance(v, (date,)):
                 data[k] = v.strftime("%Y-%m-%d")
 
-        # Credenciales
+        # Cargar credenciales
         creds_json = st.secrets["GCP_SERVICE_ACCOUNT"]
         creds_dict = json.loads(creds_json)
-        scope = ["https://spreadsheets.google.com/feeds", "https://www.googleapis.com/auth/drive"]
+
+        scope = [
+            "https://spreadsheets.google.com/feeds",
+            "https://www.googleapis.com/auth/drive"
+        ]
         creds = ServiceAccountCredentials.from_json_keyfile_dict(creds_dict, scope)
         client = gspread.authorize(creds)
 
         # Abrir archivo
         sh = client.open_by_key(st.secrets["GOOGLE_SHEETS_ID"])
 
-        # Crear nombre de hoja dinámico
-        nombre_hoja = f"{data['Área']} - {data['Canal']}"
+        # Nombre de la hoja según Área + Canal
+        nombre_hoja = f"{data['Área']} – {data['Canal']}".strip()
 
-        # Validar si existe la hoja, si no crearla
+        # Verificar si ya existe la hoja
         try:
             hoja = sh.worksheet(nombre_hoja)
         except gspread.exceptions.WorksheetNotFound:
-            hoja = sh.add_worksheet(title=nombre_hoja, rows=5000, cols=100)
-            hoja.append_row(list(data.keys()))  # encabezados
+            # Crear hoja nueva sin borrar nada más
+            hoja = sh.add_worksheet(title=nombre_hoja, rows=5000, cols=200)
+            hoja.append_row(list(data.keys()))  # Escribir encabezados
 
-        # Obtener encabezados actuales
+        # Obtener encabezados reales existentes
         encabezados = hoja.row_values(1)
 
-        # Si faltan columnas nuevas (cuando se actualiza formulario)
+        # Detectar columnas nuevas en la data
+        nuevos = False
         for col in data.keys():
             if col not in encabezados:
                 encabezados.append(col)
-                hoja.resize(cols=len(encabezados))
-                hoja.update('1:1', [encabezados])
+                nuevos = True
 
-        # Ordenar valores acorde a los encabezados de la hoja
-        fila_ordenada = [data.get(col, "") for col in encabezados]
+        # Actualizar encabezados en caso de nuevas columnas
+        if nuevos:
+            hoja.resize(cols=len(encabezados))
+            hoja.update("1:1", [encabezados])
 
-        hoja.append_row(fila_ordenada)
+        # Construir la fila alineada a los encabezados
+        fila = [data.get(col, "") for col in encabezados]
 
-        st.success(f"✅ Monitoreo guardado correctamente en la hoja '{nombre_hoja}'.")
+        # Agregar la nueva fila sin reemplazar nada
+        hoja.append_row(fila)
+
+        st.success(f"✅ Registro guardado correctamente en '{nombre_hoja}'.")
 
     except Exception as e:
-        st.error(f"❌ Error al guardar en Google Sheets: {e}")
-
+        st.error(f"❌ Error al guardar en la hoja correspondiente: {e}")
 
 def cargar_todas_las_hojas_google_sheets():
-    """
-    Carga y consolida todas las hojas del Google Sheet cuyo nombre tenga el formato:
-    'Área - Canal', por ejemplo: 'CASA UR - Presencial'.
-    """
     try:
         creds_json = st.secrets["GCP_SERVICE_ACCOUNT"]
         creds_dict = json.loads(creds_json)
         scope = ["https://spreadsheets.google.com/feeds", "https://www.googleapis.com/auth/drive"]
         creds = ServiceAccountCredentials.from_json_keyfile_dict(creds_dict, scope)
         client = gspread.authorize(creds)
+
         sh = client.open_by_key(st.secrets["GOOGLE_SHEETS_ID"])
 
         dfs = []
 
         for ws in sh.worksheets():
-            title = ws.title  # Ej: "CASA UR - Presencial"
-            if " - " not in title:
+            title = ws.title  # Ej: "CASA UR – Presencial"
+
+            # USAR EN DASH “ – ” (U+2013), NO GUION NORMAL
+            if " – " not in title:
                 continue
 
-            area_name, canal_name = [t.strip() for t in title.split("-", 1)]
+            area_name, canal_name = [t.strip() for t in title.split(" – ", 1)]
 
-            # Validar que corresponda a un área y canal definidos en tu app
             if area_name not in areas:
                 continue
             if canal_name not in areas[area_name]["canales"]:
@@ -193,8 +201,6 @@ def cargar_todas_las_hojas_google_sheets():
                 continue
 
             df_temp = pd.DataFrame(records)
-
-            # Aseguramos que el Área y Canal sean los correctos
             df_temp["Área"] = area_name
             df_temp["Canal"] = canal_name
 
@@ -209,7 +215,6 @@ def cargar_todas_las_hojas_google_sheets():
     except Exception as e:
         st.error(f"⚠️ No se pudieron cargar los datos de todas las hojas: {e}")
         return pd.DataFrame()
-
 
 def cargar_datos_google_sheets():
     """
