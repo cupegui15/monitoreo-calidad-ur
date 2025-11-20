@@ -502,54 +502,36 @@ elif pagina == "📊 Dashboard de Análisis":
     )
     st.plotly_chart(fig_cf, use_container_width=True)
 
-    # Heatmap asesor vs criterio (SIN entrar a análisis por asesor)
-df_long = df_filtrado.melt(
-    id_vars=["Asesor"],
-    value_vars=preguntas_cols,
-    var_name="Pregunta",
-    value_name="Valor"
-)
-df_long["Cumple"] = (pd.to_numeric(df_long["Valor"], errors="coerce").fillna(0) > 0).astype(int)
-
-df_heat = (
-    df_long.groupby(["Asesor","Pregunta"])["Cumple"]
-    .mean()
-    .mul(100)
-    .reset_index(name="% Cumplimiento")
-)
-
-fig_heat = px.density_heatmap(
-    df_heat,
-    x="Asesor", y="Pregunta", z="% Cumplimiento",
-    color_continuous_scale="RdYlGn",
-    title="Mapa de Calor – Asesor vs Pregunta (General)"
-)
-
-# =====================================================================
-# 🎯 DASHBOARD POR ASESOR
-# =====================================================================
+# ============================================================
+# 🎯 DASHBOARD POR ASESOR – SOLO CUMPLIMIENTO POR PREGUNTA
+# ============================================================
 elif pagina == "🎯 Dashboard por Asesor":
 
     df = cargar_todas_las_hojas_google_sheets()
 
     if df.empty:
-        st.warning("📭 No hay registros aún.")
+        st.warning("📭 No hay registros para mostrar aún.")
         st.stop()
-
-    # Limpieza
+    
+    # Limpieza estándar
     df = df.dropna(how="all")
+    df = df.loc[:, df.columns.notna()]
     df.columns = [str(c).strip() for c in df.columns]
-    df = df.dropna(subset=["Área","Asesor","Canal"])
+    df = df.loc[:, df.columns != ""]
+    df = df.dropna(subset=["Área","Asesor","Canal"], how="any")
+
     df["Fecha"] = pd.to_datetime(df["Fecha"], errors="coerce")
-    df["Mes"] = df["Fecha"].dt.month
-    df["Año"] = df["Fecha"].dt.year
+    df["Mes"]   = df["Fecha"].dt.month
+    df["Año"]   = df["Fecha"].dt.year
 
     meses = {
         1:"Enero",2:"Febrero",3:"Marzo",4:"Abril",5:"Mayo",6:"Junio",
         7:"Julio",8:"Agosto",9:"Septiembre",10:"Octubre",11:"Noviembre",12:"Diciembre"
     }
 
-    # Filtros
+    # ===============================
+    # 🎚️ FILTROS
+    # ===============================
     st.sidebar.subheader("Filtros Asesor")
 
     area_f = st.sidebar.selectbox("Área:", ["Todas"] + sorted(df["Área"].unique()))
@@ -558,7 +540,6 @@ elif pagina == "🎯 Dashboard por Asesor":
     mes_f = st.sidebar.selectbox("Mes:", ["Todos"] + [meses[m] for m in sorted(df["Mes"].dropna().unique())])
 
     df_f = df.copy()
-
     if area_f != "Todas":
         df_f = df_f[df_f["Área"] == area_f]
     if canal_f != "Todos":
@@ -573,70 +554,56 @@ elif pagina == "🎯 Dashboard por Asesor":
         st.warning("No hay datos con los filtros seleccionados.")
         st.stop()
 
-    asesor_sel = st.selectbox("Seleccione un asesor:", sorted(df_f["Asesor"].unique()))
+    asesor_sel = st.selectbox("Seleccione un asesor para analizar:", sorted(df_f["Asesor"].unique()))
+
     df_asesor = df_f[df_f["Asesor"] == asesor_sel]
 
-    st.subheader(f"👤 Análisis del Asesor: {asesor_sel}")
+    st.markdown(f"## 👤 Análisis del Asesor: **{asesor_sel}**")
 
-    # Métricas
+    # ===============================
+    # 🔢 MÉTRICAS INDIVIDUALES
+    # ===============================
     c1, c2, c3 = st.columns(3)
-    c1.metric("Monitoreos", len(df_asesor))
-    c2.metric("Promedio (%)", round(((df_asesor.filter(like="¿")>0).mean().mean())*100,2))
-    c3.metric("Errores Críticos", len(df_asesor[df_asesor["Error crítico"]=="Sí"]))
+    c1.metric("Monitoreos realizados", len(df_asesor))
+    c2.metric("Promedio general", round((df_asesor.filter(like="¿") > 0).mean().mean()*100, 2))
+    c3.metric("Errores críticos", len(df_asesor[df_asesor["Error crítico"]=="Sí"]))
 
-    preguntas_cols = [c for c in df.columns if "¿" in c]
-    preguntas_asesor = [c for c in preguntas_cols if df_asesor[c].notna().sum() > 0]
+    st.divider()
 
-    # Cumplimiento por pregunta
-    df_p = []
-    for col in preguntas_asesor:
-        pct = (pd.to_numeric(df_asesor[col], errors="coerce").fillna(0)>0).mean()*100
-        df_p.append({"Pregunta": col, "Cumplimiento": pct})
+    # ===============================
+    # 🧠 Preguntas aplicables SOLO al asesor
+    # ===============================
+    todas_preguntas = [c for c in df.columns if "¿" in c]
 
-    df_p = pd.DataFrame(df_p).sort_values("Cumplimiento")
+    preguntas_cols_asesor = [
+        col for col in todas_preguntas 
+        if df_asesor[col].notna().sum() > 0
+    ]
 
-    fig_p = px.bar(
-        df_p, x="Cumplimiento", y="Pregunta",
-        orientation="h",
-        color="Cumplimiento",
-        color_continuous_scale="tealgrn",
-        title="Cumplimiento por Pregunta – Asesor"
-    )
-    fig_p.update_traces(texttemplate="%{x:.1f}%")
-    st.plotly_chart(fig_p, use_container_width=True)
+    if not preguntas_cols_asesor:
+        st.info("Este asesor no tiene preguntas registradas.")
+        st.stop()
 
-    # Heatmap individual
+    # ===============================
+    # 📌 CUMPLIMIENTO POR PREGUNTA
+    # ===============================
     df_long = df_asesor.melt(
-        id_vars=["Fecha"],
-        value_vars=preguntas_asesor,
+        id_vars=["Área","Asesor","Canal","Fecha"],
+        value_vars=preguntas_cols_asesor,
         var_name="Pregunta",
-        value_name="Valor"
+        value_name="Puntaje"
     )
-    df_long["Valor"] = pd.to_numeric(df_long["Valor"], errors="coerce").fillna(0)
-    df_long["Fecha_str"] = df_long["Fecha"].dt.strftime("%Y-%m-%d")
 
-    fig_h = px.density_heatmap(
-        df_long,
-        x="Fecha_str", y="Pregunta", z="Valor",
-        color_continuous_scale="RdYlGn",
-        title="Mapa de calor del asesor"
+    df_long["Puntaje"] = pd.to_numeric(df_long["Puntaje"], errors="coerce").fillna(0)
+
+    df_preg = df_long.groupby("Pregunta")["Puntaje"].apply(lambda x: (x>0).mean()*100).reset_index(name="Cumplimiento")
+
+    fig = px.bar(
+        df_preg, x="Cumplimiento", y="Pregunta", orientation="h",
+        title="📌 Cumplimiento por pregunta (asesor)",
+        color="Cumplimiento", 
+        color_continuous_scale="agsunset", 
+        range_x=[0,100]
     )
-    st.plotly_chart(fig_h, use_container_width=True)
-
-    # Comparación con promedio general
-    df_general = []
-    for col in preguntas_cols:
-        pct = (pd.to_numeric(df_f[col], errors="coerce").fillna(0)>0).mean()*100
-        df_general.append({"Pregunta": col, "Promedio General": pct})
-
-    df_general = pd.DataFrame(df_general)
-
-    df_comp = df_general.merge(df_p, on="Pregunta", how="left").fillna(0)
-    df_comp = df_comp.rename(columns={"Cumplimiento": "Asesor"})
-
-    fig_c = px.line(
-        df_comp, x="Pregunta", y=["Promedio General","Asesor"],
-        markers=True,
-        title="Comparación Asesor vs Promedio General"
-    )
-    st.plotly_chart(fig_c, use_container_width=True)
+    fig.update_traces(texttemplate="%{x:.1f}%", textposition="outside")
+    st.plotly_chart(fig, use_container_width=True)
