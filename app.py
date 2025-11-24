@@ -93,6 +93,64 @@ areas = {
 }
 
 # ===============================
+# FUNCIONES AUXILIARES DE PREGUNTAS
+# ===============================
+def obtener_preguntas(area, canal):
+    """
+    Devuelve la lista de textos de preguntas correspondientes a un área y canal.
+    Deben coincidir EXACTO con las usadas en el formulario.
+    """
+    preguntas = []
+
+    if area == "CASA UR":
+        if canal in ["Presencial", "Contact Center", "Chat"]:
+            preguntas = [
+                "¿Atiende la interacción en el momento que se establece contacto con el(a) usuario(a)?",
+                "¿Saluda, se presenta de una forma amable y cortés, usando el dialogo de saludo y bienvenida?",
+                "¿Realiza la validación de identidad del usuario y personaliza la interacción de forma adecuada garantizando la confidencialidad de la información?",
+                "¿Escucha activamente al usuario y  realiza preguntas adicionales demostrando atención y concentración?",
+                "¿Consulta todas las herramientas disponibles para estructurar la posible respuesta que se le brindará al usuario?",
+                "¿Controla los tiempos de espera informando al usuario y realizando acompañamiento cada 2 minutos?",
+                "¿Brinda respuesta de forma precisa, completa y coherente, de acuerdo a la solicitado por el usuario?",
+                "¿Valida con el usuario si la información fue clara, completa o si requiere algún trámite adicional?",
+                "¿Documenta la atención de forma coherente según lo solicitado e informado al cliente; seleccionando las tipologías adecuadas y manejando correcta redacción y ortografía?",
+                "¿Finaliza la atención de forma amable, cortés utilizando el dialogo de cierre y despedida remitiendo al usuario a responder la encuesta de percepción?"
+            ]
+        elif canal == "Back Office":
+            preguntas = [
+                "¿Cumple con el ANS establecido para el servicio?",
+                "¿Analiza correctamente la solicitud?",
+                "¿Gestiona adecuadamente en SAP/UXXI/Bizagi?",
+                "¿Respuestas eficaz de acuerdo a la solicitud radicada por el usuario?",
+                "¿Es empático al cerrar la solicitud?"
+            ]
+
+    elif area == "Servicios 2030":
+        if canal in ["Línea 2030", "Chat 2030"]:
+            preguntas = [
+                "¿Atiende la interacción de forma oportuna en el momento que se establece el contacto?",
+                "¿Saluda y se presenta de manera amable y profesional, estableciendo un inicio cordial de la atención?",
+                "¿Realiza la validación de identidad del usuario garantizando confidencialidad y aplica protocolos de seguridad de la información?",
+                "¿Escucha activamente al usuario y formula preguntas pertinentes para un diagnóstico claro y completo?",
+                "¿Consulta y utiliza todas las herramientas de soporte disponibles (base de conocimiento, sistemas, documentación) para estructurar una respuesta adecuada?",
+                "¿Gestiona adecuadamente los tiempos de espera, manteniendo informado al usuario y realizando acompañamiento oportuno durante la interacción?",
+                "¿Sigue el flujo definido para solución o escalamiento, asegurando trazabilidad y cumplimiento de procesos internos?",
+                "¿Valida con el usuario que la información brindada es clara, completa y confirma si requiere trámites o pasos adicionales?",
+                "¿Documenta la atención en el sistema de tickets de manera coherente, seleccionando tipologías correctas y con redacción/ortografía adecuadas?",
+                "¿Finaliza la atención de forma amable y profesional, utilizando el cierre de interacción definido y remitiendo al usuario a la encuesta de satisfacción?"
+            ]
+        elif canal == "Sitio 2030":
+            preguntas = [
+                "¿Cumple con el ANS/SLA establecido?",
+                "¿Realiza un análisis completo y pertinente de la solicitud, aplicando diagnóstico claro antes de ejecutar acciones?",
+                "¿Gestiona correctamente en las herramientas institucionales (SAP / UXXI / Salesforce u otras) garantizando trazabilidad y registro adecuado?",
+                "¿Brinda una respuesta eficaz y alineada a la solicitud radicada por el usuario, asegurando calidad técnica en la solución?",
+                "¿Comunica el cierre de la solicitud de manera empática y profesional, validando la satisfacción del usuario?"
+            ]
+
+    return preguntas
+
+# ===============================
 # GOOGLE SHEETS – GUARDAR
 # ===============================
 def guardar_datos_google_sheets(data):
@@ -202,7 +260,8 @@ pagina = st.sidebar.radio(
     "Menú:",
     [
         "📝 Formulario de Monitoreo",
-        "📊 Dashboard de Análisis",
+        "📊 Dashboard CASA UR",
+        "📈 Dashboard Servicios 2030",
         "🎯 Dashboard por Asesor"
     ]
 )
@@ -216,32 +275,12 @@ st.markdown(f"""
     <p>Comprometidos con la excelencia en la atención al usuario</p></div>
     <div><img src="{URL_BANNER_IMG}" width="130" style="border-radius:6px;"></div>
 </div>
-
-# Mostrar mensaje de guardado
-if st.session_state.mensaje_guardado:
-    elapsed = time.time() - st.session_state.mensaje_timestamp
-    if elapsed < 12:
-        st.success(st.session_state.mensaje_guardado)
-    else:
-        st.session_state.mensaje_guardado = None
-        st.session_state.mensaje_timestamp = None
-
 """, unsafe_allow_html=True)
 
 # =====================================================================
 # 📝 FORMULARIO DE MONITOREO
 # =====================================================================
 if pagina == "📝 Formulario de Monitoreo":
-
-    # Inicialización de mensajes y reseteo
-    import time
-    if "mensaje_guardado" not in st.session_state:
-        st.session_state.mensaje_guardado = None
-        st.session_state.mensaje_timestamp = None
-    if "reset_form" not in st.session_state:
-        st.session_state.reset_form = False
-    
-    
 
     st.markdown('<div class="section-title">🧾 Registro de Monitoreo</div>', unsafe_allow_html=True)
 
@@ -251,15 +290,6 @@ if pagina == "📝 Formulario de Monitoreo":
     if st.session_state.form_reset:
         st.session_state.clear()
         st.session_state.form_reset = False
-
-    
-    if st.session_state.reset_form:
-        st.session_state.reset_form = False
-        # limpiar todos los campos excepto mensajes
-        keep_keys = ["mensaje_guardado", "mensaje_timestamp", "reset_form"]
-        for key in list(st.session_state.keys()):
-            if key not in keep_keys:
-                st.session_state[key] = None
 
     c1, c2, c3 = st.columns(3)
 
@@ -379,22 +409,13 @@ if pagina == "📝 Formulario de Monitoreo":
                 fila[q] = v
 
             guardar_datos_google_sheets(fila)
-
-            st.session_state.mensaje_guardado = "✅ Registro guardado correctamente."
-            st.session_state.mensaje_timestamp = time.time()
-
-            keep_keys = ["mensaje_guardado", "mensaje_timestamp", "reset_form"]
-            for key in list(st.session_state.keys()):
-                if key not in keep_keys:
-                    st.session_state[key] = None
-
-            st.session_state.reset_form = True
-            st.experimental_rerun()
+            st.session_state.form_reset = True
+            st.rerun()
 
 # =====================================================================
-# 📊 DASHBOARD GENERAL – LÓGICA TIPO A
+# 📊 DASHBOARD CASA UR
 # =====================================================================
-elif pagina == "📊 Dashboard de Análisis":
+elif pagina == "📊 Dashboard CASA UR":
 
     df = cargar_todas_las_hojas_google_sheets()
 
@@ -405,10 +426,17 @@ elif pagina == "📊 Dashboard de Análisis":
     # Limpieza
     df = df.dropna(how="all")
     df.columns = [str(c).strip() for c in df.columns]
-    df = df.dropna(subset=["Área","Canal","Asesor"])
+    df = df.dropna(subset=["Área", "Canal", "Asesor"])
     df["Fecha"] = pd.to_datetime(df["Fecha"], errors="coerce")
     df["Mes"] = df["Fecha"].dt.month
     df["Año"] = df["Fecha"].dt.year
+
+    # Fijar área CASA UR
+    df = df[df["Área"] == "CASA UR"]
+
+    if df.empty:
+        st.warning("No hay datos para CASA UR.")
+        st.stop()
 
     meses = {
         1:"Enero",2:"Febrero",3:"Marzo",4:"Abril",5:"Mayo",6:"Junio",
@@ -418,17 +446,13 @@ elif pagina == "📊 Dashboard de Análisis":
     # ===============================
     # FILTROS
     # ===============================
-    st.sidebar.subheader("Filtros")
+    st.sidebar.subheader("Filtros CASA UR")
 
-    area_f = st.sidebar.selectbox("Área:", ["Todas"] + sorted(df["Área"].unique()))
     canal_f = st.sidebar.selectbox("Canal:", ["Todos"] + sorted(df["Canal"].unique()))
     anio_f = st.sidebar.selectbox("Año:", ["Todos"] + sorted(df["Año"].dropna().unique().astype(int)))
     mes_f = st.sidebar.selectbox("Mes:", ["Todos"] + [meses[m] for m in sorted(df["Mes"].dropna().unique())])
 
     df_filtrado = df.copy()
-
-    if area_f != "Todas":
-        df_filtrado = df_filtrado[df_filtrado["Área"] == area_f]
 
     if canal_f != "Todos":
         df_filtrado = df_filtrado[df_filtrado["Canal"] == canal_f]
@@ -437,211 +461,270 @@ elif pagina == "📊 Dashboard de Análisis":
         df_filtrado = df_filtrado[df_filtrado["Año"] == int(anio_f)]
 
     if mes_f != "Todos":
-        mes_num = [k for k,v in meses.items() if v == mes_f][0]
+        mes_num = [k for k, v in meses.items() if v == mes_f][0]
         df_filtrado = df_filtrado[df_filtrado["Mes"] == mes_num]
 
-# ---------------------------------
-# LÓGICA A → NO HAY FILTROS
-# ---------------------------------
-no_filtros = (area_f=="Todas" and canal_f=="Todos" and anio_f=="Todos" and mes_f=="Todos")
+    no_filtros = (canal_f == "Todos" and anio_f == "Todos" and mes_f == "Todos")
 
-if no_filtros:
-    st.subheader("📊 Dashboard Global – Sin filtros")
-
-    # ===============================
-    # 🔢 MÉTRICAS CORREGIDAS
-    # ===============================
-    
-    if st.session_state.reset_form:
-        st.session_state.reset_form = False
-        # limpiar todos los campos excepto mensajes
-        keep_keys = ["mensaje_guardado", "mensaje_timestamp", "reset_form"]
-        for key in list(st.session_state.keys()):
-            if key not in keep_keys:
-                st.session_state[key] = None
-
-    c1, c2, c3 = st.columns(3)
-
-    c1.metric("Monitoreos Totales", len(df))
-
-    # 🟢 Promedio general basado en TOTAL (0–100)
-    if "Total" in df.columns:
-        promedio_general = df["Total"].mean()
-    else:
-        promedio_general = (df.filter(like="¿") > 0).mean().mean()*100  # fallback
-
-    c2.metric("Promedio General (%)", f"{promedio_general:.2f}")
-
-    c3.metric("Errores Críticos", len(df[df["Error crítico"]=="Sí"]))
-
-    # ===============================
-    # 📍 Distribución por Área
-    # ===============================
-    df_area = df.groupby("Área").size().reset_index(name="Total")
-    fig_a = px.pie(df_area, names="Área", values="Total", title="Distribución por Área")
-    st.plotly_chart(fig_a, use_container_width=True)
-
-    # ===============================
-    # 📍 Distribución por Canal
-    # ===============================
-    df_canal = df.groupby("Canal").size().reset_index(name="Total")
-    fig_c = px.pie(df_canal, names="Canal", values="Total", title="Distribución por Canal")
-    st.plotly_chart(fig_c, use_container_width=True)
-
-    # ===============================
-# 🔥 Cumplimiento Global por Pregunta – Separado por Canal
-# ===============================
-st.subheader("🔥 Cumplimiento Global por Pregunta (separado por Canal)")
-
-canales_unicos = df["Canal"].unique()
-
-for canal_actual in canales_unicos:
-
-    st.markdown(f"### 📌 Canal: **{canal_actual}**")
-
-    df_c = df[df["Canal"] == canal_actual]
-
-    # Obtener el área del canal actual
-    area_canal = df_c["Área"].iloc[0]
-
-    # Obtener preguntas correctas
-    preguntas_definidas = []
-
-    if canal_actual in areas[area_canal]["canales"]:
-
-        # CASA UR
-        if area_canal == "CASA UR":
-            if canal_actual in ["Presencial", "Contact Center", "Chat"]:
-                preguntas_definidas = [
-                    "¿Atiende la interacción en el momento que se establece contacto con el(a) usuario(a)?",
-                    "¿Saluda, se presenta de una forma amable y cortés, usando el dialogo de saludo y bienvenida?",
-                    "¿Realiza la validación de identidad del usuario y personaliza la interacción de forma adecuada garantizando la confidencialidad de la información?",
-                    "¿Escucha activamente al usuario y  realiza preguntas adicionales demostrando atención y concentración?",
-                    "¿Consulta todas las herramientas disponibles para estructurar la posible respuesta que se le brindará al usuario?",
-                    "¿Controla los tiempos de espera informando al usuario y realizando acompañamiento cada 2 minutos?",
-                    "¿Brinda respuesta de forma precisa, completa y coherente, de acuerdo a la solicitado por el usuario?",
-                    "¿Valida con el usuario si la información fue clara, completa o si requiere algún trámite adicional?",
-                    "¿Documenta la atención de forma coherente según lo solicitado e informado al cliente; seleccionando las tipologías adecuadas y manejando correcta redacción y ortografía?",
-                    "¿Finaliza la atención de forma amable, cortés utilizando el dialogo de cierre y despedida remitiendo al usuario a responder la encuesta de percepción?"
-                ]
-            elif canal_actual == "Back Office":
-                preguntas_definidas = [
-                    "¿Cumple con el ANS establecido para el servicio?",
-                    "¿Analiza correctamente la solicitud?",
-                    "¿Gestiona adecuadamente en SAP/UXXI/Bizagi?",
-                    "¿Respuestas eficaz de acuerdo a la solicitud radicada por el usuario?",
-                    "¿Es empático al cerrar la solicitud?"
-                ]
-
-        # SERVICIOS 2030
-        elif area_canal == "Servicios 2030":
-            if canal_actual in ["Línea 2030", "Chat 2030"]:
-                preguntas_definidas = [
-                    "¿Atiende la interacción de forma oportuna en el momento que se establece el contacto?",
-                    "¿Saluda y se presenta de manera amable y profesional, estableciendo un inicio cordial de la atención?",
-                    "¿Realiza la validación de identidad del usuario garantizando confidencialidad y aplica protocolos de seguridad de la información?",
-                    "¿Escucha activamente al usuario y formula preguntas pertinentes para un diagnóstico claro y completo?",
-                    "¿Consulta y utiliza todas las herramientas de soporte disponibles (base de conocimiento, sistemas, documentación) para estructurar una respuesta adecuada?",
-                    "¿Gestiona adecuadamente los tiempos de espera, manteniendo informado al usuario y realizando acompañamiento oportuno durante la interacción?",
-                    "¿Sigue el flujo definido para solución o escalamiento, asegurando trazabilidad y cumplimiento de procesos internos?",
-                    "¿Valida con el usuario que la información brindada es clara, completa y confirma si requiere trámites o pasos adicionales?",
-                    "¿Documenta la atención en el sistema de tickets de manera coherente, seleccionando tipologías correctas y con redacción/ortografía adecuadas?",
-                    "¿Finaliza la atención de forma amable y profesional, utilizando el cierre de interacción definido y remitiendo al usuario a la encuesta de satisfacción?"
-                ]
-            elif canal_actual == "Sitio 2030":
-                preguntas_definidas = [
-                    "¿Cumple con el ANS/SLA establecido?",
-                    "¿Realiza un análisis completo y pertinente de la solicitud, aplicando diagnóstico claro antes de ejecutar acciones?",
-                    "¿Gestiona correctamente en las herramientas institucionales (SAP / UXXI / Salesforce u otras) garantizando trazabilidad y registro adecuado?",
-                    "¿Brinda una respuesta eficaz y alineada a la solicitud radicada por el usuario, asegurando calidad técnica en la solución?",
-                    "¿Comunica el cierre de la solicitud de manera empática y profesional, validando la satisfacción del usuario?"
-                ]
-
-    # Preguntas presentes en columnas del DF
-    preguntas_cols = [c for c in preguntas_definidas if c in df_c.columns]
-
-    cumplimiento_canal = []
-
-    for col in preguntas_cols:
-        valores = pd.to_numeric(df_c[col], errors="coerce").fillna(0)
-        pct = (valores > 0).mean() * 100
-        cumplimiento_canal.append({"Pregunta": col, "Cumplimiento": pct})
-
-    df_preg_canal = pd.DataFrame(cumplimiento_canal).sort_values("Cumplimiento")
-
-    fig_h = px.bar(
-        df_preg_canal,
-        x="Cumplimiento", y="Pregunta",
-        orientation="h",
-        color="Cumplimiento",
-        color_continuous_scale="RdYlGn",
-        title=f"Cumplimiento por Pregunta – {canal_actual}"
-    )
-
-    fig_h.update_traces(texttemplate="%{x:.1f}%", textposition="outside")
-    st.plotly_chart(fig_h, use_container_width=True)
-
-    # --------------------------------------------------------------------
-    # SI HAY ALGÚN FILTRO → Dashboard detallado por Área / Canal / Mes
-    # --------------------------------------------------------------------
     if df_filtrado.empty:
         st.warning("No hay datos con los filtros seleccionados.")
         st.stop()
 
-    st.subheader("📊 Dashboard General con Filtros")
+    if no_filtros:
+        st.subheader("📊 Dashboard CASA UR – Global (sin filtros)")
 
-    
-    if st.session_state.reset_form:
-        st.session_state.reset_form = False
-        # limpiar todos los campos excepto mensajes
-        keep_keys = ["mensaje_guardado", "mensaje_timestamp", "reset_form"]
-        for key in list(st.session_state.keys()):
-            if key not in keep_keys:
-                st.session_state[key] = None
+        c1, c2, c3 = st.columns(3)
+        c1.metric("Monitoreos Totales", len(df))
 
-    c1, c2, c3 = st.columns(3)
-    c1.metric("Monitoreos", len(df_filtrado))
-    c2.metric("Promedio (%)", round(((df_filtrado.filter(like="¿")>0).mean().mean())*100,2))
-    c3.metric("Errores Críticos", len(df_filtrado[df_filtrado["Error crítico"]=="Sí"]))
+        if "Total" in df.columns:
+            promedio_general = df["Total"].mean()
+        else:
+            promedio_general = 0.0
 
-    # Cumplimiento por pregunta
-    preguntas_cols = [c for c in df.columns if "¿" in c]
+        c2.metric("Promedio General (Total puntos)", f"{promedio_general:.2f}")
+        c3.metric("Errores Críticos", len(df[df["Error crítico"] == "Sí"]))
 
-    df_preg_f = []
-    for col in preguntas_cols:
-        valores = pd.to_numeric(df_filtrado[col], errors="coerce").fillna(0)
-        pct = (valores > 0).mean() * 100
-        df_preg_f.append({"Pregunta": col, "Cumplimiento": pct})
+        # Distribución por Canal
+        df_canal = df.groupby("Canal").size().reset_index(name="Total")
+        fig_c = px.pie(df_canal, names="Canal", values="Total", title="Distribución por Canal")
+        st.plotly_chart(fig_c, use_container_width=True)
 
-    df_preg_f = pd.DataFrame(df_preg_f).sort_values("Cumplimiento")
+        # Cumplimiento por pregunta separado por canal
+        st.subheader("🔥 Cumplimiento por Pregunta (por Canal)")
 
-    fig_pf = px.bar(
-        df_preg_f, x="Cumplimiento", y="Pregunta",
-        orientation="h",
-        color="Cumplimiento",
-        color_continuous_scale="RdYlGn",
-        title="Cumplimiento por Pregunta (Filtrado)"
-    )
-    fig_pf.update_traces(texttemplate="%{x:.1f}%", textposition="outside")
-    st.plotly_chart(fig_pf, use_container_width=True)
+        for canal_actual in df["Canal"].unique():
+            st.markdown(f"### 📌 Canal: **{canal_actual}**")
+            df_c = df[df["Canal"] == canal_actual]
 
-    # Cumplimiento por Canal
-    df_canal_f = []
-    for canal_name, grupo in df_filtrado.groupby("Canal"):
-        pct = ((grupo.filter(like="¿")>0).mean().mean())*100
-        df_canal_f.append({"Canal": canal_name, "Cumplimiento": pct})
+            preguntas_definidas = obtener_preguntas("CASA UR", canal_actual)
+            preguntas_cols = [c for c in preguntas_definidas if c in df_c.columns]
 
-    df_canal_f = pd.DataFrame(df_canal_f)
+            if not preguntas_cols:
+                st.info("No hay preguntas configuradas para este canal.")
+                continue
 
-    fig_cf = px.bar(
-        df_canal_f, x="Canal", y="Cumplimiento",
-        color="Cumplimiento",
-        color_continuous_scale="tealgrn",
-        title="Cumplimiento por Canal"
-    )
-    st.plotly_chart(fig_cf, use_container_width=True)
+            cumplimiento_canal = []
+            for col in preguntas_cols:
+                valores = pd.to_numeric(df_c[col], errors="coerce").fillna(0)
+                pct = (valores > 0).mean() * 100
+                cumplimiento_canal.append({"Pregunta": col, "Cumplimiento": pct})
 
-    # ============================================================
+            df_preg_canal = pd.DataFrame(cumplimiento_canal).sort_values("Cumplimiento")
+
+            fig_h = px.bar(
+                df_preg_canal,
+                x="Cumplimiento", y="Pregunta",
+                orientation="h",
+                color="Cumplimiento",
+                color_continuous_scale="RdYlGn",
+                title=f"Cumplimiento por Pregunta – {canal_actual}"
+            )
+            fig_h.update_traces(texttemplate="%{x:.1f}%", textposition="outside")
+            st.plotly_chart(fig_h, use_container_width=True)
+
+    else:
+        st.subheader("📊 Dashboard CASA UR – con filtros")
+
+        c1, c2, c3 = st.columns(3)
+        c1.metric("Monitoreos filtrados", len(df_filtrado))
+
+        if "Total" in df_filtrado.columns:
+            promedio_general = df_filtrado["Total"].mean()
+        else:
+            promedio_general = 0.0
+
+        c2.metric("Promedio General (Total puntos)", f"{promedio_general:.2f}")
+        c3.metric("Errores Críticos", len(df_filtrado[df_filtrado["Error crítico"] == "Sí"]))
+
+        st.subheader("🔥 Cumplimiento por Pregunta (por Canal, filtrado)")
+
+        for canal_actual in df_filtrado["Canal"].unique():
+            st.markdown(f"### 📌 Canal: **{canal_actual}**")
+            df_c = df_filtrado[df_filtrado["Canal"] == canal_actual]
+
+            preguntas_definidas = obtener_preguntas("CASA UR", canal_actual)
+            preguntas_cols = [c for c in preguntas_definidas if c in df_c.columns]
+
+            if not preguntas_cols:
+                st.info("No hay preguntas configuradas para este canal.")
+                continue
+
+            cumplimiento_canal = []
+            for col in preguntas_cols:
+                valores = pd.to_numeric(df_c[col], errors="coerce").fillna(0)
+                pct = (valores > 0).mean() * 100
+                cumplimiento_canal.append({"Pregunta": col, "Cumplimiento": pct})
+
+            df_preg_canal = pd.DataFrame(cumplimiento_canal).sort_values("Cumplimiento")
+
+            fig_h = px.bar(
+                df_preg_canal,
+                x="Cumplimiento", y="Pregunta",
+                orientation="h",
+                color="Cumplimiento",
+                color_continuous_scale="RdYlGn",
+                title=f"Cumplimiento por Pregunta – {canal_actual} (filtrado)"
+            )
+            fig_h.update_traces(texttemplate="%{x:.1f}%", textposition="outside")
+            st.plotly_chart(fig_h, use_container_width=True)
+
+# =====================================================================
+# 📈 DASHBOARD SERVICIOS 2030
+# =====================================================================
+elif pagina == "📈 Dashboard Servicios 2030":
+
+    df = cargar_todas_las_hojas_google_sheets()
+
+    if df.empty:
+        st.warning("📭 No hay datos para mostrar aún.")
+        st.stop()
+
+    # Limpieza
+    df = df.dropna(how="all")
+    df.columns = [str(c).strip() for c in df.columns]
+    df = df.dropna(subset=["Área", "Canal", "Asesor"])
+    df["Fecha"] = pd.to_datetime(df["Fecha"], errors="coerce")
+    df["Mes"] = df["Fecha"].dt.month
+    df["Año"] = df["Fecha"].dt.year
+
+    # Fijar área Servicios 2030
+    df = df[df["Área"] == "Servicios 2030"]
+
+    if df.empty:
+        st.warning("No hay datos para Servicios 2030.")
+        st.stop()
+
+    meses = {
+        1:"Enero",2:"Febrero",3:"Marzo",4:"Abril",5:"Mayo",6:"Junio",
+        7:"Julio",8:"Agosto",9:"Septiembre",10:"Octubre",11:"Noviembre",12:"Diciembre"
+    }
+
+    # ===============================
+    # FILTROS
+    # ===============================
+    st.sidebar.subheader("Filtros Servicios 2030")
+
+    canal_f = st.sidebar.selectbox("Canal:", ["Todos"] + sorted(df["Canal"].unique()))
+    anio_f = st.sidebar.selectbox("Año:", ["Todos"] + sorted(df["Año"].dropna().unique().astype(int)))
+    mes_f = st.sidebar.selectbox("Mes:", ["Todos"] + [meses[m] for m in sorted(df["Mes"].dropna().unique())])
+
+    df_filtrado = df.copy()
+
+    if canal_f != "Todos":
+        df_filtrado = df_filtrado[df_filtrado["Canal"] == canal_f]
+
+    if anio_f != "Todos":
+        df_filtrado = df_filtrado[df_filtrado["Año"] == int(anio_f)]
+
+    if mes_f != "Todos":
+        mes_num = [k for k, v in meses.items() if v == mes_f][0]
+        df_filtrado = df_filtrado[df_filtrado["Mes"] == mes_num]
+
+    no_filtros = (canal_f == "Todos" and anio_f == "Todos" and mes_f == "Todos")
+
+    if df_filtrado.empty:
+        st.warning("No hay datos con los filtros seleccionados.")
+        st.stop()
+
+    if no_filtros:
+        st.subheader("📈 Dashboard Servicios 2030 – Global (sin filtros)")
+
+        c1, c2, c3 = st.columns(3)
+        c1.metric("Monitoreos Totales", len(df))
+
+        if "Total" in df.columns:
+            promedio_general = df["Total"].mean()
+        else:
+            promedio_general = 0.0
+
+        c2.metric("Promedio General (Total puntos)", f"{promedio_general:.2f}")
+        c3.metric("Errores Críticos", len(df[df["Error crítico"] == "Sí"]))
+
+        # Distribución por Canal
+        df_canal = df.groupby("Canal").size().reset_index(name="Total")
+        fig_c = px.pie(df_canal, names="Canal", values="Total", title="Distribución por Canal")
+        st.plotly_chart(fig_c, use_container_width=True)
+
+        # Cumplimiento por pregunta separado por canal
+        st.subheader("🔥 Cumplimiento por Pregunta (por Canal)")
+
+        for canal_actual in df["Canal"].unique():
+            st.markdown(f"### 📌 Canal: **{canal_actual}**")
+            df_c = df[df["Canal"] == canal_actual]
+
+            preguntas_definidas = obtener_preguntas("Servicios 2030", canal_actual)
+            preguntas_cols = [c for c in preguntas_definidas if c in df_c.columns]
+
+            if not preguntas_cols:
+                st.info("No hay preguntas configuradas para este canal.")
+                continue
+
+            cumplimiento_canal = []
+            for col in preguntas_cols:
+                valores = pd.to_numeric(df_c[col], errors="coerce").fillna(0)
+                pct = (valores > 0).mean() * 100
+                cumplimiento_canal.append({"Pregunta": col, "Cumplimiento": pct})
+
+            df_preg_canal = pd.DataFrame(cumplimiento_canal).sort_values("Cumplimiento")
+
+            fig_h = px.bar(
+                df_preg_canal,
+                x="Cumplimiento", y="Pregunta",
+                orientation="h",
+                color="Cumplimiento",
+                color_continuous_scale="RdYlGn",
+                title=f"Cumplimiento por Pregunta – {canal_actual}"
+            )
+            fig_h.update_traces(texttemplate="%{x:.1f}%", textposition="outside")
+            st.plotly_chart(fig_h, use_container_width=True)
+
+    else:
+        st.subheader("📈 Dashboard Servicios 2030 – con filtros")
+
+        c1, c2, c3 = st.columns(3)
+        c1.metric("Monitoreos filtrados", len(df_filtrado))
+
+        if "Total" in df_filtrado.columns:
+            promedio_general = df_filtrado["Total"].mean()
+        else:
+            promedio_general = 0.0
+
+        c2.metric("Promedio General (Total puntos)", f"{promedio_general:.2f}")
+        c3.metric("Errores Críticos", len(df_filtrado[df_filtrado["Error crítico"] == "Sí"]))
+
+        st.subheader("🔥 Cumplimiento por Pregunta (por Canal, filtrado)")
+
+        for canal_actual in df_filtrado["Canal"].unique():
+            st.markdown(f"### 📌 Canal: **{canal_actual}**")
+            df_c = df_filtrado[df_filtrado["Canal"] == canal_actual]
+
+            preguntas_definidas = obtener_preguntas("Servicios 2030", canal_actual)
+            preguntas_cols = [c for c in preguntas_definidas if c in df_c.columns]
+
+            if not preguntas_cols:
+                st.info("No hay preguntas configuradas para este canal.")
+                continue
+
+            cumplimiento_canal = []
+            for col in preguntas_cols:
+                valores = pd.to_numeric(df_c[col], errors="coerce").fillna(0)
+                pct = (valores > 0).mean() * 100
+                cumplimiento_canal.append({"Pregunta": col, "Cumplimiento": pct})
+
+            df_preg_canal = pd.DataFrame(cumplimiento_canal).sort_values("Cumplimiento")
+
+            fig_h = px.bar(
+                df_preg_canal,
+                x="Cumplimiento", y="Pregunta",
+                orientation="h",
+                color="Cumplimiento",
+                color_continuous_scale="RdYlGn",
+                title=f"Cumplimiento por Pregunta – {canal_actual} (filtrado)"
+            )
+            fig_h.update_traces(texttemplate="%{x:.1f}%", textposition="outside")
+            st.plotly_chart(fig_h, use_container_width=True)
+
+# ============================================================
 # 🎯 DASHBOARD POR ASESOR – SOLO CUMPLIMIENTO POR PREGUNTA
 # ============================================================
 elif pagina == "🎯 Dashboard por Asesor":
@@ -702,15 +785,6 @@ elif pagina == "🎯 Dashboard por Asesor":
     # ===============================
     # 🔢 MÉTRICAS INDIVIDUALES
     # ===============================
-    
-    if st.session_state.reset_form:
-        st.session_state.reset_form = False
-        # limpiar todos los campos excepto mensajes
-        keep_keys = ["mensaje_guardado", "mensaje_timestamp", "reset_form"]
-        for key in list(st.session_state.keys()):
-            if key not in keep_keys:
-                st.session_state[key] = None
-
     c1, c2, c3 = st.columns(3)
     c1.metric("Monitoreos realizados", len(df_asesor))
 
@@ -720,7 +794,7 @@ elif pagina == "🎯 Dashboard por Asesor":
     else:
         promedio_general = (df_asesor.filter(like="¿") > 0).mean().mean()*100  
 
-    c2.metric("Promedio general", f"{promedio_general:.2f}")
+    c2.metric("Promedio general (Total puntos)", f"{promedio_general:.2f}")
 
     c3.metric("Errores críticos", len(df_asesor[df_asesor["Error crítico"]=="Sí"]))
 
