@@ -471,7 +471,7 @@ elif pagina == "📊 Dashboard CASA UR":
         st.stop()
 
     if no_filtros:
-        st.subheader("📊 Dashboard CASA UR – Global (sin filtros)")
+        st.subheader("📊 Dashboard CASA UR")
 
         c1, c2, c3 = st.columns(3)
         c1.metric("Monitoreos Totales", len(df))
@@ -490,7 +490,7 @@ elif pagina == "📊 Dashboard CASA UR":
         st.plotly_chart(fig_c, use_container_width=True)
 
         # Cumplimiento por pregunta separado por canal
-        st.subheader("🔥 Cumplimiento por Pregunta (por Canal)")
+        st.subheader("Cumplimiento por Pregunta - Canal")
 
         for canal_actual in df["Canal"].unique():
             st.markdown(f"### 📌 Canal: **{canal_actual}**")
@@ -840,7 +840,7 @@ elif pagina == "🎯 Dashboard por Asesor":
 
     fig = px.bar(
         df_preg, x="Cumplimiento", y="Pregunta", orientation="h",
-        title="📌 Cumplimiento por pregunta (asesor)",
+        title="📌 Cumplimiento por pregunta",
         color="Cumplimiento", 
         color_continuous_scale="agsunset", 
         range_x=[0,100]
