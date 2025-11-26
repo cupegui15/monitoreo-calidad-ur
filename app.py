@@ -383,34 +383,49 @@ if pagina == "📝 Formulario de Monitoreo":
 
     st.metric("Puntaje Total", total)
 
-    if st.button("💾 Guardar Monitoreo"):
-        if area == "Seleccione una opción" or monitor == "Seleccione una opción" or asesor == "Seleccione una opción":
-            st.error("⚠️ Debes completar todos los campos.")
-        elif not codigo.strip():
-            st.error("⚠️ Código obligatorio.")
-        elif not positivos.strip() or not mejorar.strip():
-            st.error("⚠️ Debes diligenciar los aspectos positivos y por mejorar.")
-        else:
+if st.button("💾 Guardar Monitoreo"):
+    if area == "Seleccione una opción" or monitor == "Seleccione una opción" or asesor == "Seleccione una opción":
+        st.error("⚠️ Debes completar todos los campos.")
+    elif not codigo.strip():
+        st.error("⚠️ Código obligatorio.")
+    elif not positivos.strip() or not mejorar.strip():
+        st.error("⚠️ Debes diligenciar los aspectos positivos y por mejorar.")
+    else:
 
-            fila = {
-                "Área": area,
-                "Monitor": monitor,
-                "Asesor": asesor,
-                "Código": codigo.strip(),
-                "Fecha": fecha,
-                "Canal": canal,
-                "Error crítico": error_critico,
-                "Total": total,
-                "Aspectos positivos": positivos,
-                "Aspectos por Mejorar": mejorar
-            }
+        fila = {
+            "Área": area,
+            "Monitor": monitor,
+            "Asesor": asesor,
+            "Código": codigo.strip(),
+            "Fecha": fecha,
+            "Canal": canal,
+            "Error crítico": error_critico,
+            "Total": total,
+            "Aspectos positivos": positivos,
+            "Aspectos por Mejorar": mejorar
+        }
 
-            for q, v in resultados.items():
-                fila[q] = v
+        for q, v in resultados.items():
+            fila[q] = v
 
-            guardar_datos_google_sheets(fila)
-            st.session_state.form_reset = True
-            st.rerun()
+        guardar_datos_google_sheets(fila)
+
+        # -----------------------------------------------
+        # 🎉 MENSAJE DE ÉXITO DURANTE 10 SEGUNDOS
+        # -----------------------------------------------
+        placeholder = st.empty()
+        placeholder.success("✅ Monitoreo guardado correctamente")
+
+        # Mantener visible 10 segundos
+        import time
+        time.sleep(10)
+        placeholder.empty()
+
+        # -----------------------------------------------
+        # 🔄 REINICIAR FORMULARIO
+        # -----------------------------------------------
+        st.session_state.clear()
+        st.rerun()
 
 # =====================================================================
 # 📊 DASHBOARD CASA UR
