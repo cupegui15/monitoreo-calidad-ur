@@ -753,60 +753,57 @@ elif pagina == "🎯 Dashboard por Asesor":
 # 🔥 FILTRAR SOLO PREGUNTAS REALMENTE RESPONDIDAS
 # ============================
 
-# Columnas que son preguntas
-todas_preguntas = [c for c in df_asesor.columns if "¿" in c]
+# Identificar área y canal del asesor
+area_asesor = df_asesor["Área"].iloc[0]
+canal_asesor = df_asesor["Canal"].iloc[0]
 
-preguntas_cols_asesor = []
+# Obtener solo preguntas que aplican para ese canal
+preguntas_reales = obtener_preguntas(area_asesor, canal_asesor)
 
-for col in todas_preguntas:
-    # Contar registros donde la pregunta aparece con valor REAL
-    valores_validos = df_asesor[col].apply(lambda x: str(x).strip() != "")
+# Validar cuáles de esas preguntas existen en el dataframe del asesor
+preguntas_cols_asesor = [p for p in preguntas_reales if p in df_asesor.columns]
 
-    # Si al menos en un monitoreo tuvo un valor diferente de vacío,
-    # significa que esa pregunta SÍ estaba en su formulario.
-    if valores_validos.sum() > 0:
-        preguntas_cols_asesor.append(col)
-
-# Si después del filtro no quedan preguntas
 if not preguntas_cols_asesor:
-    st.info("Este asesor no tiene preguntas aplicables.")
+    st.info("Este asesor no tiene preguntas asociadas a su canal.")
     st.stop()
 
-    if not preguntas_cols_asesor:
-        st.info("Este asesor no tiene preguntas registradas.")
-        st.stop()
+# ============================
+# 📌 Transformar para graficar
+# ============================
 
-    df_long = df_asesor.melt(
-        id_vars=["Área", "Asesor", "Canal", "Fecha"],
-        value_vars=preguntas_cols_asesor,
-        var_name="Pregunta",
-        value_name="Puntaje"
-    )
+df_long = df_asesor.melt(
+    id_vars=["Área", "Asesor", "Canal", "Fecha"],
+    value_vars=preguntas_cols_asesor,
+    var_name="Pregunta",
+    value_name="Puntaje"
+)
 
-    df_long["Puntaje"] = pd.to_numeric(df_long["Puntaje"], errors="coerce")
+df_long["Puntaje"] = pd.to_numeric(df_long["Puntaje"], errors="coerce").fillna(0)
 
-    df_long_aplica = df_long.dropna(subset=["Puntaje"]).copy()
+# Clasificar cumplimiento
+df_preg = (
+    df_long.assign(Cumple=lambda d: d["Puntaje"] > 0)
+            .groupby("Pregunta")["Cumple"]
+            .mean()
+            .reset_index(name="Cumplimiento")
+)
 
-    df_preg = (
-        df_long_aplica
-        .assign(Cumple=lambda d: d["Puntaje"] > 0)
-        .groupby("Pregunta")["Cumple"]
-        .mean()
-        .reset_index(name="Cumplimiento")
-    )
+df_preg["Cumplimiento"] *= 100  # Convertir a porcentaje
 
-    df_preg["Cumplimiento"] *= 100
+# ============================
+# 📊 Gráfico final
+# ============================
 
-    fig = px.bar(
-        df_preg,
-        x="Cumplimiento",
-        y="Pregunta",
-        orientation="h",
-        title="📌 Cumplimiento por pregunta",
-        color="Cumplimiento",
-        color_continuous_scale="agsunset",
-        range_x=[0, 100]
-    )
+fig = px.bar(
+    df_preg,
+    x="Cumplimiento",
+    y="Pregunta",
+    orientation="h",
+    title="📌 Cumplimiento por pregunta",
+    color="Cumplimiento",
+    color_continuous_scale="agsunset",
+    range_x=[0, 100]
+)
 
-    fig.update_traces(texttemplate="%{x:.1f}%", textposition="outside")
-    st.plotly_chart(fig, use_container_width=True)
+fig.update_traces(texttemplate="%{x:.1f}%", textposition="outside")
+st.plotly_chart(fig, use_container_width=True)
