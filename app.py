@@ -749,12 +749,28 @@ elif pagina == "🎯 Dashboard por Asesor":
 
     st.divider()
 
-    todas_preguntas = [c for c in df_asesor.columns if "¿" in c]
+# ============================
+# 🔥 FILTRAR SOLO PREGUNTAS REALMENTE RESPONDIDAS
+# ============================
 
-    preguntas_cols_asesor = [
-        col for col in todas_preguntas
-        if df_asesor[col].notna().sum() > 0
-    ]
+# Columnas que son preguntas
+todas_preguntas = [c for c in df_asesor.columns if "¿" in c]
+
+preguntas_cols_asesor = []
+
+for col in todas_preguntas:
+    # Contar registros donde la pregunta aparece con valor REAL
+    valores_validos = df_asesor[col].apply(lambda x: str(x).strip() != "")
+
+    # Si al menos en un monitoreo tuvo un valor diferente de vacío,
+    # significa que esa pregunta SÍ estaba en su formulario.
+    if valores_validos.sum() > 0:
+        preguntas_cols_asesor.append(col)
+
+# Si después del filtro no quedan preguntas
+if not preguntas_cols_asesor:
+    st.info("Este asesor no tiene preguntas aplicables.")
+    st.stop()
 
     if not preguntas_cols_asesor:
         st.info("Este asesor no tiene preguntas registradas.")
