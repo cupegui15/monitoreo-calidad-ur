@@ -796,21 +796,21 @@ df_preg["Cumplimiento"] *= 100  # Convertir a porcentaje
 
 orden_formulario = obtener_preguntas(area_asesor, canal_asesor)
 
-# Crear un diccionario con el orden numérico
-mapa_orden = {pregunta: idx for idx, pregunta in enumerate(orden_formulario)}
+# Crear diccionario con índice numérico del formulario
+mapa_orden = {preg: idx for idx, preg in enumerate(orden_formulario)}
 
-# Agregar columna temporal de orden
+# Agregar columna de orden
 df_preg["orden"] = df_preg["Pregunta"].map(mapa_orden)
 
-# Eliminar preguntas que NO coincidan con el formulario (map devuelve NaN)
+# Eliminar preguntas que NO coincidan (None)
 df_preg = df_preg.dropna(subset=["orden"])
 
-# Ordenar definitivamente por el número asignado
+# Ordenar por el índice numérico del formulario
 df_preg = df_preg.sort_values("orden")
 
-# ============================
-# 📊 Gráfico final
-# ============================
+# =================================================
+# 📊 GRÁFICO FINAL
+# =================================================
 
 fig = px.bar(
     df_preg,
@@ -821,13 +821,6 @@ fig = px.bar(
     color="Cumplimiento",
     color_continuous_scale="agsunset",
     range_x=[0, 100]
-)
-# Forzar que el eje Y respete exactamente ese orden
-fig.update_layout(
-    yaxis=dict(
-        categoryorder="array",
-        categoryarray=preguntas_ordenadas
-    )
 )
 
 fig.update_traces(texttemplate="%{x:.1f}%", textposition="outside")
