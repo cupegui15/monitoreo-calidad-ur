@@ -790,6 +790,19 @@ df_preg = (
 
 df_preg["Cumplimiento"] *= 100  # Convertir a porcentaje
 
+# =================================================
+# ORDENAR PREGUNTAS SEGÚN EL ORDEN DEL FORMULARIO
+# =================================================
+
+# Obtener orden correcto según el canal del asesor
+orden_formulario = obtener_preguntas(area_asesor, canal_asesor)
+# Filtrar preguntas que realmente estén en df_preg
+preguntas_ordenadas = [p for p in orden_formulario if p in df_preg["Pregunta"].values]
+# Aplicar orden explícito
+df_preg["Pregunta"] = pd.Categorical(df_preg["Pregunta"], categories=preguntas_ordenadas, ordered=True)
+# Reordenar dataframe
+df_preg = df_preg.sort_values("Pregunta")
+
 # ============================
 # 📊 Gráfico final
 # ============================
