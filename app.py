@@ -749,83 +749,62 @@ elif pagina == "🎯 Dashboard por Asesor":
 
     st.divider()
 
-# ============================
-# 🔥 FILTRAR SOLO PREGUNTAS REALMENTE RESPONDIDAS
-# ============================
+    # ====================================================
+    # 🔥 FILTRAR PREGUNTAS DEL FORMULARIO DEL CANAL
+    # ====================================================
+    area_asesor = df_asesor["Área"].iloc[0]
+    canal_asesor = df_asesor["Canal"].iloc[0]
 
-# Identificar área y canal del asesor
-area_asesor = df_asesor["Área"].iloc[0]
-canal_asesor = df_asesor["Canal"].iloc[0]
+    preguntas_reales = obtener_preguntas(area_asesor, canal_asesor)
+    preguntas_cols_asesor = [p for p in preguntas_reales if p in df_asesor.columns]
 
-# Obtener solo preguntas que aplican para ese canal
-preguntas_reales = obtener_preguntas(area_asesor, canal_asesor)
+    if not preguntas_cols_asesor:
+        st.info("Este asesor no tiene preguntas asociadas a su canal.")
+        st.stop()
 
-# Validar cuáles de esas preguntas existen en el dataframe del asesor
-preguntas_cols_asesor = [p for p in preguntas_reales if p in df_asesor.columns]
+    df_long = df_asesor.melt(
+        id_vars=["Área", "Asesor", "Canal", "Fecha"],
+        value_vars=preguntas_cols_asesor,
+        var_name="Pregunta",
+        value_name="Puntaje"
+    )
 
-if not preguntas_cols_asesor:
-    st.info("Este asesor no tiene preguntas asociadas a su canal.")
-    st.stop()
+    df_long["Puntaje"] = pd.to_numeric(df_long["Puntaje"], errors="coerce").fillna(0)
 
-# ============================
-# 📌 Transformar para graficar
-# ============================
+    df_preg = (
+        df_long.assign(Cumple=lambda d: d["Puntaje"] > 0)
+                .groupby("Pregunta")["Cumple"]
+                .mean()
+                .reset_index(name="Cumplimiento")
+    )
 
-df_long = df_asesor.melt(
-    id_vars=["Área", "Asesor", "Canal", "Fecha"],
-    value_vars=preguntas_cols_asesor,
-    var_name="Pregunta",
-    value_name="Puntaje"
-)
+    df_preg["Cumplimiento"] *= 100
 
-df_long["Puntaje"] = pd.to_numeric(df_long["Puntaje"], errors="coerce").fillna(0)
+    # ====================================================
+    # 🔥 ORDENAR LAS PREGUNTAS COMO EN EL FORMULARIO
+    # ====================================================
 
-# Clasificar cumplimiento
-df_preg = (
-    df_long.assign(Cumple=lambda d: d["Puntaje"] > 0)
-            .groupby("Pregunta")["Cumple"]
-            .mean()
-            .reset_index(name="Cumplimiento")
-)
+    orden_formulario = obtener_preguntas(area_asesor, canal_asesor)
+    mapa_orden = {preg: idx for idx, preg in enumerate(orden_formulario)}
 
-df_preg["Cumplimiento"] *= 100  # Convertir a porcentaje
+    df_preg["orden"] = df_preg["Pregunta"].map(mapa_orden)
+    df_preg = df_preg.dropna(subset=["orden"]).sort_values("orden")
+    df_preg = df_preg.iloc[::-1].reset_index(drop=True)
 
-# =================================================
-# ORDENAR PREGUNTAS SEGÚN EL ORDEN DEL FORMULARIO
-# =================================================
+    # ====================================================
+    # 📊 GRÁFICO FINAL
+    # ====================================================
 
-orden_formulario = obtener_preguntas(area_asesor, canal_asesor)
+    fig = px.bar(
+        df_preg,
+        x="Cumplimiento",
+        y="Pregunta",
+        orientation="h",
+        title="📌 Cumplimiento por pregunta",
+        color="Cumplimiento",
+        color_continuous_scale="agsunset",
+        range_x=[0, 100]
+    )
 
-# Crear diccionario con índice numérico del formulario
-mapa_orden = {preg: idx for idx, preg in enumerate(orden_formulario)}
-
-# Agregar columna de orden
-df_preg["orden"] = df_preg["Pregunta"].map(mapa_orden)
-
-# Eliminar preguntas que NO coincidan (None)
-df_preg = df_preg.dropna(subset=["orden"])
-
-# Ordenar por el índice numérico del formulario
-df_preg = df_preg.sort_values("orden")
-
-# 🔥 Invertir el orden para que Plotly muestre igual al formulario
-df_preg = df_preg.iloc[::-1].reset_index(drop=True)
-
-
-# =================================================
-# 📊 GRÁFICO FINAL
-# =================================================
-
-fig = px.bar(
-    df_preg,
-    x="Cumplimiento",
-    y="Pregunta",
-    orientation="h",
-    title="📌 Cumplimiento por pregunta",
-    color="Cumplimiento",
-    color_continuous_scale="agsunset",
-    range_x=[0, 100]
-)
-
-fig.update_traces(texttemplate="%{x:.1f}%", textposition="outside")
-st.plotly_chart(fig, use_container_width=True)
+    fig.update_traces(texttemplate="%{x:.1f}%", textposition="outside")
+    st.plotly_chart(fig, use_container_width=True)
