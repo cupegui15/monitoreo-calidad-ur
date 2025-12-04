@@ -808,6 +808,10 @@ df_preg = df_preg.dropna(subset=["orden"])
 # Ordenar por el índice numérico del formulario
 df_preg = df_preg.sort_values("orden")
 
+# 🔥 Invertir el orden para que Plotly muestre igual al formulario
+df_preg = df_preg.iloc[::-1].reset_index(drop=True)
+
+
 # =================================================
 # 📊 GRÁFICO FINAL
 # =================================================
