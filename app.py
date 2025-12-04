@@ -261,7 +261,27 @@ def cargar_todas_las_hojas_google_sheets():
             if not records:
                 continue
 
+            # ----------------------------------------
+            # Crear dataframe base
+            # ----------------------------------------
             df_temp = pd.DataFrame(records)
+
+            # ========================================
+            # 🔥 Asegurar que TODAS las preguntas existan
+            # ========================================
+            preguntas_definidas = obtener_preguntas(area_name, canal_name)
+
+            for p in preguntas_definidas:
+                # Si la columna NO existe → agregarla con 0
+                if p not in df_temp.columns:
+                    df_temp[p] = 0
+                else:
+                    # Convertir valores vacíos o texto a 0
+                    df_temp[p] = pd.to_numeric(df_temp[p], errors="coerce").fillna(0)
+
+            # ----------------------------------------
+            # Agregar columnas de área y canal
+            # ----------------------------------------
             df_temp["Área"] = area_name
             df_temp["Canal"] = canal_name
 
