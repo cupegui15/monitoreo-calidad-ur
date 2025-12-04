@@ -808,6 +808,9 @@ df_preg = (
     .reset_index()
 )
 
+st.write("Preguntas reales:", df_preg["Pregunta"].tolist())
+st.write("Orden formulario:", preguntas_ordenadas)
+
 # ============================
 # 📊 Gráfico final
 # ============================
