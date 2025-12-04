@@ -80,7 +80,7 @@ areas = {
             "Nelson Peña Ramírez","Solangel Milena Rodriguez Quitian","Leidy Sofia Ramirez Paez"
         ]
     },
-    "Servicios 2030": {
+    "Conecta UR": {
         "canales": ["Línea 2030", "Chat 2030", "Sitio 2030"],
         "monitores": ["Johanna Rueda Cuvajante", "Cristian Alberto Upegui M"],
         "asesores": [
@@ -125,7 +125,7 @@ def obtener_preguntas(area, canal):
                 "¿Es empático al cerrar la solicitud?"
             ]
 
-    elif area == "Servicios 2030":
+    elif area == "Conecta UR":
         if canal in ["Línea 2030", "Chat 2030"]:
             preguntas = [
                 "¿Atiende la interacción de forma oportuna en el momento que se establece el contacto?",
@@ -261,7 +261,7 @@ pagina = st.sidebar.radio(
     [
         "📝 Formulario de Monitoreo",
         "📊 Dashboard CASA UR",
-        "📈 Dashboard Servicios 2030",
+        "📈 Dashboard Conecta UR",
         "🎯 Dashboard por Asesor"
     ]
 )
@@ -341,7 +341,7 @@ if pagina == "📝 Formulario de Monitoreo":
                 ("¿Es empático al cerrar la solicitud?", 20)
             ]
 
-    elif area == "Servicios 2030":
+    elif area == "Conecta UR":
 
         if canal in ["Línea 2030", "Chat 2030"]:
             preguntas_canal = [
@@ -586,9 +586,9 @@ elif pagina == "📊 Dashboard CASA UR":
             st.plotly_chart(fig_h, use_container_width=True)
 
 # =====================================================================
-# 📈 DASHBOARD SERVICIOS 2030
+# 📈 DASHBOARD Conecta UR
 # =====================================================================
-elif pagina == "📈 Dashboard Servicios 2030":
+elif pagina == "📈 Dashboard Conecta UR":
 
     df = cargar_todas_las_hojas_google_sheets()
 
@@ -604,11 +604,11 @@ elif pagina == "📈 Dashboard Servicios 2030":
     df["Mes"] = df["Fecha"].dt.month
     df["Año"] = df["Fecha"].dt.year
 
-    # Fijar área Servicios 2030
-    df = df[df["Área"] == "Servicios 2030"]
+    # Fijar área Conecta UR
+    df = df[df["Área"] == "Conecta UR"]
 
     if df.empty:
-        st.warning("No hay datos para Servicios 2030.")
+        st.warning("No hay datos para Conecta UR.")
         st.stop()
 
     meses = {
@@ -619,7 +619,7 @@ elif pagina == "📈 Dashboard Servicios 2030":
     # ===============================
     # FILTROS
     # ===============================
-    st.sidebar.subheader("Filtros Servicios 2030")
+    st.sidebar.subheader("Filtros Conecta UR")
 
     canal_f = st.sidebar.selectbox("Canal:", ["Todos"] + sorted(df["Canal"].unique()))
     anio_f = st.sidebar.selectbox("Año:", ["Todos"] + sorted(df["Año"].dropna().unique().astype(int)))
@@ -644,7 +644,7 @@ elif pagina == "📈 Dashboard Servicios 2030":
         st.stop()
 
     if no_filtros:
-        st.subheader("📈 Dashboard Servicios 2030 – Global (sin filtros)")
+        st.subheader("📈 Dashboard Conecta UR – Global (sin filtros)")
 
         c1, c2, c3 = st.columns(3)
         c1.metric("Monitoreos Totales", len(df))
@@ -669,7 +669,7 @@ elif pagina == "📈 Dashboard Servicios 2030":
             st.markdown(f"### 📌 Canal: **{canal_actual}**")
             df_c = df[df["Canal"] == canal_actual]
 
-            preguntas_definidas = obtener_preguntas("Servicios 2030", canal_actual)
+            preguntas_definidas = obtener_preguntas("Conecta UR", canal_actual)
             preguntas_cols = [c for c in preguntas_definidas if c in df_c.columns]
 
             if not preguntas_cols:
@@ -696,7 +696,7 @@ elif pagina == "📈 Dashboard Servicios 2030":
             st.plotly_chart(fig_h, use_container_width=True)
 
     else:
-        st.subheader("📈 Dashboard Servicios 2030 – con filtros")
+        st.subheader("📈 Dashboard Conecta UR – con filtros")
 
         c1, c2, c3 = st.columns(3)
         c1.metric("Monitoreos filtrados", len(df_filtrado))
@@ -715,7 +715,7 @@ elif pagina == "📈 Dashboard Servicios 2030":
             st.markdown(f"### 📌 Canal: **{canal_actual}**")
             df_c = df_filtrado[df_filtrado["Canal"] == canal_actual]
 
-            preguntas_definidas = obtener_preguntas("Servicios 2030", canal_actual)
+            preguntas_definidas = obtener_preguntas("Conecta UR", canal_actual)
             preguntas_cols = [c for c in preguntas_definidas if c in df_c.columns]
 
             if not preguntas_cols:
