@@ -81,7 +81,7 @@ areas = {
         ]
     },
     "Conecta UR": {
-        "canales": ["Línea 2030", "Chat 2030", "Sitio 2030"],
+        "canales": ["Línea Conecta UR", "Chat Conecta UR", "Sitio Conecta UR"],
         "monitores": ["Johanna Rueda Cuvajante", "Cristian Alberto Upegui M"],
         "asesores": [
             "Juan Sebastian Silva Gomez","Jennyfer Caicedo Alfonso","Jerly Durley Mendez Fontecha",
@@ -126,7 +126,7 @@ def obtener_preguntas(area, canal):
             ]
 
     elif area == "Conecta UR":
-        if canal in ["Línea 2030", "Chat 2030"]:
+        if canal in ["Línea Conecta UR", "Chat Conecta UR"]:
             preguntas = [
                 "¿Atiende la interacción de forma oportuna en el momento que se establece el contacto?",
                 "¿Saluda y se presenta de manera amable y profesional, estableciendo un inicio cordial de la atención?",
@@ -139,7 +139,7 @@ def obtener_preguntas(area, canal):
                 "¿Documenta la atención en el sistema de tickets de manera coherente, seleccionando tipologías correctas y con redacción/ortografía adecuadas?",
                 "¿Finaliza la atención de forma amable y profesional, utilizando el cierre de interacción definido y remitiendo al usuario a la encuesta de satisfacción?"
             ]
-        elif canal == "Sitio 2030":
+        elif canal == "Sitio Conecta UR":
             preguntas = [
                 "¿Cumple con el ANS/SLA establecido?",
                 "¿Realiza un análisis completo y pertinente de la solicitud, aplicando diagnóstico claro antes de ejecutar acciones?",
@@ -343,7 +343,7 @@ if pagina == "📝 Formulario de Monitoreo":
 
     elif area == "Conecta UR":
 
-        if canal in ["Línea 2030", "Chat 2030"]:
+        if canal in ["Línea Conecta UR", "Chat Conecta UR"]:
             preguntas_canal = [
                 ("¿Atiende la interacción de forma oportuna en el momento que se establece el contacto?", 9),
                 ("¿Saluda y se presenta de manera amable y profesional, estableciendo un inicio cordial de la atención?", 9),
@@ -356,7 +356,7 @@ if pagina == "📝 Formulario de Monitoreo":
                 ("¿Documenta la atención en el sistema de tickets de manera coherente, seleccionando tipologías correctas y con redacción/ortografía adecuadas?", 14),
                 ("¿Finaliza la atención de forma amable y profesional, utilizando el cierre de interacción definido y remitiendo al usuario a la encuesta de satisfacción?", 10)
             ]
-        elif canal == "Sitio 2030":
+        elif canal == "Sitio Conecta UR":
             preguntas_canal = [
                 ("¿Cumple con el ANS/SLA establecido?", 20),
                 ("¿Realiza un análisis completo y pertinente de la solicitud, aplicando diagnóstico claro antes de ejecutar acciones?", 20),
