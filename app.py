@@ -794,22 +794,19 @@ df_preg["Cumplimiento"] *= 100  # Convertir a porcentaje
 # ORDENAR PREGUNTAS SEGÚN EL ORDEN DEL FORMULARIO
 # =================================================
 
-# Orden original del formulario según área y canal del asesor
 orden_formulario = obtener_preguntas(area_asesor, canal_asesor)
 
-# Nos quedamos solo con las que realmente aparecen en df_preg
-preguntas_ordenadas = [p for p in orden_formulario if p in df_preg["Pregunta"].values]
+# Crear un diccionario con el orden numérico
+mapa_orden = {pregunta: idx for idx, pregunta in enumerate(orden_formulario)}
 
-# Reordenar el dataframe según ese orden
-df_preg = (
-    df_preg
-    .set_index("Pregunta")
-    .loc[preguntas_ordenadas]
-    .reset_index()
-)
+# Agregar columna temporal de orden
+df_preg["orden"] = df_preg["Pregunta"].map(mapa_orden)
 
-st.write("Preguntas reales:", df_preg["Pregunta"].tolist())
-st.write("Orden formulario:", preguntas_ordenadas)
+# Eliminar preguntas que NO coincidan con el formulario (map devuelve NaN)
+df_preg = df_preg.dropna(subset=["orden"])
+
+# Ordenar definitivamente por el número asignado
+df_preg = df_preg.sort_values("orden")
 
 # ============================
 # 📊 Gráfico final
@@ -825,7 +822,6 @@ fig = px.bar(
     color_continuous_scale="agsunset",
     range_x=[0, 100]
 )
-
 # Forzar que el eje Y respete exactamente ese orden
 fig.update_layout(
     yaxis=dict(
