@@ -543,6 +543,52 @@ elif pagina == "📊 Dashboard CASA UR":
     c2.metric("Promedio General (Total puntos)", f"{promedio_general:.2f}")
     c3.metric("Errores Críticos", len(df_filtrado[df_filtrado["Error crítico"] == "Sí"]))
 
+        # ===============================
+    # 📌 NUEVAS GRÁFICAS SOLICITADAS
+    # ===============================
+
+    st.subheader("📊 Distribución de Monitoreos – CASA UR")
+
+    # 1️⃣ Cantidad de monitoreos por asesor
+    monit_por_asesor = (
+        df_filtrado.groupby("Asesor")
+        .size()
+        .reset_index(name="Monitoreos")
+        .sort_values("Monitoreos", ascending=False)
+    )
+
+    fig_asesores = px.bar(
+        monit_por_asesor,
+        x="Asesor",
+        y="Monitoreos",
+        title="Cantidad de Monitoreos por Asesor",
+        text="Monitoreos",
+        color="Monitoreos",
+        color_continuous_scale="Bluered"
+    )
+    fig_asesores.update_layout(xaxis_tickangle=-45)
+    st.plotly_chart(fig_asesores, use_container_width=True)
+
+    # 2️⃣ Cantidad de monitoreos por monitor
+    monit_por_monitor = (
+        df_filtrado.groupby("Monitor")
+        .size()
+        .reset_index(name="Monitoreos realizados")
+        .sort_values("Monitoreos realizados", ascending=False)
+    )
+
+    fig_monitor = px.bar(
+        monit_por_monitor,
+        x="Monitor",
+        y="Monitoreos realizados",
+        title="Cantidad de Monitoreos Realizados por Monitor",
+        text="Monitoreos realizados",
+        color="Monitoreos realizados",
+        color_continuous_scale="Teal"
+    )
+    fig_monitor.update_layout(xaxis_tickangle=-45)
+    st.plotly_chart(fig_monitor, use_container_width=True)
+
     # ===============================
     # CUMPLIMIENTO POR PREGUNTA
     # ===============================
@@ -645,6 +691,52 @@ elif pagina == "📈 Dashboard Conecta UR":
 
     c2.metric("Promedio General (Total puntos)", f"{promedio_general:.2f}")
     c3.metric("Errores Críticos", len(df_filtrado[df_filtrado["Error crítico"] == "Sí"]))
+
+        # ===============================
+    # 📌 NUEVAS GRÁFICAS
+    # ===============================
+
+    st.subheader("📊 Distribución de Monitoreos – Conecta UR")
+
+    # 1️⃣ Cantidad de monitoreos por asesor
+    monit_por_asesor = (
+        df_filtrado.groupby("Asesor")
+        .size()
+        .reset_index(name="Monitoreos")
+        .sort_values("Monitoreos", ascending=False)
+    )
+
+    fig_asesores = px.bar(
+        monit_por_asesor,
+        x="Asesor",
+        y="Monitoreos",
+        title="Cantidad de Monitoreos por Asesor",
+        text="Monitoreos",
+        color="Monitoreos",
+        color_continuous_scale="Bluered"
+    )
+    fig_asesores.update_layout(xaxis_tickangle=-45)
+    st.plotly_chart(fig_asesores, use_container_width=True)
+
+    # 2️⃣ Cantidad de monitoreos por monitor
+    monit_por_monitor = (
+        df_filtrado.groupby("Monitor")
+        .size()
+        .reset_index(name="Monitoreos realizados")
+        .sort_values("Monitoreos realizados", ascending=False)
+    )
+
+    fig_monitor = px.bar(
+        monit_por_monitor,
+        x="Monitor",
+        y="Monitoreos realizados",
+        title="Cantidad de Monitoreos Realizados por Monitor",
+        text="Monitoreos realizados",
+        color="Monitoreos realizados",
+        color_continuous_scale="Teal"
+    )
+    fig_monitor.update_layout(xaxis_tickangle=-45)
+    st.plotly_chart(fig_monitor, use_container_width=True)
 
     # ===============================
     # CUMPLIMIENTO POR PREGUNTA
