@@ -88,7 +88,7 @@ areas = {
             "Juliana Cadena Rodriguez- TMP","Yesica Yohana Tota Sierra - TMP",
             "Madeline García Fuerte- TMP","Jhon Alexis Cosme Basabe - TMP",
             "Angie Paola Rojas Jeronimo - TMP","Camilo Alexander Huertas Melo - TMP",
-            "Miguel Angel Rojas Rojas - TMP","Shana Dennis Francis Beltran - TMP"
+            "Miguel Angel Rojas Rojas - TMP"
         ]
     },
 
