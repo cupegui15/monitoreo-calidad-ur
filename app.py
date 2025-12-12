@@ -662,7 +662,7 @@ elif pagina == "📈 Dashboard Conecta UR":
     monit_por_monitor = (
         df_filtrado.groupby("Monitor")
         .size()
-        .reset_indeфx(name="Monitoreos realizados")
+        .reset_index(name="Monitoreos realizados")
         .sort_values("Monitoreos realizados", ascending=False)
     )
 
