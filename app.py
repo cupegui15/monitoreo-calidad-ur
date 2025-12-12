@@ -6,6 +6,7 @@ from datetime import date
 import gspread
 from oauth2client.service_account import ServiceAccountCredentials
 import json
+import time
 
 # ===============================
 # CONFIGURACIÓN PRINCIPAL
@@ -110,7 +111,9 @@ areas = {
 }
 
 # ===============================
-# PREGUNTAS POR CANAL
+# PREGUNTAS POR CANAL (FUENTE ÚNICA)
+# IMPORTANTE: aquí dejé EXACTAMENTE los textos que ya usas en tu formulario,
+# para que coincidan con las columnas que ya están guardadas en Sheets.
 # ===============================
 def obtener_preguntas(area, canal):
 
@@ -146,24 +149,44 @@ def obtener_preguntas(area, canal):
                 "¿Saluda y se presenta de manera amable y profesional, estableciendo un inicio cordial de la atención?",
                 "¿Realiza la validación de identidad del usuario garantizando confidencialidad y aplica protocolos de seguridad de la información?",
                 "¿Escucha activamente al usuario y formula preguntas pertinentes para un diagnóstico claro y completo?",
-                "¿Consulta y utiliza todas las herramientas de soporte disponibles para estructurar una respuesta adecuada?",
-                "¿Gestiona adecuadamente los tiempos de espera informando al usuario y realizando acompañamiento oportuno?",
-                "¿Sigue el flujo definido para solución o escalamiento, asegurando trazabilidad y cumplimiento?",
-                "¿Valida con el usuario que la información brindada es clara, completa y confirma si requiere trámites adicionales?",
-                "¿Documenta la atención de manera coherente, con tipologías correctas y buena redacción?",
-                "¿Finaliza la atención de forma amable y profesional, invitando a responder la encuesta?"
+                "¿Consulta y utiliza todas las herramientas de soporte disponibles (base de conocimiento, sistemas, documentación) para estructurar una respuesta adecuada?",
+                "¿Gestiona adecuadamente los tiempos de espera, manteniendo informado al usuario y realizando acompañamiento oportuno durante la interacción?",
+                "¿Sigue el flujo definido para solución o escalamiento, asegurando trazabilidad y cumplimiento de procesos internos?",
+                "¿Valida con el usuario que la información brindada es clara, completa y confirma si requiere trámites o pasos adicionales?",
+                "¿Documenta la atención en el sistema de tickets de manera coherente, seleccionando tipologías correctas y con redacción/ortografía adecuadas?",
+                "¿Finaliza la atención de forma amable y profesional, utilizando el cierre de interacción definido y remitiendo al usuario a la encuesta de satisfacción?"
             ]
 
         elif canal == "Sitio":
             return [
                 "¿Cumple con el ANS/SLA establecido?",
-                "¿Realiza un análisis completo y pertinente de la solicitud?",
-                "¿Gestiona correctamente en SAP / UXXI / Salesforce u otras herramientas?",
-                "¿Brinda una respuesta eficaz alineada a la solicitud radicada?",
-                "¿Comunica el cierre de la solicitud de manera empática y profesional?"
+                "¿Realiza un análisis completo y pertinente de la solicitud, aplicando diagnóstico claro antes de ejecutar acciones?",
+                "¿Gestiona correctamente en las herramientas institucionales (SAP / UXXI / Salesforce u otras) garantizando trazabilidad y registro adecuado?",
+                "¿Brinda una respuesta eficaz y alineada a la solicitud radicada por el usuario, asegurando calidad técnica en la solución?",
+                "¿Comunica el cierre de la solicitud de manera empática y profesional, validando la satisfacción del usuario?"
             ]
 
     return []
+
+# ===============================
+# PESOS POR CANAL (MISMA LONGITUD QUE obtener_preguntas)
+# ===============================
+def obtener_pesos(area, canal):
+
+    if area == "CASA UR":
+        if canal in ["Presencial", "Contact Center", "Chat"]:
+            return [9, 9, 9, 9, 9, 9, 14, 8, 14, 10]
+        elif canal == "Back Office":
+            return [20, 20, 20, 20, 20]
+
+    if area == "Conecta UR":
+        if canal in ["Linea", "Chat"]:
+            return [9, 9, 9, 9, 9, 9, 14, 8, 14, 10]
+        elif canal == "Sitio":
+            return [20, 20, 20, 20, 20]
+
+    return []
+
 # ===============================
 # GUARDAR REGISTRO EN GOOGLE SHEETS
 # ===============================
@@ -186,18 +209,14 @@ def guardar_datos_google_sheets(data):
         client = gspread.authorize(creds)
         sh = client.open_by_key(st.secrets["GOOGLE_SHEETS_ID"])
 
-        # ============================
-        # SELECCIÓN DE HOJA SEGÚN ÁREA
-        # ============================
+        # Selección de hoja según área/canal
         area = data["Área"]
         canal = data["Canal"]
 
         if area == "CASA UR":
             nombre_hoja = f"CASA UR - {canal}"
-
         elif area == "Conecta UR":
             nombre_hoja = f"Conecta UR - {canal}"
-
         else:
             nombre_hoja = f"{area} - {canal}"
 
@@ -230,6 +249,7 @@ def guardar_datos_google_sheets(data):
 
 # ===============================
 # CARGAR TODAS LAS HOJAS
+# CORRECCIÓN: NO inventa columnas con 0; solo convierte a numérico las columnas existentes.
 # ===============================
 def cargar_todas_las_hojas_google_sheets():
 
@@ -265,27 +285,18 @@ def cargar_todas_las_hojas_google_sheets():
             if not records:
                 continue
 
-            # ----------------------------------------
-            # Crear dataframe base
-            # ----------------------------------------
             df_temp = pd.DataFrame(records)
 
-            # ========================================
-            # 🔥 Asegurar que TODAS las preguntas existan
-            # ========================================
-            preguntas_definidas = obtener_preguntas(area_name, canal_name)
+            # Normalizar nombres de columnas (solo espacios)
+            df_temp.columns = [str(c).strip() for c in df_temp.columns]
 
+            # Convertir a numérico SOLO las preguntas que existan realmente en la hoja
+            preguntas_definidas = obtener_preguntas(area_name, canal_name)
             for p in preguntas_definidas:
-                # Si la columna NO existe → agregarla con 0
-                if p not in df_temp.columns:
-                    df_temp[p] = 0
-                else:
-                    # Convertir valores vacíos o texto a 0
+                if p in df_temp.columns:
                     df_temp[p] = pd.to_numeric(df_temp[p], errors="coerce").fillna(0)
 
-            # ----------------------------------------
             # Agregar columnas de área y canal
-            # ----------------------------------------
             df_temp["Área"] = area_name
             df_temp["Canal"] = canal_name
 
@@ -329,6 +340,7 @@ st.markdown(f"""
 
 # =====================================================================
 # 📝 FORMULARIO DE MONITOREO
+# CORRECCIÓN: usa SIEMPRE las preguntas desde obtener_preguntas() (misma fuente que el dashboard)
 # =====================================================================
 if pagina == "📝 Formulario de Monitoreo":
 
@@ -362,93 +374,42 @@ if pagina == "📝 Formulario de Monitoreo":
     fecha = st.date_input("Fecha de la interacción", date.today())
     canal = st.selectbox("Canal", (areas[area]["canales"] if area != "Seleccione una opción" else []))
     error_critico = st.radio("¿Corresponde a un error crítico?", ["No", "Sí"], horizontal=True)
-    # ===============================
-    # PREGUNTAS DINÁMICAS POR CANAL
-    # ===============================
-    preguntas_canal = []
 
-    if area == "CASA UR":
-        if canal in ["Presencial", "Contact Center", "Chat"]:
-            preguntas_canal = [
-                ("¿Atiende la interacción en el momento que se establece contacto con el(a) usuario(a)?", 9),
-                ("¿Saluda, se presenta de una forma amable y cortés, usando el dialogo de saludo y bienvenida?", 9),
-                ("¿Realiza la validación de identidad del usuario y personaliza la interacción de forma adecuada garantizando la confidencialidad de la información?", 9),
-                ("¿Escucha activamente al usuario y  realiza preguntas adicionales demostrando atención y concentración?", 9),
-                ("¿Consulta todas las herramientas disponibles para estructurar la posible respuesta que se le brindará al usuario?", 9),
-                ("¿Controla los tiempos de espera informando al usuario y realizando acompañamiento cada 2 minutos?", 9),
-                ("¿Brinda respuesta de forma precisa, completa y coherente, de acuerdo a la solicitado por el usuario?", 14),
-                ("¿Valida con el usuario si la información fue clara, completa o si requiere algún trámite adicional?", 8),
-                ("¿Documenta la atención de forma coherente según lo solicitado e informado al cliente; seleccionando las tipologías adecuadas y manejando correcta redacción y ortografía?", 14),
-                ("¿Finaliza la atención de forma amable, cortés utilizando el dialogo de cierre y despedida remitiendo al usuario a responder la encuesta de percepción?", 10)
-            ]
+    # Preguntas y pesos según área/canal
+    preguntas = obtener_preguntas(area, canal) if (area != "Seleccione una opción" and canal) else []
+    pesos = obtener_pesos(area, canal) if (area != "Seleccione una opción" and canal) else []
 
-        elif canal == "Back Office":
-            preguntas_canal = [
-                ("¿Cumple con el ANS establecido para el servicio?", 20),
-                ("¿Analiza correctamente la solicitud?", 20),
-                ("¿Gestiona adecuadamente en SAP/UXXI/Bizagi?", 20),
-                ("¿Respuestas eficaz de acuerdo a la solicitud radicada por el usuario?", 20),
-                ("¿Es empático al cerrar la solicitud?", 20)
-            ]
-
-    elif area == "Conecta UR":
-
-        if canal in ["Linea", "Chat"]:
-            preguntas_canal = [
-                ("¿Atiende la interacción de forma oportuna en el momento que se establece el contacto?", 9),
-                ("¿Saluda y se presenta de manera amable y profesional, estableciendo un inicio cordial de la atención?", 9),
-                ("¿Realiza la validación de identidad del usuario garantizando confidencialidad y aplica protocolos de seguridad de la información?", 9),
-                ("¿Escucha activamente al usuario y formula preguntas pertinentes para un diagnóstico claro y completo?", 9),
-                ("¿Consulta y utiliza todas las herramientas de soporte disponibles (base de conocimiento, sistemas, documentación) para estructurar una respuesta adecuada?", 9),
-                ("¿Gestiona adecuadamente los tiempos de espera, manteniendo informado al usuario y realizando acompañamiento oportuno durante la interacción?", 9),
-                ("¿Sigue el flujo definido para solución o escalamiento, asegurando trazabilidad y cumplimiento de procesos internos?", 14),
-                ("¿Valida con el usuario que la información brindada es clara, completa y confirma si requiere trámites o pasos adicionales?", 8),
-                ("¿Documenta la atención en el sistema de tickets de manera coherente, seleccionando tipologías correctas y con redacción/ortografía adecuadas?", 14),
-                ("¿Finaliza la atención de forma amable y profesional, utilizando el cierre de interacción definido y remitiendo al usuario a la encuesta de satisfacción?", 10)
-            ]
-
-        elif canal == "Sitio":
-            preguntas_canal = [
-                ("¿Cumple con el ANS/SLA establecido?", 20),
-                ("¿Realiza un análisis completo y pertinente de la solicitud, aplicando diagnóstico claro antes de ejecutar acciones?", 20),
-                ("¿Gestiona correctamente en las herramientas institucionales (SAP / UXXI / Salesforce u otras) garantizando trazabilidad y registro adecuado?", 20),
-                ("¿Brinda una respuesta eficaz y alineada a la solicitud radicada por el usuario, asegurando calidad técnica en la solución?", 20),
-                ("¿Comunica el cierre de la solicitud de manera empática y profesional, validando la satisfacción del usuario?", 20)
-            ]
+    preguntas_canal = list(zip(preguntas, pesos)) if (preguntas and pesos and len(preguntas) == len(pesos)) else []
 
     resultados = {}
     total = 0
 
-    if error_critico == "Sí":
-        st.error("❌ Error crítico: puntaje total = 0")
-        for q, _ in preguntas_canal:
-            resultados[q] = 0
-
+    if preguntas_canal:
+        if error_critico == "Sí":
+            st.error("❌ Error crítico: puntaje total = 0")
+            for q, _ in preguntas_canal:
+                resultados[q] = 0
+        else:
+            for (q, p) in preguntas_canal:
+                resp = st.radio(q, ["Cumple", "No cumple"], horizontal=True)
+                resultados[q] = p if resp == "Cumple" else 0
+                total += resultados[q]
     else:
-        for idx, (q, p) in enumerate(preguntas_canal):
-            resp = st.radio(q, ["Cumple", "No cumple"], horizontal=True)
-            resultados[q] = p if resp == "Cumple" else 0
-            total += resultados[q]
+        st.info("Selecciona Área y Canal para cargar preguntas.")
 
     positivos = st.text_area("Aspectos Positivos *")
     mejorar = st.text_area("Aspectos por Mejorar *")
 
     st.metric("Puntaje Total", total)
 
-    # ==========================================
-    # BOTÓN GUARDAR
-    # ==========================================
     if st.button("💾 Guardar Monitoreo"):
 
         if area == "Seleccione una opción" or monitor == "Seleccione una opción" or asesor == "Seleccione una opción":
             st.error("⚠️ Debes completar todos los campos.")
-
         elif not codigo.strip():
             st.error("⚠️ Código obligatorio.")
-
         elif not positivos.strip() or not mejorar.strip():
             st.error("⚠️ Debes diligenciar los aspectos positivos y por mejorar.")
-
         else:
             fila = {
                 "Área": area,
@@ -470,8 +431,6 @@ if pagina == "📝 Formulario de Monitoreo":
 
             placeholder = st.empty()
             placeholder.success("✅ Monitoreo guardado correctamente")
-
-            import time
             time.sleep(10)
             placeholder.empty()
             st.session_state.clear()
@@ -479,6 +438,7 @@ if pagina == "📝 Formulario de Monitoreo":
 
 # =====================================================================
 # 📊 DASHBOARD CASA UR
+# CORRECCIÓN: orden por formulario y sin 0% falsos por columnas inventadas
 # =====================================================================
 elif pagina == "📊 Dashboard CASA UR":
 
@@ -527,29 +487,18 @@ elif pagina == "📊 Dashboard CASA UR":
     if df_filtrado.empty:
         st.warning("No hay datos con los filtros seleccionados.")
         st.stop()
-    # ===============================
-    # MÉTRICAS GENERALES
-    # ===============================
+
     st.subheader("📊 Dashboard CASA UR")
 
     c1, c2, c3 = st.columns(3)
     c1.metric("Monitoreos Totales", len(df_filtrado))
 
-    if "Total" in df_filtrado.columns:
-        promedio_general = df_filtrado["Total"].mean()
-    else:
-        promedio_general = 0.0
-
+    promedio_general = df_filtrado["Total"].mean() if "Total" in df_filtrado.columns else 0.0
     c2.metric("Promedio General (Total puntos)", f"{promedio_general:.2f}")
     c3.metric("Errores Críticos", len(df_filtrado[df_filtrado["Error crítico"] == "Sí"]))
 
-        # ===============================
-    # 📌 NUEVAS GRÁFICAS SOLICITADAS
-    # ===============================
-
     st.subheader("📊 Distribución de Monitoreos – CASA UR")
 
-    # 1️⃣ Cantidad de monitoreos por asesor
     monit_por_asesor = (
         df_filtrado.groupby("Asesor")
         .size()
@@ -569,7 +518,6 @@ elif pagina == "📊 Dashboard CASA UR":
     fig_asesores.update_layout(xaxis_tickangle=-45)
     st.plotly_chart(fig_asesores, use_container_width=True)
 
-    # 2️⃣ Cantidad de monitoreos por monitor
     monit_por_monitor = (
         df_filtrado.groupby("Monitor")
         .size()
@@ -589,9 +537,6 @@ elif pagina == "📊 Dashboard CASA UR":
     fig_monitor.update_layout(xaxis_tickangle=-45)
     st.plotly_chart(fig_monitor, use_container_width=True)
 
-    # ===============================
-    # CUMPLIMIENTO POR PREGUNTA
-    # ===============================
     st.subheader("🔥 Cumplimiento por Pregunta – CASA UR")
 
     for canal_actual in df_filtrado["Canal"].unique():
@@ -599,20 +544,27 @@ elif pagina == "📊 Dashboard CASA UR":
         st.markdown(f"### 📌 Canal: **{canal_actual}**")
         df_c = df_filtrado[df_filtrado["Canal"] == canal_actual]
 
-        preguntas_definidas = obtener_preguntas("CASA UR", canal_actual)
-        preguntas_cols = [c for c in preguntas_definidas if c in df_c.columns]
+        orden_formulario = obtener_preguntas("CASA UR", canal_actual)
+        preguntas_cols = [p for p in orden_formulario if p in df_c.columns]
 
         if not preguntas_cols:
-            st.info("No hay preguntas configuradas para este canal.")
+            st.info("No hay preguntas configuradas para este canal o no existen columnas aún.")
             continue
 
         cumplimiento_canal = []
-        for col in preguntas_cols:
-            valores = pd.to_numeric(df_c[col], errors="coerce").fillna(0)
+        for p in orden_formulario:
+            if p not in df_c.columns:
+                continue
+            valores = pd.to_numeric(df_c[p], errors="coerce").fillna(0)
             pct = (valores > 0).mean() * 100
-            cumplimiento_canal.append({"Pregunta": col, "Cumplimiento": pct})
+            cumplimiento_canal.append({"Pregunta": p, "Cumplimiento": pct})
 
-        df_preg_canal = pd.DataFrame(cumplimiento_canal).sort_values("Cumplimiento")
+        df_preg_canal = pd.DataFrame(cumplimiento_canal)
+
+        # 🔥 ORDEN EXACTO FORMULARIO (y revertimos para horizontal)
+        mapa_orden = {preg: idx for idx, preg in enumerate(orden_formulario)}
+        df_preg_canal["orden"] = df_preg_canal["Pregunta"].map(mapa_orden)
+        df_preg_canal = df_preg_canal.sort_values("orden", ascending=False)
 
         fig_h = px.bar(
             df_preg_canal,
@@ -620,13 +572,15 @@ elif pagina == "📊 Dashboard CASA UR":
             orientation="h",
             color="Cumplimiento",
             color_continuous_scale="RdYlGn",
-            title=f"Cumplimiento por Pregunta – {canal_actual}"
+            title=f"Cumplimiento por Pregunta – {canal_actual}",
+            range_x=[0, 100]
         )
         fig_h.update_traces(texttemplate="%{x:.1f}%", textposition="outside")
         st.plotly_chart(fig_h, use_container_width=True)
 
 # =====================================================================
 # 📈 DASHBOARD Conecta UR
+# CORRECCIÓN: orden por formulario y sin 0% falsos por textos inconsistentes
 # =====================================================================
 elif pagina == "📈 Dashboard Conecta UR":
 
@@ -676,29 +630,17 @@ elif pagina == "📈 Dashboard Conecta UR":
         st.warning("No hay datos con los filtros seleccionados.")
         st.stop()
 
-    # ===============================
-    # MÉTRICAS GENERALES
-    # ===============================
     st.subheader("📈 Dashboard Conecta UR – Global")
 
     c1, c2, c3 = st.columns(3)
     c1.metric("Monitoreos Totales", len(df_filtrado))
 
-    if "Total" in df_filtrado.columns:
-        promedio_general = df_filtrado["Total"].mean()
-    else:
-        promedio_general = 0.0
-
+    promedio_general = df_filtrado["Total"].mean() if "Total" in df_filtrado.columns else 0.0
     c2.metric("Promedio General (Total puntos)", f"{promedio_general:.2f}")
     c3.metric("Errores Críticos", len(df_filtrado[df_filtrado["Error crítico"] == "Sí"]))
 
-        # ===============================
-    # 📌 NUEVAS GRÁFICAS
-    # ===============================
-
     st.subheader("📊 Distribución de Monitoreos – Conecta UR")
 
-    # 1️⃣ Cantidad de monitoreos por asesor
     monit_por_asesor = (
         df_filtrado.groupby("Asesor")
         .size()
@@ -718,11 +660,10 @@ elif pagina == "📈 Dashboard Conecta UR":
     fig_asesores.update_layout(xaxis_tickangle=-45)
     st.plotly_chart(fig_asesores, use_container_width=True)
 
-    # 2️⃣ Cantidad de monitoreos por monitor
     monit_por_monitor = (
         df_filtrado.groupby("Monitor")
         .size()
-        .reset_index(name="Monitoreos realizados")
+        .reset_indeфx(name="Monitoreos realizados")
         .sort_values("Monitoreos realizados", ascending=False)
     )
 
@@ -738,9 +679,6 @@ elif pagina == "📈 Dashboard Conecta UR":
     fig_monitor.update_layout(xaxis_tickangle=-45)
     st.plotly_chart(fig_monitor, use_container_width=True)
 
-    # ===============================
-    # CUMPLIMIENTO POR PREGUNTA
-    # ===============================
     st.subheader("🔥 Cumplimiento por Pregunta – Conecta UR")
 
     for canal_actual in df_filtrado["Canal"].unique():
@@ -748,20 +686,27 @@ elif pagina == "📈 Dashboard Conecta UR":
         st.markdown(f"### 📌 Canal: **{canal_actual}**")
         df_c = df_filtrado[df_filtrado["Canal"] == canal_actual]
 
-        preguntas_definidas = obtener_preguntas("Conecta UR", canal_actual)
-        preguntas_cols = [c for c in preguntas_definidas if c in df_c.columns]
+        orden_formulario = obtener_preguntas("Conecta UR", canal_actual)
+        preguntas_cols = [p for p in orden_formulario if p in df_c.columns]
 
         if not preguntas_cols:
-            st.info("No hay preguntas configuradas para este canal.")
+            st.info("No hay preguntas configuradas para este canal o no existen columnas aún.")
             continue
 
         cumplimiento_canal = []
-        for col in preguntas_cols:
-            valores = pd.to_numeric(df_c[col], errors="coerce").fillna(0)
+        for p in orden_formulario:
+            if p not in df_c.columns:
+                continue
+            valores = pd.to_numeric(df_c[p], errors="coerce").fillna(0)
             pct = (valores > 0).mean() * 100
-            cumplimiento_canal.append({"Pregunta": col, "Cumplimiento": pct})
+            cumplimiento_canal.append({"Pregunta": p, "Cumplimiento": pct})
 
-        df_preg_canal = pd.DataFrame(cumplimiento_canal).sort_values("Cumplimiento")
+        df_preg_canal = pd.DataFrame(cumplimiento_canal)
+
+        # 🔥 ORDEN EXACTO FORMULARIO (y revertimos para horizontal)
+        mapa_orden = {preg: idx for idx, preg in enumerate(orden_formulario)}
+        df_preg_canal["orden"] = df_preg_canal["Pregunta"].map(mapa_orden)
+        df_preg_canal = df_preg_canal.sort_values("orden", ascending=False)
 
         fig_h = px.bar(
             df_preg_canal,
@@ -769,13 +714,15 @@ elif pagina == "📈 Dashboard Conecta UR":
             orientation="h",
             color="Cumplimiento",
             color_continuous_scale="RdYlGn",
-            title=f"Cumplimiento por Pregunta – {canal_actual}"
+            title=f"Cumplimiento por Pregunta – {canal_actual}",
+            range_x=[0, 100]
         )
         fig_h.update_traces(texttemplate="%{x:.1f}%", textposition="outside")
         st.plotly_chart(fig_h, use_container_width=True)
 
 # =====================================================================
 # 🎯 DASHBOARD POR ASESOR
+# (Tu lógica estaba bien; solo lo dejé consistente con el orden y fuente única)
 # =====================================================================
 elif pagina == "🎯 Dashboard por Asesor":
 
@@ -827,7 +774,6 @@ elif pagina == "🎯 Dashboard por Asesor":
         st.stop()
 
     asesor_sel = st.selectbox("Seleccione un asesor para analizar:", sorted(df_f["Asesor"].unique()))
-
     df_asesor = df_f[df_f["Asesor"] == asesor_sel]
 
     st.markdown(f"## 👤 Análisis del Asesor: **{asesor_sel}**")
@@ -835,27 +781,20 @@ elif pagina == "🎯 Dashboard por Asesor":
     c1, c2, c3 = st.columns(3)
     c1.metric("Monitoreos realizados", len(df_asesor))
 
-    if "Total" in df_asesor.columns:
-        promedio_general = df_asesor["Total"].mean()
-    else:
-        promedio_general = (df_asesor.filter(like="¿") > 0).mean().mean() * 100
-
+    promedio_general = df_asesor["Total"].mean() if "Total" in df_asesor.columns else 0.0
     c2.metric("Promedio general (Total puntos)", f"{promedio_general:.2f}")
     c3.metric("Errores Críticos", len(df_asesor[df_asesor["Error crítico"] == "Sí"]))
 
     st.divider()
 
-    # ====================================================
-    # 🔥 FILTRAR PREGUNTAS DEL FORMULARIO DEL CANAL
-    # ====================================================
     area_asesor = df_asesor["Área"].iloc[0]
     canal_asesor = df_asesor["Canal"].iloc[0]
 
-    preguntas_reales = obtener_preguntas(area_asesor, canal_asesor)
-    preguntas_cols_asesor = [p for p in preguntas_reales if p in df_asesor.columns]
+    orden_formulario = obtener_preguntas(area_asesor, canal_asesor)
+    preguntas_cols_asesor = [p for p in orden_formulario if p in df_asesor.columns]
 
     if not preguntas_cols_asesor:
-        st.info("Este asesor no tiene preguntas asociadas a su canal.")
+        st.info("Este asesor no tiene preguntas asociadas a su canal o aún no hay columnas en la hoja.")
         st.stop()
 
     df_long = df_asesor.melt(
@@ -869,27 +808,17 @@ elif pagina == "🎯 Dashboard por Asesor":
 
     df_preg = (
         df_long.assign(Cumple=lambda d: d["Puntaje"] > 0)
-                .groupby("Pregunta")["Cumple"]
-                .mean()
-                .reset_index(name="Cumplimiento")
+               .groupby("Pregunta")["Cumple"]
+               .mean()
+               .reset_index(name="Cumplimiento")
     )
 
     df_preg["Cumplimiento"] *= 100
 
-    # ====================================================
-    # 🔥 ORDENAR LAS PREGUNTAS COMO EN EL FORMULARIO
-    # ====================================================
-
-    orden_formulario = obtener_preguntas(area_asesor, canal_asesor)
+    # Orden exacto del formulario (y reversa para horizontal)
     mapa_orden = {preg: idx for idx, preg in enumerate(orden_formulario)}
-
     df_preg["orden"] = df_preg["Pregunta"].map(mapa_orden)
-    df_preg = df_preg.dropna(subset=["orden"]).sort_values("orden")
-    df_preg = df_preg.iloc[::-1].reset_index(drop=True)
-
-    # ====================================================
-    # 📊 GRÁFICO FINAL
-    # ====================================================
+    df_preg = df_preg.dropna(subset=["orden"]).sort_values("orden", ascending=False)
 
     fig = px.bar(
         df_preg,
