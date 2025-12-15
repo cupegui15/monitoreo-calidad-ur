@@ -244,6 +244,28 @@ def ajustar_grafico_horizontal(fig, df_plot: pd.DataFrame, col_wrapped: str = "P
     return fig
 
 # ===============================
+# FUNCIONES DE SOPORTE PARA TEXTO Y GRÁFICOS
+# ===============================
+def envolver_pregunta(texto: str, ancho: int = 45) -> str:
+    """
+    Divide textos largos en varias líneas para Plotly
+    """
+    if not isinstance(texto, str):
+        return str(texto)
+    return "<br>".join(
+        textwrap.wrap(texto.strip(), width=ancho, break_long_words=False)
+    )
+
+def _lineas_wrap(s: str) -> int:
+    """
+    Cuenta cuántas líneas reales tiene un texto con <br>
+    """
+    if not isinstance(s, str) or not s:
+        return 1
+    return s.count("<br>") + 1
+
+
+# ===============================
 # GUARDAR REGISTRO EN GOOGLE SHEETS
 # ===============================
 def guardar_datos_google_sheets(data):
