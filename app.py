@@ -84,7 +84,8 @@ areas = {
             "Jose Edwin Navarro Rondon","Laura Alejandra Bernal Perez","Leidy Johanna Alonso Rincón",
             "Leyner Anyul Silva Avila","Martha Soraya Monsalve Fonseca",
             "Nancy Viviana Bulla Bustos","Nelson Peña Ramírez",
-            "Solangel Milena Rodriguez Quitian","Leidy Sofia Ramirez Paez","Nathalia Andrea Bernal Lara"
+            "Solangel Milena Rodriguez Quitian","Leidy Sofia Ramirez Paez","Nathalia Andrea Bernal Lara - TMP",
+            "Rafael Ricardo Garcia Gutierrez - TMP", "Laura Sofia Mayac Roa - TMP",
             "Juliana Cadena Rodriguez- TMP","Yesica Yohana Tota Sierra - TMP",
             "Madeline García Fuerte- TMP","Jhon Alexis Cosme Basabe - TMP",
             "Angie Paola Rojas Jeronimo - TMP","Camilo Alexander Huertas Melo - TMP",
