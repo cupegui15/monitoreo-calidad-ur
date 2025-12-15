@@ -405,45 +405,53 @@ st.markdown(f"""
 </div>
 """, unsafe_allow_html=True)
 
-    # =====================================================
-    # Formulario de Monitoreo
-    # =====================================================
 
 if pagina == "📝 Formulario de Monitoreo":
 
     st.markdown('<div class="section-title">🧾 Registro de Monitoreo</div>', unsafe_allow_html=True)
 
     # =====================================================
-    # DATOS GENERALES
+    # SECCIÓN 1 — DATOS GENERALES
     # =====================================================
-    area = st.selectbox(
-        "Área",
-        ["Seleccione una opción"] + list(areas.keys()),
-        key="f_area"
-    )
+    st.markdown("Datos generales")
 
-    monitor = st.selectbox(
-        "Persona que monitorea",
-        ["Seleccione una opción"] +
-        (areas[area]["monitores"] if area != "Seleccione una opción" else []),
-        key="f_monitor"
-    )
+    c1, c2 = st.columns(2)
 
-    asesor = st.selectbox(
-        "Asesor monitoreado",
-        ["Seleccione una opción"] +
-        (areas[area]["asesores"] if area != "Seleccione una opción" else []),
-        key="f_asesor"
-    )
+    with c1:
+        area = st.selectbox(
+            "Área",
+            ["Seleccione una opción"] + list(areas.keys()),
+            key="f_area"
+        )
 
-    canal = st.selectbox(
-        "Canal",
-        (areas[area]["canales"] if area != "Seleccione una opción" else []),
-        key="f_canal"
-    )
+        monitor = st.selectbox(
+            "Persona que monitorea",
+            ["Seleccione una opción"] +
+            (areas[area]["monitores"] if area != "Seleccione una opción" else []),
+            key="f_monitor"
+        )
 
-    codigo = st.text_input("Código de la interacción *", key="f_codigo")
-    fecha = st.date_input("Fecha de la interacción", date.today(), key="f_fecha")
+    with c2:
+        asesor = st.selectbox(
+            "Asesor monitoreado",
+            ["Seleccione una opción"] +
+            (areas[area]["asesores"] if area != "Seleccione una opción" else []),
+            key="f_asesor"
+        )
+
+        canal = st.selectbox(
+            "Canal",
+            (areas[area]["canales"] if area != "Seleccione una opción" else []),
+            key="f_canal"
+        )
+
+    c3, c4 = st.columns(2)
+
+    with c3:
+        codigo = st.text_input("Código de la interacción *", key="f_codigo")
+
+    with c4:
+        fecha = st.date_input("Fecha de la interacción", date.today(), key="f_fecha")
 
     error_critico = st.radio(
         "¿Corresponde a un error crítico?",
@@ -455,8 +463,10 @@ if pagina == "📝 Formulario de Monitoreo":
     st.divider()
 
     # =====================================================
-    # PREGUNTAS DINÁMICAS
+    # SECCIÓN 2 — CRITERIOS DE EVALUACIÓN
     # =====================================================
+    st.markdown("Criterios de evaluación")
+
     preguntas = obtener_preguntas(area, canal) if area != "Seleccione una opción" and canal else []
     pesos = obtener_pesos(area, canal) if area != "Seleccione una opción" and canal else []
 
@@ -473,56 +483,61 @@ if pagina == "📝 Formulario de Monitoreo":
         else:
             for q, p in zip(preguntas, pesos):
                 key_q = f"q_{abs(hash((area, canal, q))) % 10**10}"
-                resp = st.radio(q, ["Cumple", "No cumple"], horizontal=True, key=key_q)
+                resp = st.radio(
+                    q,
+                    ["Cumple", "No cumple"],
+                    horizontal=True,
+                    key=key_q
+                )
                 resultados[q] = p if resp == "Cumple" else 0
                 total += resultados[q]
 
     else:
-        st.info("Selecciona Área y Canal para cargar las preguntas.")
+        st.info("Selecciona Área y Canal para cargar los criterios de evaluación.")
 
     st.divider()
 
     # =====================================================
-    # RESULTADO
+    # SECCIÓN 3 — OBSERVACIONES
     # =====================================================
-    st.metric("Puntaje Total", total)
+    st.markdown("Observaciones finales")
 
-    st.divider()
+    o1, o2 = st.columns(2)
 
-    # =====================================================
-    # OBSERVACIONES FINALES (MISMO FORMULARIO VISUAL)
-    # =====================================================
-    st.markdown("### 📝 Observaciones finales")
-
-    col1, col2 = st.columns(2)
-
-    with col1:
+    with o1:
         positivos = st.text_area(
             "Aspectos Positivos *",
+            height=120,
             placeholder="Ej. Buen manejo del usuario, claridad en la respuesta..."
         )
 
-    with col2:
+    with o2:
         mejorar = st.text_area(
             "Aspectos por Mejorar *",
+            height=120,
             placeholder="Ej. Validación de identidad, control de tiempos..."
         )
 
     st.divider()
 
     # =====================================================
-    # BOTÓN GUARDAR
+    # SECCIÓN 4 — RESULTADO Y GUARDADO
     # =====================================================
-    if st.button("💾 Guardar Monitoreo", use_container_width=True):
+
+    st.metric("Puntaje Total", total)
+
+    guardar = st.button("💾 Guardar Monitoreo")
+
+    if guardar:
 
         if area == "Seleccione una opción" or not canal:
-            st.error("⚠️ Debes seleccionar Área y Canal.")
+            st.error("⚠️ Selecciona Área y Canal.")
         elif monitor == "Seleccione una opción" or asesor == "Seleccione una opción":
-            st.error("⚠️ Debes seleccionar monitor y asesor.")
+            st.error("⚠️ Selecciona monitor y asesor.")
         elif not codigo.strip():
-            st.error("⚠️ El código de la interacción es obligatorio.")
+            st.error("⚠️ Código obligatorio.")
         elif not positivos.strip() or not mejorar.strip():
-            st.error("⚠️ Debes diligenciar aspectos positivos y por mejorar.")
+            st.error("⚠️ Debes diligenciar los aspectos.")
         else:
             fila = {
                 "Área": area,
@@ -542,7 +557,7 @@ if pagina == "📝 Formulario de Monitoreo":
 
             guardar_datos_google_sheets(fila)
             st.success("✅ Monitoreo guardado correctamente")
-
+            time.sleep(2)
 # =====================================================================
 # 📊 DASHBOARD CASA UR
 # =====================================================================
