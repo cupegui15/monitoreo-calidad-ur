@@ -412,6 +412,11 @@ st.markdown(f"""
 </div>
 """, unsafe_allow_html=True)
 
+def on_change_area():
+    st.session_state["f_monitor"] = "Seleccione una opción"
+    st.session_state["f_asesor"] = "Seleccione una opción"
+    st.session_state["f_canal"] = None
+
 # =====================================================================
 # 📝 FORMULARIO DE MONITOREO
 # ✅ Ajuste: al guardar queda como al iniciar (clear_on_submit + rerun)
@@ -430,7 +435,9 @@ if pagina == "📝 Formulario de Monitoreo":
         c1, c2, c3 = st.columns(3)
 
         with c1:
-            area = st.selectbox("Área", ["Seleccione una opción"] + list(areas.keys()), key="f_area")
+            area = st.selectbox("Área",["Seleccione una opción"] + list(areas.keys()),key="f_area",
+            on_change=on_change_area
+            )
 
         with c2:
             monitor = st.selectbox(
