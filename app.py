@@ -7,6 +7,7 @@ import gspread
 from oauth2client.service_account import ServiceAccountCredentials
 import json
 import time
+import textwrap
 
 # ===============================
 # CONFIGURACIÓN PRINCIPAL
@@ -195,6 +196,11 @@ def ajustar_grafico_horizontal(fig, filas: int):
     )
     fig.update_yaxes(tickfont=dict(size=11))
     return fig
+
+def envolver_pregunta(texto, ancho=60):
+    if not isinstance(texto, str):
+        return texto
+    return "<br>".join(textwrap.wrap(texto, ancho))
 
 # ===============================
 # GUARDAR REGISTRO EN GOOGLE SHEETS
