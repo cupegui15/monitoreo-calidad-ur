@@ -112,23 +112,7 @@ areas = {
 }
 
 # ===============================
-# UTILIDADES PLOTLY / TEXTO
-# ===============================
-def ajustar_grafico_horizontal(fig, filas: int):
-    fig.update_layout(
-        margin=dict(l=520, r=40, t=60, b=40),
-        height=max(320, 40 * int(filas))
-    )
-    fig.update_yaxes(tickfont=dict(size=11))
-    return fig
-
-def envolver_pregunta(texto, ancho=60):
-    if not isinstance(texto, str):
-        return texto
-    return "<br>".join(textwrap.wrap(texto, ancho))
-
-# ===============================
-# PREGUNTAS POR CANAL
+# PREGUNTAS POR CANAL (FUENTE ÚNICA)
 # ===============================
 def obtener_preguntas(area, canal):
 
@@ -201,6 +185,43 @@ def obtener_pesos(area, canal):
             return [20, 20, 20, 20, 20]
 
     return []
+
+# ===============================
+# ✅ AJUSTE PLOTLY: wrap + altura dinámica para evitar solapamiento
+# ===============================
+def envolver_pregunta(texto: str, ancho: int = 45) -> str:
+    if not isinstance(texto, str):
+        return str(texto)
+    # wrap más agresivo para que no queden 6 líneas por pregunta
+    return "<br>".join(textwrap.wrap(texto.strip(), width=ancho, break_long_words=False))
+
+def _lineas_wrap(s: str) -> int:
+    if not isinstance(s, str) or not s:
+        return 1
+    return s.count("<br>") + 1
+
+def ajustar_grafico_horizontal(fig, df_plot: pd.DataFrame, col_wrapped: str = "Pregunta_wrapped"):
+    # Altura total basada en cuántas líneas tiene cada etiqueta (evita que se monten)
+    if df_plot.empty or col_wrapped not in df_plot.columns:
+        filas = 1
+        total_lineas = 1
+    else:
+        filas = len(df_plot)
+        total_lineas = int(df_plot[col_wrapped].apply(_lineas_wrap).sum())
+
+    # reglas: base + por línea (más estable que "por fila")
+    height = max(420, 140 + (total_lineas * 22))
+
+    fig.update_layout(
+        height=height,
+        margin=dict(l=460, r=40, t=60, b=40),
+        yaxis=dict(automargin=True)
+    )
+    fig.update_yaxes(
+        automargin=True,
+        tickfont=dict(size=10)
+    )
+    return fig
 
 # ===============================
 # GUARDAR REGISTRO EN GOOGLE SHEETS
@@ -300,8 +321,6 @@ def cargar_todas_las_hojas_google_sheets():
                 continue
 
             df_temp = pd.DataFrame(records)
-
-            # Normalizar nombres de columnas (solo espacios)
             df_temp.columns = [str(c).strip() for c in df_temp.columns]
 
             # Convertir a numérico SOLO las preguntas que existan realmente en la hoja
@@ -310,7 +329,6 @@ def cargar_todas_las_hojas_google_sheets():
                 if p in df_temp.columns:
                     df_temp[p] = pd.to_numeric(df_temp[p], errors="coerce").fillna(0)
 
-            # Agregar columnas de área y canal
             df_temp["Área"] = area_name
             df_temp["Canal"] = canal_name
 
@@ -354,14 +372,19 @@ st.markdown(f"""
 
 # =====================================================================
 # 📝 FORMULARIO DE MONITOREO
-# ✅ Ajuste: reset al guardar (clear_on_submit + rerun)
+# ✅ Ajuste: al guardar queda como al iniciar (clear_on_submit + rerun)
 # =====================================================================
 if pagina == "📝 Formulario de Monitoreo":
 
     st.markdown('<div class="section-title">🧾 Registro de Monitoreo</div>', unsafe_allow_html=True)
 
-    with st.form("form_monitoreo", clear_on_submit=True):
+    # Si quieres mostrar un aviso después del rerun
+    if st.session_state.get("show_saved_msg", False):
+        st.success("✅ Monitoreo guardado correctamente")
+        time.sleep(2)
+        st.session_state["show_saved_msg"] = False
 
+    with st.form("form_monitoreo", clear_on_submit=True):
         c1, c2, c3 = st.columns(3)
 
         with c1:
@@ -401,7 +424,7 @@ if pagina == "📝 Formulario de Monitoreo":
                     resultados[q] = 0
             else:
                 for (q, p) in preguntas_canal:
-                    # clave estable para radios (evita choques)
+                    # key estable por pregunta
                     k = f"q_{abs(hash((area, canal, q)))%10**10}"
                     resp = st.radio(q, ["Cumple", "No cumple"], horizontal=True, key=k)
                     resultados[q] = p if resp == "Cumple" else 0
@@ -442,17 +465,13 @@ if pagina == "📝 Formulario de Monitoreo":
 
             guardar_datos_google_sheets(fila)
 
-            placeholder = st.empty()
-            placeholder.success("✅ Monitoreo guardado correctamente")
-            time.sleep(3)  # ajusta a 10 si quieres
-            placeholder.empty()
-
-            # ✅ refresco y formulario en 0 (como al iniciar)
+            # ✅ para que al recargar siga mostrando éxito un momento
+            st.session_state["show_saved_msg"] = True
             st.rerun()
 
 # =====================================================================
 # 📊 DASHBOARD CASA UR
-# ✅ Ajuste: envolver preguntas (Pregunta_wrapped)
+# ✅ Ajuste: wrap + altura dinámica para no solapar preguntas
 # =====================================================================
 elif pagina == "📊 Dashboard CASA UR":
 
@@ -490,10 +509,8 @@ elif pagina == "📊 Dashboard CASA UR":
 
     if canal_f != "Todos":
         df_filtrado = df_filtrado[df_filtrado["Canal"] == canal_f]
-
     if anio_f != "Todos":
         df_filtrado = df_filtrado[df_filtrado["Año"] == int(anio_f)]
-
     if mes_f != "Todos":
         mes_num = [k for k, v in meses.items() if v == mes_f][0]
         df_filtrado = df_filtrado[df_filtrado["Mes"] == mes_num]
@@ -506,7 +523,6 @@ elif pagina == "📊 Dashboard CASA UR":
 
     c1, c2, c3 = st.columns(3)
     c1.metric("Monitoreos Totales", len(df_filtrado))
-
     promedio_general = df_filtrado["Total"].mean() if "Total" in df_filtrado.columns else 0.0
     c2.metric("Promedio General (Total puntos)", f"{promedio_general:.2f}")
     c3.metric("Errores Críticos", len(df_filtrado[df_filtrado["Error crítico"] == "Sí"]))
@@ -575,17 +591,17 @@ elif pagina == "📊 Dashboard CASA UR":
 
         df_preg_canal = pd.DataFrame(cumplimiento_canal)
 
-        # Orden exacto formulario
         mapa_orden = {preg: idx for idx, preg in enumerate(orden_formulario)}
         df_preg_canal["orden"] = df_preg_canal["Pregunta"].map(mapa_orden)
         df_preg_canal = df_preg_canal.sort_values("orden", ascending=False)
 
-        # ✅ envolver para mostrar (sin tocar la columna original)
-        df_preg_canal["Pregunta_wrapped"] = df_preg_canal["Pregunta"].apply(lambda x: envolver_pregunta(x, 60))
+        # ✅ wrap para plot
+        df_preg_canal["Pregunta_wrapped"] = df_preg_canal["Pregunta"].apply(lambda x: envolver_pregunta(x, 45))
 
         fig_h = px.bar(
             df_preg_canal,
-            x="Cumplimiento", y="Pregunta_wrapped",
+            x="Cumplimiento",
+            y="Pregunta_wrapped",
             orientation="h",
             color="Cumplimiento",
             color_continuous_scale="RdYlGn",
@@ -593,12 +609,13 @@ elif pagina == "📊 Dashboard CASA UR":
             range_x=[0, 100]
         )
         fig_h.update_traces(texttemplate="%{x:.1f}%", textposition="outside")
-        fig_h = ajustar_grafico_horizontal(fig_h, len(df_preg_canal))
+
+        fig_h = ajustar_grafico_horizontal(fig_h, df_preg_canal, "Pregunta_wrapped")
         st.plotly_chart(fig_h, use_container_width=True)
 
 # =====================================================================
 # 📈 DASHBOARD Conecta UR
-# ✅ Ajuste: envolver preguntas (Pregunta_wrapped)
+# ✅ Ajuste: wrap + altura dinámica para no solapar preguntas
 # =====================================================================
 elif pagina == "📈 Dashboard Conecta UR":
 
@@ -636,10 +653,8 @@ elif pagina == "📈 Dashboard Conecta UR":
 
     if canal_f != "Todos":
         df_filtrado = df_filtrado[df_filtrado["Canal"] == canal_f]
-
     if anio_f != "Todos":
         df_filtrado = df_filtrado[df_filtrado["Año"] == int(anio_f)]
-
     if mes_f != "Todos":
         mes_num = [k for k, v in meses.items() if v == mes_f][0]
         df_filtrado = df_filtrado[df_filtrado["Mes"] == mes_num]
@@ -652,7 +667,6 @@ elif pagina == "📈 Dashboard Conecta UR":
 
     c1, c2, c3 = st.columns(3)
     c1.metric("Monitoreos Totales", len(df_filtrado))
-
     promedio_general = df_filtrado["Total"].mean() if "Total" in df_filtrado.columns else 0.0
     c2.metric("Promedio General (Total puntos)", f"{promedio_general:.2f}")
     c3.metric("Errores Críticos", len(df_filtrado[df_filtrado["Error crítico"] == "Sí"]))
@@ -725,12 +739,13 @@ elif pagina == "📈 Dashboard Conecta UR":
         df_preg_canal["orden"] = df_preg_canal["Pregunta"].map(mapa_orden)
         df_preg_canal = df_preg_canal.sort_values("orden", ascending=False)
 
-        # ✅ envolver para mostrar
-        df_preg_canal["Pregunta_wrapped"] = df_preg_canal["Pregunta"].apply(lambda x: envolver_pregunta(x, 60))
+        # ✅ wrap para plot
+        df_preg_canal["Pregunta_wrapped"] = df_preg_canal["Pregunta"].apply(lambda x: envolver_pregunta(x, 45))
 
         fig_h = px.bar(
             df_preg_canal,
-            x="Cumplimiento", y="Pregunta_wrapped",
+            x="Cumplimiento",
+            y="Pregunta_wrapped",
             orientation="h",
             color="Cumplimiento",
             color_continuous_scale="RdYlGn",
@@ -738,12 +753,13 @@ elif pagina == "📈 Dashboard Conecta UR":
             range_x=[0, 100]
         )
         fig_h.update_traces(texttemplate="%{x:.1f}%", textposition="outside")
-        fig_h = ajustar_grafico_horizontal(fig_h, len(df_preg_canal))
+
+        fig_h = ajustar_grafico_horizontal(fig_h, df_preg_canal, "Pregunta_wrapped")
         st.plotly_chart(fig_h, use_container_width=True)
 
 # =====================================================================
 # 🎯 DASHBOARD POR ASESOR
-# ✅ Ajuste: envolver preguntas (Pregunta_wrapped)
+# ✅ Ajuste: wrap + altura dinámica para no solapar preguntas
 # =====================================================================
 elif pagina == "🎯 Dashboard por Asesor":
 
@@ -779,13 +795,10 @@ elif pagina == "🎯 Dashboard por Asesor":
 
     if area_f != "Todas":
         df_f = df_f[df_f["Área"] == area_f]
-
     if canal_f != "Todos":
         df_f = df_f[df_f["Canal"] == canal_f]
-
     if anio_f != "Todos":
         df_f = df_f[df_f["Año"] == int(anio_f)]
-
     if mes_f != "Todos":
         mes_num = [k for k, v in meses.items() if v == mes_f][0]
         df_f = df_f[df_f["Mes"] == mes_num]
@@ -801,7 +814,6 @@ elif pagina == "🎯 Dashboard por Asesor":
 
     c1, c2, c3 = st.columns(3)
     c1.metric("Monitoreos realizados", len(df_asesor))
-
     promedio_general = df_asesor["Total"].mean() if "Total" in df_asesor.columns else 0.0
     c2.metric("Promedio general (Total puntos)", f"{promedio_general:.2f}")
     c3.metric("Errores Críticos", len(df_asesor[df_asesor["Error crítico"] == "Sí"]))
@@ -840,8 +852,8 @@ elif pagina == "🎯 Dashboard por Asesor":
     df_preg["orden"] = df_preg["Pregunta"].map(mapa_orden)
     df_preg = df_preg.dropna(subset=["orden"]).sort_values("orden", ascending=False)
 
-    # ✅ envolver para mostrar
-    df_preg["Pregunta_wrapped"] = df_preg["Pregunta"].apply(lambda x: envolver_pregunta(x, 60))
+    # ✅ wrap para plot
+    df_preg["Pregunta_wrapped"] = df_preg["Pregunta"].apply(lambda x: envolver_pregunta(x, 45))
 
     fig = px.bar(
         df_preg,
@@ -855,5 +867,6 @@ elif pagina == "🎯 Dashboard por Asesor":
     )
 
     fig.update_traces(texttemplate="%{x:.1f}%", textposition="outside")
-    fig = ajustar_grafico_horizontal(fig, len(df_preg))
+    fig = ajustar_grafico_horizontal(fig, df_preg, "Pregunta_wrapped")
+
     st.plotly_chart(fig, use_container_width=True)
