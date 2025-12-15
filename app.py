@@ -413,8 +413,6 @@ if pagina == "📝 Formulario de Monitoreo":
     # =====================================================
     # SECCIÓN 1 — DATOS GENERALES
     # =====================================================
-    st.markdown("Datos generales")
-
     c1, c2 = st.columns(2)
 
     with c1:
