@@ -395,30 +395,28 @@ st.markdown(f"""
 # =====================================================================
 # 📝 FORMULARIO DE MONITOREO (SOLUCIÓN DEFINITIVA)
 # =====================================================================
+# =====================================================================
+# 📝 FORMULARIO DE MONITOREO
+# ORDEN: Área → Monitor → Asesor → Canal
+# Puntaje dinámico en tiempo real
+# =====================================================================
 if pagina == "📝 Formulario de Monitoreo":
 
     st.markdown('<div class="section-title">🧾 Registro de Monitoreo</div>', unsafe_allow_html=True)
 
-    # -------------------------------
-    # CONTROLES FUERA DEL FORM (RERUN)
-    # -------------------------------
-    cA, cB, cC = st.columns(3)
+    # -------------------------------------------------
+    # CONTROLES FUERA DEL FORM (provocan rerun)
+    # -------------------------------------------------
+    c1, c2, c3, c4 = st.columns(4)
 
-    with cA:
+    with c1:
         area = st.selectbox(
             "Área",
             ["Seleccione una opción"] + list(areas.keys()),
             key="f_area"
         )
 
-    with cB:
-        canal = st.selectbox(
-            "Canal",
-            (areas[area]["canales"] if area != "Seleccione una opción" else []),
-            key="f_canal"
-        )
-
-    with cC:
+    with c2:
         monitor = st.selectbox(
             "Persona que monitorea",
             ["Seleccione una opción"] +
@@ -426,72 +424,105 @@ if pagina == "📝 Formulario de Monitoreo":
             key="f_monitor"
         )
 
-    asesor = st.selectbox(
-        "Asesor monitoreado",
-        ["Seleccione una opción"] +
-        (areas[area]["asesores"] if area != "Seleccione una opción" else []),
-        key="f_asesor"
-    )
+    with c3:
+        asesor = st.selectbox(
+            "Asesor monitoreado",
+            ["Seleccione una opción"] +
+            (areas[area]["asesores"] if area != "Seleccione una opción" else []),
+            key="f_asesor"
+        )
 
-    # 🔹 Aquí YA funciona porque área y canal provocan rerun
+    with c4:
+        canal = st.selectbox(
+            "Canal",
+            (areas[area]["canales"] if area != "Seleccione una opción" else []),
+            key="f_canal"
+        )
+
+    # -------------------------------------------------
+    # CARGA DE PREGUNTAS SEGÚN ÁREA + CANAL
+    # -------------------------------------------------
     preguntas = (
         obtener_preguntas(area, canal)
         if area != "Seleccione una opción" and canal
         else []
     )
+
     pesos = (
         obtener_pesos(area, canal)
         if area != "Seleccione una opción" and canal
         else []
     )
 
+    # -------------------------------------------------
+    # PREGUNTAS (FUERA DEL FORM → dinámico)
+    # -------------------------------------------------
+    resultados = {}
+
+    if preguntas and pesos and len(preguntas) == len(pesos):
+
+        error_critico = st.radio(
+            "¿Corresponde a un error crítico?",
+            ["No", "Sí"],
+            horizontal=True,
+            key="f_error"
+        )
+
+        if error_critico == "Sí":
+            st.error("❌ Error crítico: el puntaje total será 0")
+            for q in preguntas:
+                resultados[q] = 0
+        else:
+            for q, p in zip(preguntas, pesos):
+                k = f"q_{abs(hash((area, canal, q))) % 10**10}"
+                resp = st.radio(
+                    q,
+                    ["Cumple", "No cumple"],
+                    horizontal=True,
+                    key=k
+                )
+                resultados[q] = p if resp == "Cumple" else 0
+
+    else:
+        st.info("Selecciona Área y Canal para cargar las preguntas.")
+
+    # -------------------------------------------------
+    # PUNTAJE DINÁMICO (SIEMPRE)
+    # -------------------------------------------------
+    total = sum(resultados.values())
+
+    st.metric("Puntaje Total", total)
+
+    # -------------------------------------------------
+    # FORM SOLO PARA GUARDAR
+    # -------------------------------------------------
     with st.form("form_monitoreo", clear_on_submit=True):
 
         codigo = st.text_input("Código de la interacción *")
         fecha = st.date_input("Fecha de la interacción", date.today())
 
-        error_critico = st.radio(
-            "¿Corresponde a un error crítico?",
-            ["No", "Sí"],
-            horizontal=True
-        )
-
-        resultados = {}
-        total = 0
-
-        if preguntas and pesos and len(preguntas) == len(pesos):
-            if error_critico == "Sí":
-                st.error("❌ Error crítico: puntaje total = 0")
-                for q in preguntas:
-                    resultados[q] = 0
-            else:
-                for q, p in zip(preguntas, pesos):
-                    k = f"q_{abs(hash((area, canal, q))) % 10**10}"
-                    resp = st.radio(q, ["Cumple", "No cumple"], horizontal=True, key=k)
-                    resultados[q] = p if resp == "Cumple" else 0
-                    total += resultados[q]
-        else:
-            st.info("Selecciona Área y Canal para cargar preguntas.")
-
         positivos = st.text_area("Aspectos Positivos *")
         mejorar = st.text_area("Aspectos por Mejorar *")
-
-        st.metric("Puntaje Total", total)
 
         submitted = st.form_submit_button("💾 Guardar Monitoreo")
 
         if submitted:
-            if area == "Seleccione una opción" or canal is None:
+
+            if area == "Seleccione una opción" or not canal:
                 st.error("⚠️ Selecciona Área y Canal.")
             elif monitor == "Seleccione una opción" or asesor == "Seleccione una opción":
                 st.error("⚠️ Selecciona monitor y asesor.")
+            elif not codigo.strip():
+                st.error("⚠️ Código obligatorio.")
+            elif not positivos.strip() or not mejorar.strip():
+                st.error("⚠️ Debes diligenciar los aspectos.")
             else:
                 fila = {
                     "Área": area,
                     "Canal": canal,
                     "Monitor": monitor,
                     "Asesor": asesor,
-                    "Código": codigo,
+                    "Código": codigo.strip(),
                     "Fecha": fecha,
                     "Error crítico": error_critico,
                     "Total": total,
