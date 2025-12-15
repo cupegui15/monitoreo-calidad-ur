@@ -201,13 +201,41 @@ def _lineas_wrap(s: str) -> int:
     return s.count("<br>") + 1
 
 def ajustar_grafico_horizontal(fig, df_plot: pd.DataFrame, col_wrapped: str = "Pregunta_wrapped"):
-    # Altura total basada en cuántas líneas tiene cada etiqueta (evita que se monten)
+    """
+    Ajusta gráficos horizontales con textos largos:
+    - Evita solapamiento de preguntas
+    - Altura dinámica según número de líneas
+    - Homologa títulos institucionales
+    """
+
+    # 🔹 Calcular altura según líneas reales
     if df_plot.empty or col_wrapped not in df_plot.columns:
-        filas = 1
         total_lineas = 1
     else:
-        filas = len(df_plot)
         total_lineas = int(df_plot[col_wrapped].apply(_lineas_wrap).sum())
+
+    height = max(420, 140 + (total_lineas * 22))
+
+    # 🔹 Layout general
+    fig.update_layout(
+        height=height,
+        margin=dict(l=460, r=40, t=60, b=40)
+    )
+
+    # 🔹 EJE Y HOMOLOGADO
+    fig.update_yaxes(
+        title_text="Criterio evaluado",   # ✅ aquí se cambia Pregunta_wrapped
+        automargin=True,
+        tickfont=dict(size=10)
+    )
+
+    # 🔹 COLORBAR HOMOLOGADA
+    fig.update_coloraxes(
+        colorbar_title="Cumplimiento (%)"
+    )
+
+    return fig
+
 
     # reglas: base + por línea (más estable que "por fila")
     height = max(420, 140 + (total_lineas * 22))
