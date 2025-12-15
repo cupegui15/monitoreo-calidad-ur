@@ -431,62 +431,101 @@ if pagina == "📝 Formulario de Monitoreo":
         time.sleep(2)
         st.session_state["show_saved_msg"] = False
 
-    with st.form("form_monitoreo", clear_on_submit=True):
-        c1, c2, c3 = st.columns(3)
+    # 🔹 Selector de Área FUERA del form (permite on_change)
+        area = st.selectbox(
+        "Área",
+        ["Seleccione una opción"] + list(areas.keys()),
+        key="f_area"
+    )
 
-        with c1:
-            area = st.selectbox("Área",["Seleccione una opción"] + list(areas.keys()),key="f_area",
-            on_change=on_change_area
-            )
+with st.form("form_monitoreo", clear_on_submit=True):
 
-        with c2:
-            monitor = st.selectbox(
-                "Persona que monitorea",
-                ["Seleccione una opción"] + (areas[area]["monitores"] if area != "Seleccione una opción" else []),
-                key="f_monitor"
-            )
+    c1, c2, c3 = st.columns(3)
 
-        with c3:
-            asesor = st.selectbox(
-                "Asesor monitoreado",
-                ["Seleccione una opción"] + (areas[area]["asesores"] if area != "Seleccione una opción" else []),
-                key="f_asesor"
-            )
+    # -------------------------------
+    # MONITOR
+    # -------------------------------
+    with c1:
+        monitor = st.selectbox(
+            "Persona que monitorea",
+            ["Seleccione una opción"] +
+            (areas[area]["monitores"] if area != "Seleccione una opción" else []),
+            key="f_monitor"
+        )
 
-        codigo = st.text_input("Código de la interacción *", key="f_codigo")
-        fecha = st.date_input("Fecha de la interacción", date.today(), key="f_fecha")
-        canal = st.selectbox("Canal", (areas[area]["canales"] if area != "Seleccione una opción" else []), key="f_canal")
-        error_critico = st.radio("¿Corresponde a un error crítico?", ["No", "Sí"], horizontal=True, key="f_error")
+    # -------------------------------
+    # ASESOR
+    # -------------------------------
+    with c2:
+        asesor = st.selectbox(
+            "Asesor monitoreado",
+            ["Seleccione una opción"] +
+            (areas[area]["asesores"] if area != "Seleccione una opción" else []),
+            key="f_asesor"
+        )
 
-        preguntas = obtener_preguntas(area, canal) if (area != "Seleccione una opción" and canal) else []
-        pesos = obtener_pesos(area, canal) if (area != "Seleccione una opción" and canal) else []
+    # -------------------------------
+    # CANAL
+    # -------------------------------
+    with c3:
+        canal = st.selectbox(
+            "Canal",
+            (areas[area]["canales"] if area != "Seleccione una opción" else []),
+            key="f_canal"
+        )
 
-        preguntas_canal = list(zip(preguntas, pesos)) if (preguntas and pesos and len(preguntas) == len(pesos)) else []
+    # -------------------------------
+    # DATOS GENERALES
+    # -------------------------------
+    codigo = st.text_input("Código de la interacción *", key="f_codigo")
+    fecha = st.date_input("Fecha de la interacción", date.today(), key="f_fecha")
 
-        resultados = {}
-        total = 0
+    error_critico = st.radio(
+        "¿Corresponde a un error crítico?",
+        ["No", "Sí"],
+        horizontal=True,
+        key="f_error"
+    )
+    # -------------------------------
+    # PREGUNTAS
+    # -------------------------------
+    preguntas = obtener_preguntas(area, canal) if area != "Seleccione una opción" and canal else []
+    pesos = obtener_pesos(area, canal) if area != "Seleccione una opción" and canal else []
 
-        if preguntas_canal:
-            if error_critico == "Sí":
-                st.error("❌ Error crítico: puntaje total = 0")
-                for q, _ in preguntas_canal:
-                    resultados[q] = 0
-            else:
-                for (q, p) in preguntas_canal:
-                    # key estable por pregunta
-                    k = f"q_{abs(hash((area, canal, q)))%10**10}"
-                    resp = st.radio(q, ["Cumple", "No cumple"], horizontal=True, key=k)
-                    resultados[q] = p if resp == "Cumple" else 0
-                    total += resultados[q]
+    preguntas_canal = list(zip(preguntas, pesos)) if len(preguntas) == len(pesos) else []
+
+    resultados = {}
+    total = 0
+
+    if preguntas_canal:
+        if error_critico == "Sí":
+            st.error("❌ Error crítico: el puntaje total será 0")
+            for q, _ in preguntas_canal:
+                resultados[q] = 0
         else:
-            st.info("Selecciona Área y Canal para cargar preguntas.")
+            for q, p in preguntas_canal:
+                key_preg = f"q_{abs(hash((area, canal, q))) % 10**10}"
+                resp = st.radio(q, ["Cumple", "No cumple"], horizontal=True, key=key_preg)
+                resultados[q] = p if resp == "Cumple" else 0
+                total += resultados[q]
+    else:
+        st.info("Selecciona Área y Canal para cargar las preguntas.")
 
-        positivos = st.text_area("Aspectos Positivos *", key="f_pos")
-        mejorar = st.text_area("Aspectos por Mejorar *", key="f_mej")
+    # -------------------------------
+    # OBSERVACIONES
+    # -------------------------------
+    positivos = st.text_area("Aspectos Positivos *", key="f_pos")
+    mejorar = st.text_area("Aspectos por Mejorar *", key="f_mej")
 
-        st.metric("Puntaje Total", total)
+    # -------------------------------
+    # RESULTADO
+    # -------------------------------
+    st.metric("Puntaje Total", total)
 
-        submitted = st.form_submit_button("💾 Guardar Monitoreo")
+    # -------------------------------
+    # BOTÓN SUBMIT (OBLIGATORIO)
+    # -------------------------------
+    submitted = st.form_submit_button("💾 Guardar Monitoreo")
 
     if submitted:
         if area == "Seleccione una opción" or monitor == "Seleccione una opción" or asesor == "Seleccione una opción":
