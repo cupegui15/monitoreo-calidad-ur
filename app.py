@@ -426,6 +426,16 @@ if pagina == "📝 Formulario de Monitoreo":
         time.sleep(2)
         st.session_state["show_saved_msg"] = False
 
+        # 🔄 Reset dependientes si cambia el área
+if "last_area" not in st.session_state:
+    st.session_state["last_area"] = None
+
+if st.session_state.get("f_area") != st.session_state["last_area"]:
+    st.session_state["f_monitor"] = "Seleccione una opción"
+    st.session_state["f_asesor"] = "Seleccione una opción"
+    st.session_state["last_area"] = st.session_state.get("f_area")
+
+
     with st.form("form_monitoreo", clear_on_submit=True):
         c1, c2, c3 = st.columns(3)
 
