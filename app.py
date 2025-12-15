@@ -392,80 +392,80 @@ st.markdown(f"""
 # =====================================================================
 # 📝 FORMULARIO DE MONITOREO (CORREGIDO)
 # =====================================================================
+# =====================================================================
+# 📝 FORMULARIO DE MONITOREO (SOLUCIÓN DEFINITIVA)
+# =====================================================================
 if pagina == "📝 Formulario de Monitoreo":
 
     st.markdown('<div class="section-title">🧾 Registro de Monitoreo</div>', unsafe_allow_html=True)
 
-    # 🔹 Área FUERA del form (para que Streamlit recalcule opciones)
-    area = st.selectbox(
-        "Área",
-        ["Seleccione una opción"] + list(areas.keys()),
-        key="f_area"
+    # -------------------------------
+    # CONTROLES FUERA DEL FORM (RERUN)
+    # -------------------------------
+    cA, cB, cC = st.columns(3)
+
+    with cA:
+        area = st.selectbox(
+            "Área",
+            ["Seleccione una opción"] + list(areas.keys()),
+            key="f_area"
+        )
+
+    with cB:
+        canal = st.selectbox(
+            "Canal",
+            (areas[area]["canales"] if area != "Seleccione una opción" else []),
+            key="f_canal"
+        )
+
+    with cC:
+        monitor = st.selectbox(
+            "Persona que monitorea",
+            ["Seleccione una opción"] +
+            (areas[area]["monitores"] if area != "Seleccione una opción" else []),
+            key="f_monitor"
+        )
+
+    asesor = st.selectbox(
+        "Asesor monitoreado",
+        ["Seleccione una opción"] +
+        (areas[area]["asesores"] if area != "Seleccione una opción" else []),
+        key="f_asesor"
+    )
+
+    # 🔹 Aquí YA funciona porque área y canal provocan rerun
+    preguntas = (
+        obtener_preguntas(area, canal)
+        if area != "Seleccione una opción" and canal
+        else []
+    )
+    pesos = (
+        obtener_pesos(area, canal)
+        if area != "Seleccione una opción" and canal
+        else []
     )
 
     with st.form("form_monitoreo", clear_on_submit=True):
 
-        c1, c2, c3 = st.columns(3)
-
-        with c1:
-            monitor = st.selectbox(
-                "Persona que monitorea",
-                ["Seleccione una opción"] +
-                (areas[area]["monitores"] if area != "Seleccione una opción" else []),
-                key="f_monitor"
-            )
-
-        with c2:
-            asesor = st.selectbox(
-                "Asesor monitoreado",
-                ["Seleccione una opción"] +
-                (areas[area]["asesores"] if area != "Seleccione una opción" else []),
-                key="f_asesor"
-            )
-
-        with c3:
-            canal = st.selectbox(
-                "Canal",
-                (areas[area]["canales"] if area != "Seleccione una opción" else []),
-                key="f_canal"
-            )
-
-        codigo = st.text_input("Código de la interacción *", key="f_codigo")
-        fecha = st.date_input("Fecha de la interacción", date.today(), key="f_fecha")
+        codigo = st.text_input("Código de la interacción *")
+        fecha = st.date_input("Fecha de la interacción", date.today())
 
         error_critico = st.radio(
             "¿Corresponde a un error crítico?",
             ["No", "Sí"],
-            horizontal=True,
-            key="f_error"
+            horizontal=True
         )
-
-        # ===============================
-        # PREGUNTAS
-        # ===============================
-        preguntas = (
-            obtener_preguntas(area, canal)
-            if area != "Seleccione una opción" and canal
-            else []
-        )
-        pesos = (
-            obtener_pesos(area, canal)
-            if area != "Seleccione una opción" and canal
-            else []
-        )
-
-        preguntas_canal = list(zip(preguntas, pesos)) if len(preguntas) == len(pesos) else []
 
         resultados = {}
         total = 0
 
-        if preguntas_canal:
+        if preguntas and pesos and len(preguntas) == len(pesos):
             if error_critico == "Sí":
-                st.error("❌ Error crítico: el puntaje total será 0")
-                for q, _ in preguntas_canal:
+                st.error("❌ Error crítico: puntaje total = 0")
+                for q in preguntas:
                     resultados[q] = 0
             else:
-                for q, p in preguntas_canal:
+                for q, p in zip(preguntas, pesos):
                     k = f"q_{abs(hash((area, canal, q))) % 10**10}"
                     resp = st.radio(q, ["Cumple", "No cumple"], horizontal=True, key=k)
                     resultados[q] = p if resp == "Cumple" else 0
@@ -473,28 +473,26 @@ if pagina == "📝 Formulario de Monitoreo":
         else:
             st.info("Selecciona Área y Canal para cargar preguntas.")
 
-        positivos = st.text_area("Aspectos Positivos *", key="f_pos")
-        mejorar = st.text_area("Aspectos por Mejorar *", key="f_mej")
+        positivos = st.text_area("Aspectos Positivos *")
+        mejorar = st.text_area("Aspectos por Mejorar *")
 
         st.metric("Puntaje Total", total)
 
         submitted = st.form_submit_button("💾 Guardar Monitoreo")
 
         if submitted:
-            if area == "Seleccione una opción" or monitor == "Seleccione una opción" or asesor == "Seleccione una opción":
-                st.error("⚠️ Debes completar todos los campos.")
-            elif not str(codigo).strip():
-                st.error("⚠️ Código obligatorio.")
-            elif not str(positivos).strip() or not str(mejorar).strip():
-                st.error("⚠️ Debes diligenciar los aspectos positivos y por mejorar.")
+            if area == "Seleccione una opción" or canal is None:
+                st.error("⚠️ Selecciona Área y Canal.")
+            elif monitor == "Seleccione una opción" or asesor == "Seleccione una opción":
+                st.error("⚠️ Selecciona monitor y asesor.")
             else:
                 fila = {
                     "Área": area,
+                    "Canal": canal,
                     "Monitor": monitor,
                     "Asesor": asesor,
-                    "Código": str(codigo).strip(),
+                    "Código": codigo,
                     "Fecha": fecha,
-                    "Canal": canal,
                     "Error crítico": error_critico,
                     "Total": total,
                     "Aspectos positivos": positivos,
