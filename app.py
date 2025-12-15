@@ -67,6 +67,28 @@ html, body, .stApp {
 </style>
 """, unsafe_allow_html=True)
 
+st.markdown("""
+<style>
+.card {
+    background-color: #ffffff;
+    padding: 1.2rem 1.4rem;
+    border-radius: 10px;
+    border: 1px solid #e6e6e6;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+    margin-bottom: 1rem;
+}
+.card-title {
+    font-weight: 600;
+    color: #9B0029;
+    margin-bottom: 0.6rem;
+}
+textarea {
+    background-color: #fafafa !important;
+    border-radius: 6px !important;
+}
+</style>
+""", unsafe_allow_html=True)
+
 # ===============================
 # CONFIGURACIÓN DE ÁREAS Y CANALES
 # ===============================
@@ -390,37 +412,53 @@ if pagina == "📝 Formulario de Monitoreo":
 
     st.markdown('<div class="section-title">🧾 Registro de Monitoreo</div>', unsafe_allow_html=True)
 
-    # -------------------------------------------------
-    # CONTROLES FUERA DEL FORM (provocan rerun)
-    # -------------------------------------------------
-    area = st.selectbox(
-        "Área",
-        ["Seleccione una opción"] + list(areas.keys()),
-        key="f_area"
-    )
+    # =====================================================
+    # 🗂️ DATOS GENERALES (FUERA DEL FORM – rerun automático)
+    # =====================================================
+    st.markdown("### 🗂️ Datos generales")
 
-    monitor = st.selectbox(
-        "Persona que monitorea",
-        ["Seleccione una opción"] +
-        (areas[area]["monitores"] if area != "Seleccione una opción" else []),
-        key="f_monitor"
-    )
+    c1, c2 = st.columns(2)
+    with c1:
+        area = st.selectbox(
+            "Área",
+            ["Seleccione una opción"] + list(areas.keys()),
+            key="f_area"
+        )
+    with c2:
+        monitor = st.selectbox(
+            "Persona que monitorea",
+            ["Seleccione una opción"] +
+            (areas[area]["monitores"] if area != "Seleccione una opción" else []),
+            key="f_monitor"
+        )
 
-    asesor = st.selectbox(
-        "Asesor monitoreado",
-        ["Seleccione una opción"] +
-        (areas[area]["asesores"] if area != "Seleccione una opción" else []),
-        key="f_asesor"
-    )
+    c3, c4 = st.columns(2)
+    with c3:
+        asesor = st.selectbox(
+            "Asesor monitoreado",
+            ["Seleccione una opción"] +
+            (areas[area]["asesores"] if area != "Seleccione una opción" else []),
+            key="f_asesor"
+        )
+    with c4:
+        canal = st.selectbox(
+            "Canal",
+            (areas[area]["canales"] if area != "Seleccione una opción" else []),
+            key="f_canal"
+        )
 
-    canal = st.selectbox(
-        "Canal",
-        (areas[area]["canales"] if area != "Seleccione una opción" else []),
-        key="f_canal"
-    )
+    c5, c6 = st.columns(2)
+    with c5:
+        codigo = st.text_input("Código de la interacción *", key="f_codigo")
+    with c6:
+        fecha = st.date_input("Fecha de la interacción", date.today(), key="f_fecha")
 
-    codigo = st.text_input("Código de la interacción *", key="f_codigo")
-    fecha = st.date_input("Fecha de la interacción", date.today(), key="f_fecha")
+    st.divider()
+
+    # =====================================================
+    # 🧠 EVALUACIÓN
+    # =====================================================
+    st.markdown("### 🧠 Evaluación")
 
     error_critico = st.radio(
         "¿Corresponde a un error crítico?",
@@ -444,9 +482,6 @@ if pagina == "📝 Formulario de Monitoreo":
         else []
     )
 
-    # -------------------------------------------------
-    # PREGUNTAS (dinámicas, fuera del form)
-    # -------------------------------------------------
     resultados = {}
 
     if preguntas and pesos and len(preguntas) == len(pesos):
@@ -470,18 +505,33 @@ if pagina == "📝 Formulario de Monitoreo":
         st.info("Selecciona Área y Canal para cargar las preguntas.")
 
     # -------------------------------------------------
-    # PUNTAJE DINÁMICO
+    # 🎯 PUNTAJE DINÁMICO
     # -------------------------------------------------
     total = sum(resultados.values())
     st.metric("Puntaje Total", total)
 
-    # -------------------------------------------------
-    # FORM SOLO PARA GUARDAR
-    # -------------------------------------------------
+    st.divider()
+
+    # =====================================================
+    # 📝 OBSERVACIONES + GUARDADO
+    # =====================================================
+    st.markdown("### 📝 Observaciones finales")
+
     with st.form("form_monitoreo", clear_on_submit=True):
 
-        positivos = st.text_area("Aspectos Positivos *")
-        mejorar = st.text_area("Aspectos por Mejorar *")
+        c7, c8 = st.columns(2)
+        with c7:
+            positivos = st.text_area(
+                "Aspectos Positivos *",
+                placeholder="Ej. Buen manejo del usuario, claridad en la respuesta…",
+                height=140
+            )
+        with c8:
+            mejorar = st.text_area(
+                "Aspectos por Mejorar *",
+                placeholder="Ej. Validación de identidad, control de tiempos…",
+                height=140
+            )
 
         submitted = st.form_submit_button("💾 Guardar Monitoreo")
 
@@ -515,7 +565,6 @@ if pagina == "📝 Formulario de Monitoreo":
                 guardar_datos_google_sheets(fila)
                 st.success("✅ Monitoreo guardado correctamente")
                 time.sleep(2)
-
 # =====================================================================
 # 📊 DASHBOARD CASA UR
 # =====================================================================
