@@ -112,8 +112,6 @@ areas = {
 
 # ===============================
 # PREGUNTAS POR CANAL (FUENTE ÚNICA)
-# IMPORTANTE: aquí dejé EXACTAMENTE los textos que ya usas en tu formulario,
-# para que coincidan con las columnas que ya están guardadas en Sheets.
 # ===============================
 def obtener_preguntas(area, canal):
 
@@ -169,7 +167,7 @@ def obtener_preguntas(area, canal):
     return []
 
 # ===============================
-# PESOS POR CANAL (MISMA LONGITUD QUE obtener_preguntas)
+# PESOS POR CANAL
 # ===============================
 def obtener_pesos(area, canal):
 
@@ -186,6 +184,17 @@ def obtener_pesos(area, canal):
             return [20, 20, 20, 20, 20]
 
     return []
+
+# ===============================
+# ✅ AJUSTE VISUAL PARA GRÁFICOS HORIZONTALES (PREGUNTAS LARGAS)
+# ===============================
+def ajustar_grafico_horizontal(fig, filas: int):
+    fig.update_layout(
+        margin=dict(l=520, r=40, t=60, b=40),
+        height=max(320, 40 * int(filas))  # mínimo 320 por si hay pocas preguntas
+    )
+    fig.update_yaxes(tickfont=dict(size=11))
+    return fig
 
 # ===============================
 # GUARDAR REGISTRO EN GOOGLE SHEETS
@@ -249,7 +258,6 @@ def guardar_datos_google_sheets(data):
 
 # ===============================
 # CARGAR TODAS LAS HOJAS
-# CORRECCIÓN: NO inventa columnas con 0; solo convierte a numérico las columnas existentes.
 # ===============================
 def cargar_todas_las_hojas_google_sheets():
 
@@ -340,7 +348,6 @@ st.markdown(f"""
 
 # =====================================================================
 # 📝 FORMULARIO DE MONITOREO
-# CORRECCIÓN: usa SIEMPRE las preguntas desde obtener_preguntas() (misma fuente que el dashboard)
 # =====================================================================
 if pagina == "📝 Formulario de Monitoreo":
 
@@ -438,7 +445,6 @@ if pagina == "📝 Formulario de Monitoreo":
 
 # =====================================================================
 # 📊 DASHBOARD CASA UR
-# CORRECCIÓN: orden por formulario y sin 0% falsos por columnas inventadas
 # =====================================================================
 elif pagina == "📊 Dashboard CASA UR":
 
@@ -576,11 +582,14 @@ elif pagina == "📊 Dashboard CASA UR":
             range_x=[0, 100]
         )
         fig_h.update_traces(texttemplate="%{x:.1f}%", textposition="outside")
+
+        # ✅ AJUSTE PARA QUE NO SE OCULTEN LAS PREGUNTAS
+        fig_h = ajustar_grafico_horizontal(fig_h, len(df_preg_canal))
+
         st.plotly_chart(fig_h, use_container_width=True)
 
 # =====================================================================
 # 📈 DASHBOARD Conecta UR
-# CORRECCIÓN: orden por formulario y sin 0% falsos por textos inconsistentes
 # =====================================================================
 elif pagina == "📈 Dashboard Conecta UR":
 
@@ -718,11 +727,14 @@ elif pagina == "📈 Dashboard Conecta UR":
             range_x=[0, 100]
         )
         fig_h.update_traces(texttemplate="%{x:.1f}%", textposition="outside")
+
+        # ✅ AJUSTE PARA QUE NO SE OCULTEN LAS PREGUNTAS
+        fig_h = ajustar_grafico_horizontal(fig_h, len(df_preg_canal))
+
         st.plotly_chart(fig_h, use_container_width=True)
 
 # =====================================================================
 # 🎯 DASHBOARD POR ASESOR
-# (Tu lógica estaba bien; solo lo dejé consistente con el orden y fuente única)
 # =====================================================================
 elif pagina == "🎯 Dashboard por Asesor":
 
@@ -832,4 +844,8 @@ elif pagina == "🎯 Dashboard por Asesor":
     )
 
     fig.update_traces(texttemplate="%{x:.1f}%", textposition="outside")
+
+    # ✅ AJUSTE PARA QUE NO SE OCULTEN LAS PREGUNTAS
+    fig = ajustar_grafico_horizontal(fig, len(df_preg))
+
     st.plotly_chart(fig, use_container_width=True)
