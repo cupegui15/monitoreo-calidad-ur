@@ -189,66 +189,58 @@ def obtener_pesos(area, canal):
 # ===============================
 # ✅ AJUSTE PLOTLY: wrap + altura dinámica para evitar solapamiento
 # ===============================
-def envolver_pregunta(texto: str, ancho: int = 45) -> str:
-    if not isinstance(texto, str):
-        return str(texto)
-    # wrap más agresivo para que no queden 6 líneas por pregunta
-    return "<br>".join(textwrap.wrap(texto.strip(), width=ancho, break_long_words=False))
-
-def _lineas_wrap(s: str) -> int:
-    if not isinstance(s, str) or not s:
-        return 1
-    return s.count("<br>") + 1
-
 def ajustar_grafico_horizontal(fig, df_plot: pd.DataFrame, col_wrapped: str = "Pregunta_wrapped"):
     """
-    Ajusta gráficos horizontales con textos largos:
-    - Evita solapamiento de preguntas
+    Ajuste visual optimizado para gráficos horizontales:
+    - Texto de preguntas más grande
+    - Mejor uso del espacio
     - Altura dinámica según número de líneas
-    - Homologa títulos institucionales
+    - Homologación institucional
     """
 
-    # 🔹 Calcular altura según líneas reales
+    # 🔹 Calcular número real de líneas
     if df_plot.empty or col_wrapped not in df_plot.columns:
         total_lineas = 1
     else:
         total_lineas = int(df_plot[col_wrapped].apply(_lineas_wrap).sum())
 
-    height = max(420, 140 + (total_lineas * 22))
+    # 🔹 Altura más generosa (mejora legibilidad)
+    height = max(520, 180 + (total_lineas * 32))
 
-    # 🔹 Layout general
     fig.update_layout(
         height=height,
-        margin=dict(l=460, r=40, t=60, b=40)
+        margin=dict(
+            l=360,   # ⬅️ reduce espacio muerto izquierdo
+            r=70,
+            t=70,
+            b=40
+        ),
+        bargap=0.35
     )
 
-    # 🔹 EJE Y HOMOLOGADO
+    # 🔹 EJE Y (preguntas)
     fig.update_yaxes(
-        title_text="Criterio evaluado",   # ✅ aquí se cambia Pregunta_wrapped
+        title_text="Criterio evaluado",
         automargin=True,
-        tickfont=dict(size=10)
+        tickfont=dict(
+            size=13,          # ⬅️ letra más grande
+            color="#2c2c2c"
+        )
     )
 
-    # 🔹 COLORBAR HOMOLOGADA
+    # 🔹 EJE X
+    fig.update_xaxes(
+        tickfont=dict(size=12),
+        title_font=dict(size=13)
+    )
+
+    # 🔹 COLORBAR
     fig.update_coloraxes(
-        colorbar_title="Cumplimiento (%)"
+        colorbar_title="Cumplimiento (%)",
+        colorbar_title_font=dict(size=12),
+        colorbar_tickfont=dict(size=11)
     )
 
-    return fig
-
-
-    # reglas: base + por línea (más estable que "por fila")
-    height = max(420, 140 + (total_lineas * 22))
-
-    fig.update_layout(
-        height=height,
-        margin=dict(l=460, r=40, t=60, b=40),
-        yaxis=dict(automargin=True)
-    )
-    fig.update_yaxes(
-        automargin=True,
-        tickfont=dict(size=10)
-    )
     return fig
 
 # ===============================
