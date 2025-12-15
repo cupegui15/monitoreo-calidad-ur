@@ -389,27 +389,19 @@ st.markdown(f"""
 # - Dentro del form: monitor/asesor/canal dependen de area
 # - Al guardar: mensaje + reset total + st.rerun()
 # =====================================================================
+# =====================================================================
+# 📝 FORMULARIO DE MONITOREO (CORREGIDO)
+# =====================================================================
 if pagina == "📝 Formulario de Monitoreo":
 
     st.markdown('<div class="section-title">🧾 Registro de Monitoreo</div>', unsafe_allow_html=True)
 
-    # Mensaje post-rerun
-    if st.session_state.get("show_saved_msg", False):
-        st.success("✅ Monitoreo guardado correctamente")
-        time.sleep(2)
-        st.session_state["show_saved_msg"] = False
-
-    # ✅ Área fuera del form (esto arregla que NO carguen listas)
+    # 🔹 Área FUERA del form (para que Streamlit recalcule opciones)
     area = st.selectbox(
         "Área",
         ["Seleccione una opción"] + list(areas.keys()),
         key="f_area"
     )
-
-    # Derivados dependientes del área
-    monitores_op = areas[area]["monitores"] if area != "Seleccione una opción" else []
-    asesores_op = areas[area]["asesores"] if area != "Seleccione una opción" else []
-    canales_op = areas[area]["canales"] if area != "Seleccione una opción" else []
 
     with st.form("form_monitoreo", clear_on_submit=True):
 
@@ -418,21 +410,23 @@ if pagina == "📝 Formulario de Monitoreo":
         with c1:
             monitor = st.selectbox(
                 "Persona que monitorea",
-                ["Seleccione una opción"] + monitores_op,
+                ["Seleccione una opción"] +
+                (areas[area]["monitores"] if area != "Seleccione una opción" else []),
                 key="f_monitor"
             )
 
         with c2:
             asesor = st.selectbox(
                 "Asesor monitoreado",
-                ["Seleccione una opción"] + asesores_op,
+                ["Seleccione una opción"] +
+                (areas[area]["asesores"] if area != "Seleccione una opción" else []),
                 key="f_asesor"
             )
 
         with c3:
             canal = st.selectbox(
                 "Canal",
-                canales_op,
+                (areas[area]["canales"] if area != "Seleccione una opción" else []),
                 key="f_canal"
             )
 
@@ -446,21 +440,33 @@ if pagina == "📝 Formulario de Monitoreo":
             key="f_error"
         )
 
-        preguntas = obtener_preguntas(area, canal) if (area != "Seleccione una opción" and canal) else []
-        pesos = obtener_pesos(area, canal) if (area != "Seleccione una opción" and canal) else []
-        preguntas_canal = list(zip(preguntas, pesos)) if (preguntas and pesos and len(preguntas) == len(pesos)) else []
+        # ===============================
+        # PREGUNTAS
+        # ===============================
+        preguntas = (
+            obtener_preguntas(area, canal)
+            if area != "Seleccione una opción" and canal
+            else []
+        )
+        pesos = (
+            obtener_pesos(area, canal)
+            if area != "Seleccione una opción" and canal
+            else []
+        )
+
+        preguntas_canal = list(zip(preguntas, pesos)) if len(preguntas) == len(pesos) else []
 
         resultados = {}
         total = 0
 
         if preguntas_canal:
             if error_critico == "Sí":
-                st.error("❌ Error crítico: puntaje total = 0")
+                st.error("❌ Error crítico: el puntaje total será 0")
                 for q, _ in preguntas_canal:
                     resultados[q] = 0
             else:
-                for (q, p) in preguntas_canal:
-                    k = f"q_{abs(hash((area, canal, q)))%10**10}"
+                for q, p in preguntas_canal:
+                    k = f"q_{abs(hash((area, canal, q))) % 10**10}"
                     resp = st.radio(q, ["Cumple", "No cumple"], horizontal=True, key=k)
                     resultados[q] = p if resp == "Cumple" else 0
                     total += resultados[q]
@@ -474,36 +480,33 @@ if pagina == "📝 Formulario de Monitoreo":
 
         submitted = st.form_submit_button("💾 Guardar Monitoreo")
 
-    # ✅ Guardado fuera del form (patrón correcto)
-    if submitted:
-        if area == "Seleccione una opción" or monitor == "Seleccione una opción" or asesor == "Seleccione una opción":
-            st.error("⚠️ Debes completar todos los campos.")
-        elif not str(codigo).strip():
-            st.error("⚠️ Código obligatorio.")
-        elif not str(positivos).strip() or not str(mejorar).strip():
-            st.error("⚠️ Debes diligenciar los aspectos positivos y por mejorar.")
-        else:
-            fila = {
-                "Área": area,
-                "Monitor": monitor,
-                "Asesor": asesor,
-                "Código": str(codigo).strip(),
-                "Fecha": fecha,
-                "Canal": canal,
-                "Error crítico": error_critico,
-                "Total": total,
-                "Aspectos positivos": positivos,
-                "Aspectos por Mejorar": mejorar
-            }
-            for q, v in resultados.items():
-                fila[q] = v
+        if submitted:
+            if area == "Seleccione una opción" or monitor == "Seleccione una opción" or asesor == "Seleccione una opción":
+                st.error("⚠️ Debes completar todos los campos.")
+            elif not str(codigo).strip():
+                st.error("⚠️ Código obligatorio.")
+            elif not str(positivos).strip() or not str(mejorar).strip():
+                st.error("⚠️ Debes diligenciar los aspectos positivos y por mejorar.")
+            else:
+                fila = {
+                    "Área": area,
+                    "Monitor": monitor,
+                    "Asesor": asesor,
+                    "Código": str(codigo).strip(),
+                    "Fecha": fecha,
+                    "Canal": canal,
+                    "Error crítico": error_critico,
+                    "Total": total,
+                    "Aspectos positivos": positivos,
+                    "Aspectos por Mejorar": mejorar
+                }
 
-            guardar_datos_google_sheets(fila)
+                for q, v in resultados.items():
+                    fila[q] = v
 
-            # ✅ RESET TOTAL + REFRESH
-            resetear_formulario(area, canal)
-            st.session_state["show_saved_msg"] = True
-            st.rerun()
+                guardar_datos_google_sheets(fila)
+                st.success("✅ Monitoreo guardado correctamente")
+                time.sleep(2)
 # =====================================================================
 # 📊 DASHBOARD CASA UR
 # =====================================================================
