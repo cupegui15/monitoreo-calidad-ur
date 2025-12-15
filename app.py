@@ -112,7 +112,23 @@ areas = {
 }
 
 # ===============================
-# PREGUNTAS POR CANAL (FUENTE ÚNICA)
+# UTILIDADES PLOTLY / TEXTO
+# ===============================
+def ajustar_grafico_horizontal(fig, filas: int):
+    fig.update_layout(
+        margin=dict(l=520, r=40, t=60, b=40),
+        height=max(320, 40 * int(filas))
+    )
+    fig.update_yaxes(tickfont=dict(size=11))
+    return fig
+
+def envolver_pregunta(texto, ancho=60):
+    if not isinstance(texto, str):
+        return texto
+    return "<br>".join(textwrap.wrap(texto, ancho))
+
+# ===============================
+# PREGUNTAS POR CANAL
 # ===============================
 def obtener_preguntas(area, canal):
 
@@ -185,22 +201,6 @@ def obtener_pesos(area, canal):
             return [20, 20, 20, 20, 20]
 
     return []
-
-# ===============================
-# ✅ AJUSTE VISUAL PARA GRÁFICOS HORIZONTALES (PREGUNTAS LARGAS)
-# ===============================
-def ajustar_grafico_horizontal(fig, filas: int):
-    fig.update_layout(
-        margin=dict(l=520, r=40, t=60, b=40),
-        height=max(320, 40 * int(filas))  # mínimo 320 por si hay pocas preguntas
-    )
-    fig.update_yaxes(tickfont=dict(size=11))
-    return fig
-
-def envolver_pregunta(texto, ancho=60):
-    if not isinstance(texto, str):
-        return texto
-    return "<br>".join(textwrap.wrap(texto, ancho))
 
 # ===============================
 # GUARDAR REGISTRO EN GOOGLE SHEETS
@@ -354,81 +354,81 @@ st.markdown(f"""
 
 # =====================================================================
 # 📝 FORMULARIO DE MONITOREO
+# ✅ Ajuste: reset al guardar (clear_on_submit + rerun)
 # =====================================================================
 if pagina == "📝 Formulario de Monitoreo":
 
     st.markdown('<div class="section-title">🧾 Registro de Monitoreo</div>', unsafe_allow_html=True)
 
-    if "form_reset" not in st.session_state:
-        st.session_state.form_reset = False
+    with st.form("form_monitoreo", clear_on_submit=True):
 
-    if st.session_state.form_reset:
-        st.session_state.clear()
-        st.session_state.form_reset = False
+        c1, c2, c3 = st.columns(3)
 
-    c1, c2, c3 = st.columns(3)
+        with c1:
+            area = st.selectbox("Área", ["Seleccione una opción"] + list(areas.keys()), key="f_area")
 
-    with c1:
-        area = st.selectbox("Área", ["Seleccione una opción"] + list(areas.keys()))
+        with c2:
+            monitor = st.selectbox(
+                "Persona que monitorea",
+                ["Seleccione una opción"] + (areas[area]["monitores"] if area != "Seleccione una opción" else []),
+                key="f_monitor"
+            )
 
-    with c2:
-        monitor = st.selectbox(
-            "Persona que monitorea",
-            ["Seleccione una opción"] + (areas[area]["monitores"] if area != "Seleccione una opción" else []),
-        )
+        with c3:
+            asesor = st.selectbox(
+                "Asesor monitoreado",
+                ["Seleccione una opción"] + (areas[area]["asesores"] if area != "Seleccione una opción" else []),
+                key="f_asesor"
+            )
 
-    with c3:
-        asesor = st.selectbox(
-            "Asesor monitoreado",
-            ["Seleccione una opción"] + (areas[area]["asesores"] if area != "Seleccione una opción" else []),
-        )
+        codigo = st.text_input("Código de la interacción *", key="f_codigo")
+        fecha = st.date_input("Fecha de la interacción", date.today(), key="f_fecha")
+        canal = st.selectbox("Canal", (areas[area]["canales"] if area != "Seleccione una opción" else []), key="f_canal")
+        error_critico = st.radio("¿Corresponde a un error crítico?", ["No", "Sí"], horizontal=True, key="f_error")
 
-    codigo = st.text_input("Código de la interacción *")
-    fecha = st.date_input("Fecha de la interacción", date.today())
-    canal = st.selectbox("Canal", (areas[area]["canales"] if area != "Seleccione una opción" else []))
-    error_critico = st.radio("¿Corresponde a un error crítico?", ["No", "Sí"], horizontal=True)
+        preguntas = obtener_preguntas(area, canal) if (area != "Seleccione una opción" and canal) else []
+        pesos = obtener_pesos(area, canal) if (area != "Seleccione una opción" and canal) else []
 
-    # Preguntas y pesos según área/canal
-    preguntas = obtener_preguntas(area, canal) if (area != "Seleccione una opción" and canal) else []
-    pesos = obtener_pesos(area, canal) if (area != "Seleccione una opción" and canal) else []
+        preguntas_canal = list(zip(preguntas, pesos)) if (preguntas and pesos and len(preguntas) == len(pesos)) else []
 
-    preguntas_canal = list(zip(preguntas, pesos)) if (preguntas and pesos and len(preguntas) == len(pesos)) else []
+        resultados = {}
+        total = 0
 
-    resultados = {}
-    total = 0
-
-    if preguntas_canal:
-        if error_critico == "Sí":
-            st.error("❌ Error crítico: puntaje total = 0")
-            for q, _ in preguntas_canal:
-                resultados[q] = 0
+        if preguntas_canal:
+            if error_critico == "Sí":
+                st.error("❌ Error crítico: puntaje total = 0")
+                for q, _ in preguntas_canal:
+                    resultados[q] = 0
+            else:
+                for (q, p) in preguntas_canal:
+                    # clave estable para radios (evita choques)
+                    k = f"q_{abs(hash((area, canal, q)))%10**10}"
+                    resp = st.radio(q, ["Cumple", "No cumple"], horizontal=True, key=k)
+                    resultados[q] = p if resp == "Cumple" else 0
+                    total += resultados[q]
         else:
-            for (q, p) in preguntas_canal:
-                resp = st.radio(q, ["Cumple", "No cumple"], horizontal=True)
-                resultados[q] = p if resp == "Cumple" else 0
-                total += resultados[q]
-    else:
-        st.info("Selecciona Área y Canal para cargar preguntas.")
+            st.info("Selecciona Área y Canal para cargar preguntas.")
 
-    positivos = st.text_area("Aspectos Positivos *")
-    mejorar = st.text_area("Aspectos por Mejorar *")
+        positivos = st.text_area("Aspectos Positivos *", key="f_pos")
+        mejorar = st.text_area("Aspectos por Mejorar *", key="f_mej")
 
-    st.metric("Puntaje Total", total)
+        st.metric("Puntaje Total", total)
 
-    if st.button("💾 Guardar Monitoreo"):
+        submitted = st.form_submit_button("💾 Guardar Monitoreo")
 
+    if submitted:
         if area == "Seleccione una opción" or monitor == "Seleccione una opción" or asesor == "Seleccione una opción":
             st.error("⚠️ Debes completar todos los campos.")
-        elif not codigo.strip():
+        elif not str(codigo).strip():
             st.error("⚠️ Código obligatorio.")
-        elif not positivos.strip() or not mejorar.strip():
+        elif not str(positivos).strip() or not str(mejorar).strip():
             st.error("⚠️ Debes diligenciar los aspectos positivos y por mejorar.")
         else:
             fila = {
                 "Área": area,
                 "Monitor": monitor,
                 "Asesor": asesor,
-                "Código": codigo.strip(),
+                "Código": str(codigo).strip(),
                 "Fecha": fecha,
                 "Canal": canal,
                 "Error crítico": error_critico,
@@ -444,13 +444,15 @@ if pagina == "📝 Formulario de Monitoreo":
 
             placeholder = st.empty()
             placeholder.success("✅ Monitoreo guardado correctamente")
-            time.sleep(10)
+            time.sleep(3)  # ajusta a 10 si quieres
             placeholder.empty()
-            st.session_state.clear()
+
+            # ✅ refresco y formulario en 0 (como al iniciar)
             st.rerun()
 
 # =====================================================================
 # 📊 DASHBOARD CASA UR
+# ✅ Ajuste: envolver preguntas (Pregunta_wrapped)
 # =====================================================================
 elif pagina == "📊 Dashboard CASA UR":
 
@@ -573,14 +575,17 @@ elif pagina == "📊 Dashboard CASA UR":
 
         df_preg_canal = pd.DataFrame(cumplimiento_canal)
 
-        # 🔥 ORDEN EXACTO FORMULARIO (y revertimos para horizontal)
+        # Orden exacto formulario
         mapa_orden = {preg: idx for idx, preg in enumerate(orden_formulario)}
         df_preg_canal["orden"] = df_preg_canal["Pregunta"].map(mapa_orden)
         df_preg_canal = df_preg_canal.sort_values("orden", ascending=False)
 
+        # ✅ envolver para mostrar (sin tocar la columna original)
+        df_preg_canal["Pregunta_wrapped"] = df_preg_canal["Pregunta"].apply(lambda x: envolver_pregunta(x, 60))
+
         fig_h = px.bar(
             df_preg_canal,
-            x="Cumplimiento", y="Pregunta",
+            x="Cumplimiento", y="Pregunta_wrapped",
             orientation="h",
             color="Cumplimiento",
             color_continuous_scale="RdYlGn",
@@ -588,14 +593,12 @@ elif pagina == "📊 Dashboard CASA UR":
             range_x=[0, 100]
         )
         fig_h.update_traces(texttemplate="%{x:.1f}%", textposition="outside")
-
-        # ✅ AJUSTE PARA QUE NO SE OCULTEN LAS PREGUNTAS
         fig_h = ajustar_grafico_horizontal(fig_h, len(df_preg_canal))
-
         st.plotly_chart(fig_h, use_container_width=True)
 
 # =====================================================================
 # 📈 DASHBOARD Conecta UR
+# ✅ Ajuste: envolver preguntas (Pregunta_wrapped)
 # =====================================================================
 elif pagina == "📈 Dashboard Conecta UR":
 
@@ -718,14 +721,16 @@ elif pagina == "📈 Dashboard Conecta UR":
 
         df_preg_canal = pd.DataFrame(cumplimiento_canal)
 
-        # 🔥 ORDEN EXACTO FORMULARIO (y revertimos para horizontal)
         mapa_orden = {preg: idx for idx, preg in enumerate(orden_formulario)}
         df_preg_canal["orden"] = df_preg_canal["Pregunta"].map(mapa_orden)
         df_preg_canal = df_preg_canal.sort_values("orden", ascending=False)
 
+        # ✅ envolver para mostrar
+        df_preg_canal["Pregunta_wrapped"] = df_preg_canal["Pregunta"].apply(lambda x: envolver_pregunta(x, 60))
+
         fig_h = px.bar(
             df_preg_canal,
-            x="Cumplimiento", y="Pregunta",
+            x="Cumplimiento", y="Pregunta_wrapped",
             orientation="h",
             color="Cumplimiento",
             color_continuous_scale="RdYlGn",
@@ -733,14 +738,12 @@ elif pagina == "📈 Dashboard Conecta UR":
             range_x=[0, 100]
         )
         fig_h.update_traces(texttemplate="%{x:.1f}%", textposition="outside")
-
-        # ✅ AJUSTE PARA QUE NO SE OCULTEN LAS PREGUNTAS
         fig_h = ajustar_grafico_horizontal(fig_h, len(df_preg_canal))
-
         st.plotly_chart(fig_h, use_container_width=True)
 
 # =====================================================================
 # 🎯 DASHBOARD POR ASESOR
+# ✅ Ajuste: envolver preguntas (Pregunta_wrapped)
 # =====================================================================
 elif pagina == "🎯 Dashboard por Asesor":
 
@@ -833,15 +836,17 @@ elif pagina == "🎯 Dashboard por Asesor":
 
     df_preg["Cumplimiento"] *= 100
 
-    # Orden exacto del formulario (y reversa para horizontal)
     mapa_orden = {preg: idx for idx, preg in enumerate(orden_formulario)}
     df_preg["orden"] = df_preg["Pregunta"].map(mapa_orden)
     df_preg = df_preg.dropna(subset=["orden"]).sort_values("orden", ascending=False)
 
+    # ✅ envolver para mostrar
+    df_preg["Pregunta_wrapped"] = df_preg["Pregunta"].apply(lambda x: envolver_pregunta(x, 60))
+
     fig = px.bar(
         df_preg,
         x="Cumplimiento",
-        y="Pregunta",
+        y="Pregunta_wrapped",
         orientation="h",
         title="📌 Cumplimiento por pregunta",
         color="Cumplimiento",
@@ -850,8 +855,5 @@ elif pagina == "🎯 Dashboard por Asesor":
     )
 
     fig.update_traces(texttemplate="%{x:.1f}%", textposition="outside")
-
-    # ✅ AJUSTE PARA QUE NO SE OCULTEN LAS PREGUNTAS
     fig = ajustar_grafico_horizontal(fig, len(df_preg))
-
     st.plotly_chart(fig, use_container_width=True)
