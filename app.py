@@ -93,7 +93,7 @@ textarea {
 # CONFIGURACIÓN DE ÁREAS Y CANALES
 # ===============================
 areas = {
-    "CASA UR": {
+    "Casa UR": {
         "canales": ["Presencial", "Contact Center", "Chat", "Back Office"],
         "monitores": [
             "Mauricio Ramirez Cubillos",
@@ -136,7 +136,7 @@ areas = {
 # PREGUNTAS POR CANAL (FUENTE ÚNICA)
 # ===============================
 def obtener_preguntas(area, canal):
-    if area == "CASA UR":
+    if area == "Casa UR":
         if canal in ["Presencial", "Contact Center", "Chat"]:
             return [
                 "¿Atiende la interacción en el momento que se establece contacto con el(a) usuario(a)?",
@@ -187,7 +187,7 @@ def obtener_preguntas(area, canal):
 # PESOS POR CANAL
 # ===============================
 def obtener_pesos(area, canal):
-    if area == "CASA UR":
+    if area == "Casa UR":
         if canal in ["Presencial", "Contact Center", "Chat"]:
             return [9, 9, 9, 9, 9, 9, 14, 8, 14, 10]
         elif canal == "Back Office":
@@ -270,8 +270,8 @@ def guardar_datos_google_sheets(data):
         area = data["Área"]
         canal = data["Canal"]
 
-        if area == "CASA UR":
-            nombre_hoja = f"CASA UR - {canal}"
+        if area == "Casa UR":
+            nombre_hoja = f"Casa UR - {canal}"
         elif area == "Conecta UR":
             nombre_hoja = f"Conecta UR - {canal}"
         else:
@@ -386,7 +386,7 @@ pagina = st.sidebar.radio(
     "Menú:",
     [
         "📝 Formulario de Monitoreo",
-        "📊 Dashboard CASA UR",
+        "📊 Dashboard Casa UR",
         "📈 Dashboard Conecta UR",
         "🎯 Dashboard por Asesor"
     ]
@@ -557,9 +557,9 @@ if pagina == "📝 Formulario de Monitoreo":
             st.success("✅ Monitoreo guardado correctamente")
             time.sleep(2)
 # =====================================================================
-# 📊 DASHBOARD CASA UR
+# 📊 DASHBOARD Casa UR
 # =====================================================================
-elif pagina == "📊 Dashboard CASA UR":
+elif pagina == "📊 Dashboard Casa UR":
 
     df = cargar_todas_las_hojas_google_sheets()
 
@@ -574,14 +574,14 @@ elif pagina == "📊 Dashboard CASA UR":
     df["Mes"] = df["Fecha"].dt.month
     df["Año"] = df["Fecha"].dt.year
 
-    df = df[df["Área"] == "CASA UR"]
+    df = df[df["Área"] == "Casa UR"]
     if df.empty:
-        st.warning("No hay datos para CASA UR.")
+        st.warning("No hay datos para Casa UR.")
         st.stop()
 
     meses = {1:"Enero",2:"Febrero",3:"Marzo",4:"Abril",5:"Mayo",6:"Junio",7:"Julio",8:"Agosto",9:"Septiembre",10:"Octubre",11:"Noviembre",12:"Diciembre"}
 
-    st.sidebar.subheader("Filtros CASA UR")
+    st.sidebar.subheader("Filtros Casa UR")
     canal_f = st.sidebar.selectbox("Canal:", ["Todos"] + sorted(df["Canal"].unique()))
     anio_f = st.sidebar.selectbox("Año:", ["Todos"] + sorted(df["Año"].dropna().unique().astype(int)))
     mes_f = st.sidebar.selectbox("Mes:", ["Todos"] + [meses[m] for m in sorted(df["Mes"].dropna().unique())])
@@ -599,13 +599,13 @@ elif pagina == "📊 Dashboard CASA UR":
         st.warning("No hay datos con los filtros seleccionados.")
         st.stop()
 
-    st.subheader("📊 Dashboard CASA UR")
+    st.subheader("📊 Dashboard Casa UR")
     c1, c2, c3 = st.columns(3)
     c1.metric("Monitoreos Totales", len(df_filtrado))
     c2.metric("Promedio General (Total puntos)", f"{(df_filtrado['Total'].mean() if 'Total' in df_filtrado.columns else 0.0):.2f}")
     c3.metric("Errores Críticos", len(df_filtrado[df_filtrado["Error crítico"] == "Sí"]))
 
-    st.subheader("📊 Distribución de Monitoreos – CASA UR")
+    st.subheader("📊 Distribución de Monitoreos – Casa UR")
 
     monit_por_asesor = df_filtrado.groupby("Asesor").size().reset_index(name="Monitoreos").sort_values("Monitoreos", ascending=False)
     fig_asesores = px.bar(monit_por_asesor, x="Asesor", y="Monitoreos", title="Cantidad de Monitoreos por Asesor", text="Monitoreos", color="Monitoreos")
@@ -617,13 +617,13 @@ elif pagina == "📊 Dashboard CASA UR":
     fig_monitor.update_layout(xaxis_tickangle=-45)
     st.plotly_chart(fig_monitor, use_container_width=True)
 
-    st.subheader("🔥 Cumplimiento por Pregunta – CASA UR")
+    st.subheader("🔥 Cumplimiento por Pregunta – Casa UR")
 
     for canal_actual in df_filtrado["Canal"].unique():
         st.markdown(f"### 📌 Canal: **{canal_actual}**")
         df_c = df_filtrado[df_filtrado["Canal"] == canal_actual]
 
-        orden_formulario = obtener_preguntas("CASA UR", canal_actual)
+        orden_formulario = obtener_preguntas("Casa UR", canal_actual)
         if not orden_formulario:
             st.info("No hay preguntas configuradas para este canal.")
             continue
