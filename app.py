@@ -126,8 +126,8 @@ areas = {
             "Jerly Durley Mendez Fontecha","Addison Rodriguez Casallas",
             "Gabriel Ferney Martinez Lopez","Juan David Gonzalez Jimenez",
             "Miguel Angel Rico Acevedo","Juan Camilo Ortega Clavijo",
-            "Andres Fernando Galindo Algarra","Adrian Jose Sosa Gil","Juan David Gonzalez Jimenez"
-            "Andrea Katherine Torres Junco","Leidi Daniela Arias Rodriguez"
+            "Andres Fernando Galindo Algarra","Adrian Jose Sosa Gil","Juan David Gonzalez Jimenez",
+            "Andrea Katherine Torres Junco","Leidi Daniela Arias Rodriguez", "Wilson David Olarte Hernandez - TMP"
         ]
     }
 }
