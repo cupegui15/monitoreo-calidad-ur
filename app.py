@@ -103,16 +103,16 @@ areas = {
         "asesores": [
             "Adela Bogotá Cagua","David Esteban Puerto Salgado",
             "Diana Marcela Sánchez Cano","Diana Milena Nieto Perez",
-            "Jenny Lorena Quintero","Jhon Caballero",
+            "Jenny Lorena Quintero","Jhon Estiverson Caballero",
             "Jose Edwin Navarro Rondon","Laura Alejandra Bernal Perez","Leidy Johanna Alonso Rincón",
             "Leyner Anyul Silva Avila","Martha Soraya Monsalve Fonseca",
             "Nancy Viviana Bulla Bustos","Nelson Peña Ramírez",
-            "Solangel Milena Rodriguez Quitian","Leidy Sofia Ramirez Paez","Nathalia Andrea Bernal Lara - TMP",
+            "Solangel Milena Rodriguez Quitian","Leidy Sofia Ramirez Paez","Nathalia Andrea Bernal Lara",
             "Rafael Ricardo Garcia Gutierrez - TMP", "Laura Sofia Mayac Roa - TMP",
             "Juliana Cadena Rodriguez- TMP","Yesica Yohana Tota Sierra - TMP",
             "Madeline García Fuerte- TMP","Jhon Alexis Cosme Basabe - TMP",
             "Angie Paola Rojas Jeronimo - TMP","Camilo Alexander Huertas Melo - TMP",
-            "Miguel Angel Rojas Rojas - TMP", "Angela Yesenia Gomez Martinez - TMP"
+            "Angela Yesenia Gomez Martinez - TMP"
         ]
     },
     "Conecta UR": {
