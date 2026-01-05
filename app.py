@@ -974,7 +974,7 @@ elif pagina == "📥 Descarga de resultados":
     from io import BytesIO
 
     buffer = BytesIO()
-    with pd.ExcelWriter(buffer, engine="xlsxwriter") as writer:
+    with pd.ExcelWriter(buffer, engine="openpyxl") as writer:
         consolidado.to_excel(
             writer,
             index=False,
