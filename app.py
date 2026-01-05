@@ -960,7 +960,6 @@ elif pagina == "📥 Descarga de resultados":
             "Nombre Asesor",
             "Cantida Monitoreos",
             "Promedio de Total de puntos",
-            "Correo Electronico",
             "Aspectos Positivos",
             "Aspectos Por Mejorar"
         ]
