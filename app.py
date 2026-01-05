@@ -388,9 +388,20 @@ pagina = st.sidebar.radio(
         "📝 Formulario de Monitoreo",
         "📊 Dashboard Casa UR",
         "📈 Dashboard Conecta UR",
-        "🎯 Dashboard por Asesor"
+        "🎯 Dashboard por Asesor",
+        "📥 Descarga de resultados"
     ]
 )
+
+def consolidar_texto(serie):
+    textos = serie.dropna().astype(str)
+    items = []
+    for t in textos:
+        for x in t.split("\n"):
+            x = x.strip()
+            if x:
+                items.append(x)
+    return "\n".join(sorted(set(items)))
 
 # ===============================
 # BANNER
@@ -862,3 +873,117 @@ elif pagina == "🎯 Dashboard por Asesor":
     fig.update_traces(texttemplate="%{x:.1f}%", textposition="outside")
     fig = ajustar_grafico_horizontal(fig, df_preg, "Pregunta_wrapped")
     st.plotly_chart(fig, use_container_width=True)
+
+    # =====================================================================
+# 📥 DESCARGA DE RESULTADOS
+# =====================================================================
+elif pagina == "📥 Descarga de resultados":
+
+    st.subheader("📥 Descarga de consolidado mensual")
+
+    df = cargar_todas_las_hojas_google_sheets()
+
+    if df.empty:
+        st.warning("📭 No hay información disponible.")
+        st.stop()
+
+    df = df.dropna(how="all")
+    df.columns = [str(c).strip() for c in df.columns]
+    df = df.dropna(subset=["Área", "Asesor", "Fecha"])
+
+    df["Fecha"] = pd.to_datetime(df["Fecha"], errors="coerce")
+    df["Mes"] = df["Fecha"].dt.month
+    df["Año"] = df["Fecha"].dt.year
+
+    meses = {
+        1:"Enero",2:"Febrero",3:"Marzo",4:"Abril",5:"Mayo",6:"Junio",
+        7:"Julio",8:"Agosto",9:"Septiembre",10:"Octubre",11:"Noviembre",12:"Diciembre"
+    }
+
+    # -------------------------------
+    # FILTROS
+    # -------------------------------
+    c1, c2, c3 = st.columns(3)
+
+    with c1:
+        area_f = st.selectbox("Área:", sorted(df["Área"].unique()))
+
+    with c2:
+        anio_f = st.selectbox("Año:", sorted(df["Año"].dropna().unique().astype(int)))
+
+    with c3:
+        mes_f = st.selectbox(
+            "Mes:",
+            [meses[m] for m in sorted(df["Mes"].dropna().unique())]
+        )
+
+    mes_num = [k for k, v in meses.items() if v == mes_f][0]
+
+    df_f = df[
+        (df["Área"] == area_f) &
+        (df["Año"] == anio_f) &
+        (df["Mes"] == mes_num)
+    ]
+
+    if df_f.empty:
+        st.warning("No hay datos con los filtros seleccionados.")
+        st.stop()
+
+    # -------------------------------
+    # CONSOLIDADO
+    # -------------------------------
+    consolidado = (
+        df_f
+        .groupby("Asesor")
+        .agg(
+            **{
+                "Cantida Monitoreos": ("Asesor", "count"),
+                "Promedio de Total de puntos": ("Total", "mean"),
+                "Aspectos Positivos": ("Aspectos positivos", consolidar_texto),
+                "Aspectos Por Mejorar": ("Aspectos por Mejorar", consolidar_texto)
+            }
+        )
+        .reset_index()
+        .rename(columns={"Asesor": "Nombre Asesor"})
+    )
+
+    consolidado["Promedio de Total de puntos"] = (
+        consolidado["Promedio de Total de puntos"].round(2)
+    )
+
+    # Columna de correo (placeholder)
+    consolidado["Correo Electronico"] = ""
+
+    # Orden exacto del archivo oficial
+    consolidado = consolidado[
+        [
+            "Nombre Asesor",
+            "Cantida Monitoreos",
+            "Promedio de Total de puntos",
+            "Correo Electronico",
+            "Aspectos Positivos",
+            "Aspectos Por Mejorar"
+        ]
+    ]
+
+    st.dataframe(consolidado, use_container_width=True)
+
+    # -------------------------------
+    # DESCARGA EXCEL
+    # -------------------------------
+    from io import BytesIO
+
+    buffer = BytesIO()
+    with pd.ExcelWriter(buffer, engine="xlsxwriter") as writer:
+        consolidado.to_excel(
+            writer,
+            index=False,
+            sheet_name="Correo"
+        )
+
+    st.download_button(
+        label="📥 Descargar archivo consolidado",
+        data=buffer.getvalue(),
+        file_name=f"Resultados_{area_f}_{anio_f}_{mes_f}.xlsx",
+        mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+    )
