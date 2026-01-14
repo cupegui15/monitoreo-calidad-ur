@@ -137,7 +137,7 @@ areas = {
 # ===============================
 def obtener_preguntas(area, canal):
     if area == "Casa UR":
-        if canal in ["Presencial", "Contact Center", "Chat"]:
+        if canal in ["Presencial", "Contact Center"]:
             return [
                 "¿Atiende la interacción en el momento que se establece contacto con el(a) usuario(a)?",
                 "¿Saluda, se presenta de una forma amable y cortés, usando el dialogo de saludo y bienvenida?",
@@ -149,6 +149,17 @@ def obtener_preguntas(area, canal):
                 "¿Valida con el usuario si la información fue clara, completa o si requiere algún trámite adicional?",
                 "¿Documenta la atención de forma coherente según lo solicitado e informado al cliente; seleccionando las tipologías adecuadas y manejando correcta redacción y ortografía?",
                 "¿Finaliza la atención de forma amable, cortés utilizando el dialogo de cierre y despedida remitiendo al usuario a responder la encuesta de percepción?"
+            ]
+            elif canal == "Chat":
+            return [
+                "¿Atiende la interacción en el momento que se establece contacto con el(a) usuario(a)?",
+                "¿Realiza la validación de identidad del usuario y personaliza la interacción de forma adecuada garantizando la confidencialidad de la información?",
+                "¿Escucha activamente al usuario y  realiza preguntas adicionales demostrando atención y concentración?",
+                "¿Consulta todas las herramientas disponibles para estructurar la posible respuesta que se le brindará al usuario?",
+                "¿Controla los tiempos de espera informando al usuario y realizando acompañamiento cada 2 minutos?",
+                "¿Brinda respuesta de forma precisa, completa y coherente, de acuerdo a la solicitado por el usuario?",
+                "¿Valida con el usuario si la información fue clara, completa o si requiere algún trámite adicional?",
+                "¿Documenta la atención de forma coherente según lo solicitado e informado al cliente; seleccionando las tipologías adecuadas y manejando correcta redacción y ortografía?",
             ]
         elif canal == "Back Office":
             return [
@@ -173,6 +184,18 @@ def obtener_preguntas(area, canal):
                 "¿Documenta la atención en el sistema de tickets de manera coherente, seleccionando tipologías correctas y con redacción/ortografía adecuadas?",
                 "¿Finaliza la atención de forma amable y profesional, utilizando el cierre de interacción definido y remitiendo al usuario a la encuesta de satisfacción?"
             ]
+
+        elif canal == "Chat":
+             return [
+                "¿Atiende la interacción de forma oportuna en el momento que se establece el contacto?",
+                "¿Realiza la validación de identidad del usuario garantizando confidencialidad y aplica protocolos de seguridad de la información?",
+                "¿Escucha activamente al usuario y formula preguntas pertinentes para un diagnóstico claro y completo?",
+                "¿Consulta y utiliza todas las herramientas de soporte disponibles (base de conocimiento, sistemas, documentación) para estructurar una respuesta adecuada?",
+                "¿Gestiona adecuadamente los tiempos de espera, manteniendo informado al usuario y realizando acompañamiento oportuno durante la interacción?",
+                "¿Sigue el flujo definido para solución o escalamiento, asegurando trazabilidad y cumplimiento de procesos internos?",
+                "¿Valida con el usuario que la información brindada es clara, completa y confirma si requiere trámites o pasos adicionales?",
+                "¿Documenta la atención en el sistema de tickets de manera coherente, seleccionando tipologías correctas y con redacción/ortografía adecuadas?"
+            ]
         elif canal == "Sitio":
             return [
                 "¿Cumple con el ANS/SLA establecido?",
@@ -188,14 +211,18 @@ def obtener_preguntas(area, canal):
 # ===============================
 def obtener_pesos(area, canal):
     if area == "Casa UR":
-        if canal in ["Presencial", "Contact Center", "Chat"]:
+        if canal in ["Presencial", "Contact Center"]:
             return [9, 9, 9, 9, 9, 9, 14, 8, 14, 10]
+        elif canal == "Chat":
+            return [10, 11, 11, 11, 11, 14, 12, 12, 14]
         elif canal == "Back Office":
             return [20, 20, 20, 20, 20]
 
     if area == "Conecta UR":
-        if canal in ["Linea", "Chat"]:
+        if canal == "Linea":
             return [9, 9, 9, 9, 9, 9, 14, 8, 14, 10]
+        elif canal == "Chat":
+            return [10, 11, 11, 11, 11, 14, 12, 12, 14]
         elif canal == "Sitio":
             return [20, 20, 20, 20, 20]
     return []
