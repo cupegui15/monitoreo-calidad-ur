@@ -137,40 +137,44 @@ areas = {
 # ===============================
 def obtener_preguntas(area, canal):
     if area == "Casa UR":
+
         if canal in ["Presencial", "Contact Center"]:
             return [
                 "¿Atiende la interacción en el momento que se establece contacto con el(a) usuario(a)?",
                 "¿Saluda, se presenta de una forma amable y cortés, usando el dialogo de saludo y bienvenida?",
                 "¿Realiza la validación de identidad del usuario y personaliza la interacción de forma adecuada garantizando la confidencialidad de la información?",
-                "¿Escucha activamente al usuario y  realiza preguntas adicionales demostrando atención y concentración?",
+                "¿Escucha activamente al usuario y realiza preguntas adicionales demostrando atención y concentración?",
                 "¿Consulta todas las herramientas disponibles para estructurar la posible respuesta que se le brindará al usuario?",
                 "¿Controla los tiempos de espera informando al usuario y realizando acompañamiento cada 2 minutos?",
-                "¿Brinda respuesta de forma precisa, completa y coherente, de acuerdo a la solicitado por el usuario?",
+                "¿Brinda respuesta de forma precisa, completa y coherente, de acuerdo a lo solicitado por el usuario?",
                 "¿Valida con el usuario si la información fue clara, completa o si requiere algún trámite adicional?",
                 "¿Documenta la atención de forma coherente según lo solicitado e informado al cliente; seleccionando las tipologías adecuadas y manejando correcta redacción y ortografía?",
                 "¿Finaliza la atención de forma amable, cortés utilizando el dialogo de cierre y despedida remitiendo al usuario a responder la encuesta de percepción?"
             ]
-            elif canal == "Chat":
+
+        elif canal == "Chat":
             return [
                 "¿Atiende la interacción en el momento que se establece contacto con el(a) usuario(a)?",
                 "¿Realiza la validación de identidad del usuario y personaliza la interacción de forma adecuada garantizando la confidencialidad de la información?",
-                "¿Escucha activamente al usuario y  realiza preguntas adicionales demostrando atención y concentración?",
+                "¿Escucha activamente al usuario y realiza preguntas adicionales demostrando atención y concentración?",
                 "¿Consulta todas las herramientas disponibles para estructurar la posible respuesta que se le brindará al usuario?",
                 "¿Controla los tiempos de espera informando al usuario y realizando acompañamiento cada 2 minutos?",
-                "¿Brinda respuesta de forma precisa, completa y coherente, de acuerdo a la solicitado por el usuario?",
+                "¿Brinda respuesta de forma precisa, completa y coherente, de acuerdo a lo solicitado por el usuario?",
                 "¿Valida con el usuario si la información fue clara, completa o si requiere algún trámite adicional?",
-                "¿Documenta la atención de forma coherente según lo solicitado e informado al cliente; seleccionando las tipologías adecuadas y manejando correcta redacción y ortografía?",
+                "¿Documenta la atención de forma coherente según lo solicitado e informado al cliente; seleccionando las tipologías adecuadas y manejando correcta redacción y ortografía?"
             ]
+
         elif canal == "Back Office":
             return [
                 "¿Cumple con el ANS establecido para el servicio?",
                 "¿Analiza correctamente la solicitud?",
                 "¿Gestiona adecuadamente en SAP/UXXI/Bizagi?",
-                "¿Respuestas eficaz de acuerdo a la solicitud radicada por el usuario?",
+                "¿Respuesta eficaz de acuerdo a la solicitud radicada por el usuario?",
                 "¿Es empático al cerrar la solicitud?"
             ]
 
     elif area == "Conecta UR":
+
         if canal == "Linea":
             return [
                 "¿Atiende la interacción de forma oportuna en el momento que se establece el contacto?",
@@ -186,7 +190,7 @@ def obtener_preguntas(area, canal):
             ]
 
         elif canal == "Chat":
-             return [
+            return [
                 "¿Atiende la interacción de forma oportuna en el momento que se establece el contacto?",
                 "¿Realiza la validación de identidad del usuario garantizando confidencialidad y aplica protocolos de seguridad de la información?",
                 "¿Escucha activamente al usuario y formula preguntas pertinentes para un diagnóstico claro y completo?",
@@ -196,6 +200,7 @@ def obtener_preguntas(area, canal):
                 "¿Valida con el usuario que la información brindada es clara, completa y confirma si requiere trámites o pasos adicionales?",
                 "¿Documenta la atención en el sistema de tickets de manera coherente, seleccionando tipologías correctas y con redacción/ortografía adecuadas?"
             ]
+
         elif canal == "Sitio":
             return [
                 "¿Cumple con el ANS/SLA establecido?",
@@ -204,6 +209,7 @@ def obtener_preguntas(area, canal):
                 "¿Brinda una respuesta eficaz y alineada a la solicitud radicada por el usuario, asegurando calidad técnica en la solución?",
                 "¿Comunica el cierre de la solicitud de manera empática y profesional, validando la satisfacción del usuario?"
             ]
+
     return []
 
 # ===============================
