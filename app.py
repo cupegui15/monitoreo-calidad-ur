@@ -171,7 +171,7 @@ def obtener_preguntas(area, canal):
             ]
 
     elif area == "Conecta UR":
-        if canal in ["Linea", "Chat"]:
+        if canal == "Linea":
             return [
                 "¿Atiende la interacción de forma oportuna en el momento que se establece el contacto?",
                 "¿Saluda y se presenta de manera amable y profesional, estableciendo un inicio cordial de la atención?",
