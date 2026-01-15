@@ -1035,7 +1035,6 @@ elif pagina == "🎯 Dashboard por Asesor":
 
         st.plotly_chart(fig, use_container_width=True)
 
-
 # =====================================================================
 # 📥 DESCARGA DE RESULTADOS
 # =====================================================================
@@ -1053,7 +1052,7 @@ elif pagina == "📥 Descarga de resultados":
 
     df = df.dropna(how="all")
     df.columns = [str(c).strip() for c in df.columns]
-    df = df.dropna(subset=["Área", "Asesor", "Fecha"])
+    df = df.dropna(subset=["Área", "Asesor", "Fecha", "Canal", "Total"])
 
     df["Fecha"] = pd.to_datetime(df["Fecha"], errors="coerce")
     df["Mes"] = df["Fecha"].dt.month
@@ -1074,7 +1073,9 @@ elif pagina == "📥 Descarga de resultados":
         area_f = st.selectbox("Área:", sorted(df["Área"].unique()))
 
     with c2:
-        anio_f = st.selectbox("Año:", sorted(df["Año"].dropna().unique().astype(int)))
+        anio_f = st.selectbox(
+            "Año:", sorted(df["Año"].dropna().unique().astype(int))
+        )
 
     with c3:
         mes_f = st.selectbox(
@@ -1095,7 +1096,17 @@ elif pagina == "📥 Descarga de resultados":
         st.stop()
 
     # -------------------------------
-    # CONSOLIDADO
+    # PROMEDIO POR ASESOR Y CANAL
+    # -------------------------------
+    promedio_canal = (
+        df_f
+        .groupby(["Asesor", "Canal"])["Total"]
+        .mean()
+        .reset_index(name="Promedio Canal")
+    )
+
+    # -------------------------------
+    # PONDERADO FINAL POR ASESOR
     # -------------------------------
     ponderado_asesor = (
         promedio_canal
@@ -1104,6 +1115,9 @@ elif pagina == "📥 Descarga de resultados":
         .reset_index(name="Promedio de Total de puntos")
     )
 
+    # -------------------------------
+    # CONSOLIDADO GENERAL
+    # -------------------------------
     consolidado = (
         df_f
         .groupby("Asesor")
