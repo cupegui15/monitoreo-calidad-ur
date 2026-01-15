@@ -94,7 +94,7 @@ textarea {
 # ===============================
 areas = {
     "Casa UR": {
-        "canales": ["Presencial", "Contact Center", "Chat", "Back Office"],
+        "canales": ["Presencial", "Contact Center", "Chat", "Back Office", "Servicio"],
         "monitores": [
             "Mauricio Ramirez Cubillos",
             "Alejandro Parra Sánchez",
@@ -116,7 +116,7 @@ areas = {
         ]
     },
     "Conecta UR": {
-        "canales": ["Linea", "Chat", "Sitio"],
+        "canales": ["Linea", "Chat", "Sitio", "Servicio"],
         "monitores": [
             "Johanna Rueda Cuvajante",
             "Cristian Alberto Upegui M"
@@ -172,7 +172,7 @@ def obtener_preguntas(area, canal):
                 "¿Respuesta eficaz de acuerdo a la solicitud radicada por el usuario?",
                 "¿Es empático al cerrar la solicitud?"
             ]
-         elif canal == "Servicio":
+        elif canal == "Servicio":
             return [
                 "¿Atiende la interacción en el momento que se establece contacto con el(a) usuario(a)?",
                 "¿Saluda, se presenta de una forma amable y cortés, usando el dialogo de saludo y bienvenida?",
@@ -183,6 +183,7 @@ def obtener_preguntas(area, canal):
                 "¿Valida con el usuario si la información fue clara, completa o si requiere algún trámite adicional?",
                 "¿Finaliza la atención de forma amable, cortés utilizando el dialogo de cierre y despedida remitiendo al usuario a responder la encuesta de percepción?"
             ]
+
     elif area == "Conecta UR":
 
         if canal == "Linea":
@@ -844,7 +845,7 @@ elif pagina == "📈 Dashboard Conecta UR":
 # Calculo Pesos Por Canal
 # =====================================================================
 
-    def calcular_ponderado_por_asesor(df_asesor):
+def calcular_ponderado_por_asesor(df_asesor):
     """
     Calcula el puntaje final ponderado por canal:
     - Servicio = 30%
@@ -862,11 +863,11 @@ elif pagina == "📈 Dashboard Conecta UR":
 
     puntaje_final = 0.0
 
-    # 1️⃣ Canal Servicio (30%)
+    # Canal Servicio (30%)
     if "Servicio" in promedios.index:
         puntaje_final += promedios["Servicio"] * PESOS_GLOBALES_CANAL["Servicio"]
 
-    # 2️⃣ Otros canales (70%)
+    # Otros canales (70%)
     otros = promedios.drop(index=["Servicio"], errors="ignore")
 
     if not otros.empty:
