@@ -8,6 +8,7 @@ from oauth2client.service_account import ServiceAccountCredentials
 import json
 import time
 import textwrap
+from io import BytesIO
 
 # ===============================
 # CONFIGURACIÓN PRINCIPAL
@@ -1082,8 +1083,7 @@ st.dataframe(consolidado, use_container_width=True)
     # -------------------------------
     # DESCARGA EXCEL
     # -------------------------------
-    from io import BytesIO
-
+    
     buffer = BytesIO()
     with pd.ExcelWriter(buffer, engine="xlsxwriter") as writer:
         consolidado.to_excel(
