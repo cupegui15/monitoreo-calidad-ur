@@ -318,35 +318,33 @@ def ajustar_grafico_horizontal(fig, df_plot: pd.DataFrame, col_wrapped: str = "P
 
 def calcular_ponderado_por_asesor(df_asesor):
     """
-    Calcula el puntaje final ponderado por canal:
-    - Servicio = 30%
-    - Otros canales = 70%
+    Ponderación final por asesor:
+    - Canal Servicio: 30 %
+    - Otros canales: 70 %
+    df_asesor debe tener:
+    ['Asesor', 'Canal', 'Promedio Canal']
     """
-    promedios = (
-        df_asesor
-        .groupby("Canal")["Total"]
-        .mean()
-        .dropna()
-    )
 
-    if promedios.empty:
-        return 0.0
+    # Separar canales
+    servicio = df_asesor.loc[
+        df_asesor["Canal"] == "Servicio", "Promedio Canal"
+    ]
 
-    puntaje_final = 0.0
+    otros = df_asesor.loc[
+        df_asesor["Canal"] != "Servicio", "Promedio Canal"
+    ]
 
-    # Canal Servicio (30%)
-    if "Servicio" in promedios.index:
-        puntaje_final += promedios["Servicio"] * PESOS_GLOBALES_CANAL["Servicio"]
+    # Casos
+    if not servicio.empty and not otros.empty:
+        return round(servicio.mean() * 0.30 + otros.mean() * 0.70, 2)
 
-    # Otros canales (70%)
-    otros = promedios.drop(index=["Servicio"], errors="ignore")
+    if not servicio.empty:
+        return round(servicio.mean(), 2)
 
     if not otros.empty:
-        peso_individual = PESO_OTROS_CANALES / len(otros)
-        for v in otros.values:
-            puntaje_final += v * peso_individual
+        return round(otros.mean(), 2)
 
-    return round(puntaje_final, 2)
+    return 0.0
 
 # ===============================
 # GOOGLE SHEETS: GUARDAR
