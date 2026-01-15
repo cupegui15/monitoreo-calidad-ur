@@ -877,9 +877,9 @@ elif pagina == "📈 Dashboard Conecta UR":
         fig_h.update_traces(texttemplate="%{x:.1f}%", textposition="outside")
         fig_h = ajustar_grafico_horizontal(fig_h, df_preg_canal, "Pregunta_wrapped")
         st.plotly_chart(fig_h, use_container_width=True)
-===================================================================== 
-# 🎯 DASHBOARD POR ASESOR # 
-=====================================================================
+# ===================================================================== 
+# 🎯 DASHBOARD POR ASESOR
+# =====================================================================
 
 elif pagina == "🎯 Dashboard por Asesor":
 
