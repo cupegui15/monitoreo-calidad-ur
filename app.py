@@ -203,11 +203,11 @@ def obtener_preguntas(area, canal):
 
         elif canal == "Sitio":
             return [
-                "¿Cumple con el ANS/SLA establecido?",
-                "¿Realiza un análisis completo y pertinente de la solicitud, aplicando diagnóstico claro antes de ejecutar acciones?",
-                "¿Gestiona correctamente en las herramientas institucionales (SAP / UXXI / Salesforce u otras) garantizando trazabilidad y registro adecuado?",
-                "¿Brinda una respuesta eficaz y alineada a la solicitud radicada por el usuario, asegurando calidad técnica en la solución?",
-                "¿Comunica el cierre de la solicitud de manera empática y profesional, validando la satisfacción del usuario?"
+                "¿Cómo califica el tiempo de respuesta de su solicitud?",
+                "¿Cómo califica la amabilidad y la actitud de servicio del técnico durante la atención brindada?",
+                "¿Cómo califica la presentación personal del técnico, incluyendo el uso adecuado de la chaqueta institucional, durante la visita?",
+                "¿El Tecnico de soporte en sitio logró solucionar su requerimiento en esta visita?",
+                "¿Qué probabilidad hay de que recomiendes los servicios de CONECTA UR a tus compañeros y amigos?"
             ]
 
     return []
