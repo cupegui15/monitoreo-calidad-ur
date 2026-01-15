@@ -880,7 +880,8 @@ def calcular_ponderado_por_asesor(df_asesor):
 # =====================================================================
 # 🎯 DASHBOARD POR ASESOR
 # =====================================================================
-elif pagina == "🎯 Dashboard por Asesor":
+
+if pagina == "🎯 Dashboard por Asesor":
 
     df = cargar_todas_las_hojas_google_sheets()
 
