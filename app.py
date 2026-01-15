@@ -1111,7 +1111,7 @@ elif pagina == "📥 Descarga de resultados":
     ponderado_asesor = (
         promedio_canal
         .groupby("Asesor")
-        .apply(calcular_ponderado)
+        .apply(calcular_ponderado_por_asesor)
         .reset_index(name="Promedio de Total de puntos")
     )
 
