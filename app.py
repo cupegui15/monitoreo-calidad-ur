@@ -172,7 +172,17 @@ def obtener_preguntas(area, canal):
                 "¿Respuesta eficaz de acuerdo a la solicitud radicada por el usuario?",
                 "¿Es empático al cerrar la solicitud?"
             ]
-
+         elif canal == "Servicio":
+            return [
+                "¿Atiende la interacción en el momento que se establece contacto con el(a) usuario(a)?",
+                "¿Saluda, se presenta de una forma amable y cortés, usando el dialogo de saludo y bienvenida?",
+                "¿Realiza la validación de identidad del usuario y personaliza la interacción de forma adecuada garantizando la confidencialidad de la información?",
+                "¿Escucha activamente al usuario y realiza preguntas adicionales demostrando atención y concentración?",
+                "¿Controla los tiempos de espera informando al usuario y realizando acompañamiento cada 2 minutos?",
+                "¿Brinda respuesta de forma precisa, completa y coherente, de acuerdo a lo solicitado por el usuario?",
+                "¿Valida con el usuario si la información fue clara, completa o si requiere algún trámite adicional?",
+                "¿Finaliza la atención de forma amable, cortés utilizando el dialogo de cierre y despedida remitiendo al usuario a responder la encuesta de percepción?"
+            ]
     elif area == "Conecta UR":
 
         if canal == "Linea":
@@ -209,8 +219,17 @@ def obtener_preguntas(area, canal):
                 "¿El Tecnico de soporte en sitio logró solucionar su requerimiento en esta visita?",
                 "¿Qué probabilidad hay de que recomiendes los servicios de CONECTA UR a tus compañeros y amigos?"
             ]
+        if canal == "Servicio":
+            return [
+                "¿Atiende la interacción de forma oportuna en el momento que se establece el contacto?",
+                "¿Saluda y se presenta de manera amable y profesional, estableciendo un inicio cordial de la atención?",
+                "¿Realiza la validación de identidad del usuario garantizando confidencialidad y aplica protocolos de seguridad de la información?",
+                "¿Escucha activamente al usuario y formula preguntas pertinentes para un diagnóstico claro y completo?",
+                "¿Gestiona adecuadamente los tiempos de espera, manteniendo informado al usuario y realizando acompañamiento oportuno durante la interacción?",
+                "¿Valida con el usuario que la información brindada es clara, completa y confirma si requiere trámites o pasos adicionales?",
+                "¿Finaliza la atención de forma amable y profesional, utilizando el cierre de interacción definido y remitiendo al usuario a la encuesta de satisfacción?"
 
-    return []
+            ]
 
 # ===============================
 # PESOS POR CANAL
@@ -223,6 +242,8 @@ def obtener_pesos(area, canal):
             return [10, 12, 12, 12, 12, 14, 12, 16]
         elif canal == "Back Office":
             return [20, 20, 20, 20, 20]
+        elif canal == "Servicio":
+            return [15, 15, 15, 15, 10, 10, 10, 10]
 
     if area == "Conecta UR":
         if canal == "Linea":
@@ -231,8 +252,17 @@ def obtener_pesos(area, canal):
             return [10, 12, 12, 12, 12, 14, 12, 16]
         elif canal == "Sitio":
             return [20, 20, 20, 20, 20]
+        elif canal == "Servicio":
+            return [15, 15, 15, 15, 10, 15, 15]
     return []
 
+# ===============================
+# PESO GLOBAL POR CANAL (RESULTADO FINAL)
+# ===============================
+PESOS_GLOBALES_CANAL = {
+    "Servicio": 0.30  # Atención Servicio
+}
+PESO_OTROS_CANALES = 0.70
 # ===============================
 # SOPORTE WRAP PLOTLY
 # ===============================
@@ -811,6 +841,42 @@ elif pagina == "📈 Dashboard Conecta UR":
         st.plotly_chart(fig_h, use_container_width=True)
 
 # =====================================================================
+# Calculo Pesos Por Canal
+# =====================================================================
+
+    def calcular_ponderado_por_asesor(df_asesor):
+    """
+    Calcula el puntaje final ponderado por canal:
+    - Servicio = 30%
+    - Otros canales = 70%
+    """
+    promedios = (
+        df_asesor
+        .groupby("Canal")["Total"]
+        .mean()
+        .dropna()
+    )
+
+    if promedios.empty:
+        return 0.0
+
+    puntaje_final = 0.0
+
+    # 1️⃣ Canal Servicio (30%)
+    if "Servicio" in promedios.index:
+        puntaje_final += promedios["Servicio"] * PESOS_GLOBALES_CANAL["Servicio"]
+
+    # 2️⃣ Otros canales (70%)
+    otros = promedios.drop(index=["Servicio"], errors="ignore")
+
+    if not otros.empty:
+        peso_individual = PESO_OTROS_CANALES / len(otros)
+        for v in otros.values:
+            puntaje_final += v * peso_individual
+
+    return round(puntaje_final, 2)
+
+# =====================================================================
 # 🎯 DASHBOARD POR ASESOR
 # =====================================================================
 elif pagina == "🎯 Dashboard por Asesor":
@@ -859,7 +925,8 @@ elif pagina == "🎯 Dashboard por Asesor":
 
     c1, c2, c3 = st.columns(3)
     c1.metric("Monitoreos realizados", len(df_asesor))
-    c2.metric("Promedio general (Total puntos)", f"{(df_asesor['Total'].mean() if 'Total' in df_asesor.columns else 0.0):.2f}")
+    puntaje_ponderado = calcular_ponderado_por_asesor(df_asesor) 
+    c2.metric("Puntaje final ponderado",f"{puntaje_ponderado:.2f}")
     c3.metric("Errores Críticos", len(df_asesor[df_asesor["Error crítico"] == "Sí"]))
 
     area_asesor = df_asesor["Área"].iloc[0]
@@ -965,40 +1032,50 @@ elif pagina == "📥 Descarga de resultados":
     # -------------------------------
     # CONSOLIDADO
     # -------------------------------
-    consolidado = (
-        df_f
-        .groupby("Asesor")
-        .agg(
-            **{
-                "Cantida Monitoreos": ("Asesor", "count"),
-                "Promedio de Total de puntos": ("Total", "mean"),
-                "Aspectos Positivos": ("Aspectos positivos", consolidar_texto),
-                "Aspectos Por Mejorar": ("Aspectos por Mejorar", consolidar_texto)
-            }
-        )
-        .reset_index()
-        .rename(columns={"Asesor": "Nombre Asesor"})
+    ponderado_asesor = (
+    promedio_canal
+    .groupby("Asesor")
+    .apply(calcular_ponderado)
+    .reset_index(name="Promedio de Total de puntos")
+)
+
+consolidado = (
+    df_f
+    .groupby("Asesor")
+    .agg(
+        **{
+            "Cantida Monitoreos": ("Asesor", "count"),
+            "Aspectos Positivos": ("Aspectos positivos", consolidar_texto),
+            "Aspectos Por Mejorar": ("Aspectos por Mejorar", consolidar_texto)
+        }
     )
+    .reset_index()
+    .rename(columns={"Asesor": "Nombre Asesor"})
+)
 
-    consolidado["Promedio de Total de puntos"] = (
-        consolidado["Promedio de Total de puntos"].round(2)
-    )
+# Unir ponderado
+consolidado = consolidado.merge(
+    ponderado_asesor,
+    left_on="Nombre Asesor",
+    right_on="Asesor",
+    how="left"
+).drop(columns=["Asesor"])
 
-    # Columna de correo (placeholder)
-    consolidado["Correo Electronico"] = ""
+# Columna de correo
+consolidado["Correo Electronico"] = ""
 
-    # Orden exacto del archivo oficial
-    consolidado = consolidado[
-        [
-            "Nombre Asesor",
-            "Cantida Monitoreos",
-            "Promedio de Total de puntos",
-            "Aspectos Positivos",
-            "Aspectos Por Mejorar"
-        ]
+# Orden oficial
+consolidado = consolidado[
+    [
+        "Nombre Asesor",
+        "Cantida Monitoreos",
+        "Promedio de Total de puntos",
+        "Aspectos Positivos",
+        "Aspectos Por Mejorar"
     ]
+]
 
-    st.dataframe(consolidado, use_container_width=True)
+st.dataframe(consolidado, use_container_width=True)
 
     # -------------------------------
     # DESCARGA EXCEL
