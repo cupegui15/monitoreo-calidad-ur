@@ -312,6 +312,41 @@ def ajustar_grafico_horizontal(fig, df_plot: pd.DataFrame, col_wrapped: str = "P
         colorbar_tickfont=dict(size=11)
     )
     return fig
+# ===============================
+# Calculos Por Canal
+# ===============================
+
+def calcular_ponderado_por_asesor(df_asesor):
+    """
+    Calcula el puntaje final ponderado por canal:
+    - Servicio = 30%
+    - Otros canales = 70%
+    """
+    promedios = (
+        df_asesor
+        .groupby("Canal")["Total"]
+        .mean()
+        .dropna()
+    )
+
+    if promedios.empty:
+        return 0.0
+
+    puntaje_final = 0.0
+
+    # Canal Servicio (30%)
+    if "Servicio" in promedios.index:
+        puntaje_final += promedios["Servicio"] * PESOS_GLOBALES_CANAL["Servicio"]
+
+    # Otros canales (70%)
+    otros = promedios.drop(index=["Servicio"], errors="ignore")
+
+    if not otros.empty:
+        peso_individual = PESO_OTROS_CANALES / len(otros)
+        for v in otros.values:
+            puntaje_final += v * peso_individual
+
+    return round(puntaje_final, 2)
 
 # ===============================
 # GOOGLE SHEETS: GUARDAR
@@ -632,6 +667,7 @@ if pagina == "📝 Formulario de Monitoreo":
             guardar_datos_google_sheets(fila)
             st.success("✅ Monitoreo guardado correctamente")
             time.sleep(2)
+    
 # =====================================================================
 # 📊 DASHBOARD Casa UR
 # =====================================================================
@@ -841,48 +877,11 @@ elif pagina == "📈 Dashboard Conecta UR":
         fig_h.update_traces(texttemplate="%{x:.1f}%", textposition="outside")
         fig_h = ajustar_grafico_horizontal(fig_h, df_preg_canal, "Pregunta_wrapped")
         st.plotly_chart(fig_h, use_container_width=True)
+===================================================================== 
+# 🎯 DASHBOARD POR ASESOR # 
+=====================================================================
 
-# =====================================================================
-# Calculo Pesos Por Canal
-# =====================================================================
-
-def calcular_ponderado_por_asesor(df_asesor):
-    """
-    Calcula el puntaje final ponderado por canal:
-    - Servicio = 30%
-    - Otros canales = 70%
-    """
-    promedios = (
-        df_asesor
-        .groupby("Canal")["Total"]
-        .mean()
-        .dropna()
-    )
-
-    if promedios.empty:
-        return 0.0
-
-    puntaje_final = 0.0
-
-    # Canal Servicio (30%)
-    if "Servicio" in promedios.index:
-        puntaje_final += promedios["Servicio"] * PESOS_GLOBALES_CANAL["Servicio"]
-
-    # Otros canales (70%)
-    otros = promedios.drop(index=["Servicio"], errors="ignore")
-
-    if not otros.empty:
-        peso_individual = PESO_OTROS_CANALES / len(otros)
-        for v in otros.values:
-            puntaje_final += v * peso_individual
-
-    return round(puntaje_final, 2)
-
-# =====================================================================
-# 🎯 DASHBOARD POR ASESOR
-# =====================================================================
-
-if pagina == "🎯 Dashboard por Asesor":
+elif pagina == "🎯 Dashboard por Asesor":
 
     df = cargar_todas_las_hojas_google_sheets()
 
@@ -898,15 +897,26 @@ if pagina == "🎯 Dashboard por Asesor":
     df["Mes"] = df["Fecha"].dt.month
     df["Año"] = df["Fecha"].dt.year
 
-    meses = {1:"Enero",2:"Febrero",3:"Marzo",4:"Abril",5:"Mayo",6:"Junio",7:"Julio",8:"Agosto",9:"Septiembre",10:"Octubre",11:"Noviembre",12:"Diciembre"}
+    meses = {
+        1:"Enero",2:"Febrero",3:"Marzo",4:"Abril",5:"Mayo",6:"Junio",
+        7:"Julio",8:"Agosto",9:"Septiembre",10:"Octubre",11:"Noviembre",12:"Diciembre"
+    }
 
+    # ===============================
+    # FILTROS
+    # ===============================
     st.sidebar.subheader("Filtros Asesor")
+
     area_f = st.sidebar.selectbox("Área:", ["Todas"] + sorted(df["Área"].unique()))
     canal_f = st.sidebar.selectbox("Canal:", ["Todos"] + sorted(df["Canal"].unique()))
     anio_f = st.sidebar.selectbox("Año:", ["Todos"] + sorted(df["Año"].dropna().unique().astype(int)))
-    mes_f = st.sidebar.selectbox("Mes:", ["Todos"] + [meses[m] for m in sorted(df["Mes"].dropna().unique())])
+    mes_f = st.sidebar.selectbox(
+        "Mes:",
+        ["Todos"] + [meses[m] for m in sorted(df["Mes"].dropna().unique())]
+    )
 
     df_f = df.copy()
+
     if area_f != "Todas":
         df_f = df_f[df_f["Área"] == area_f]
     if canal_f != "Todos":
@@ -921,63 +931,112 @@ if pagina == "🎯 Dashboard por Asesor":
         st.warning("No hay datos con los filtros seleccionados.")
         st.stop()
 
-    asesor_sel = st.selectbox("Seleccione un asesor para analizar:", sorted(df_f["Asesor"].unique()))
+    asesor_sel = st.selectbox(
+        "Seleccione un asesor para analizar:",
+        sorted(df_f["Asesor"].unique())
+    )
+
     df_asesor = df_f[df_f["Asesor"] == asesor_sel]
 
     st.markdown(f"## 👤 Análisis del Asesor: **{asesor_sel}**")
 
+    # ===============================
+    # MÉTRICAS GENERALES
+    # ===============================
     c1, c2, c3 = st.columns(3)
+
     c1.metric("Monitoreos realizados", len(df_asesor))
-    puntaje_ponderado = calcular_ponderado_por_asesor(df_asesor) 
-    c2.metric("Puntaje final ponderado",f"{puntaje_ponderado:.2f}")
-    c3.metric("Errores Críticos", len(df_asesor[df_asesor["Error crítico"] == "Sí"]))
 
+    puntaje_ponderado = calcular_ponderado_por_asesor(df_asesor)
+    c2.metric("🎯 Puntaje final ponderado", f"{puntaje_ponderado:.2f}")
+
+    c3.metric(
+        "Errores Críticos",
+        len(df_asesor[df_asesor["Error crítico"] == "Sí"])
+    )
+
+    st.caption(
+        "📌 El puntaje final pondera **Servicio (30%)** y el promedio de los demás canales (**70%**)."
+    )
+
+    st.divider()
+
+    # ===============================
+    # ANÁLISIS POR CANAL (CLAVE)
+    # ===============================
     area_asesor = df_asesor["Área"].iloc[0]
-    canal_asesor = df_asesor["Canal"].iloc[0]
-    orden_formulario = obtener_preguntas(area_asesor, canal_asesor)
-    preguntas_cols = [p for p in orden_formulario if p in df_asesor.columns]
 
-    if not preguntas_cols:
-        st.info("Este asesor no tiene preguntas asociadas a su canal o aún no hay columnas en la hoja.")
-        st.stop()
+    for canal_actual in df_asesor["Canal"].unique():
 
-    df_long = df_asesor.melt(
-        id_vars=["Área", "Asesor", "Canal", "Fecha"],
-        value_vars=preguntas_cols,
-        var_name="Pregunta",
-        value_name="Puntaje"
-    )
-    df_long["Puntaje"] = pd.to_numeric(df_long["Puntaje"], errors="coerce").fillna(0)
+        st.markdown(f"### 📌 Canal: **{canal_actual}**")
 
-    df_preg = (
-        df_long.assign(Cumple=lambda d: d["Puntaje"] > 0)
-               .groupby("Pregunta")["Cumple"]
-               .mean()
-               .reset_index(name="Cumplimiento")
-    )
-    df_preg["Cumplimiento"] *= 100
+        df_canal = df_asesor[df_asesor["Canal"] == canal_actual]
 
-    mapa_orden = {preg: idx for idx, preg in enumerate(orden_formulario)}
-    df_preg["orden"] = df_preg["Pregunta"].map(mapa_orden)
-    df_preg = df_preg.dropna(subset=["orden"]).sort_values("orden", ascending=False)
+        orden_formulario = obtener_preguntas(area_asesor, canal_actual)
 
-    df_preg["Pregunta_wrapped"] = df_preg["Pregunta"].apply(lambda x: envolver_pregunta(x, 45))
+        if not orden_formulario:
+            st.info("No hay preguntas configuradas para este canal.")
+            continue
 
-    fig = px.bar(
-        df_preg,
-        x="Cumplimiento",
-        y="Pregunta_wrapped",
-        orientation="h",
-        title="📌 Cumplimiento por criterio",
-        color="Cumplimiento",
-        color_continuous_scale="RdYlGn",
-        range_x=[0, 100]
-    )
-    fig.update_traces(texttemplate="%{x:.1f}%", textposition="outside")
-    fig = ajustar_grafico_horizontal(fig, df_preg, "Pregunta_wrapped")
-    st.plotly_chart(fig, use_container_width=True)
+        preguntas_cols = [p for p in orden_formulario if p in df_canal.columns]
 
-    # =====================================================================
+        if not preguntas_cols:
+            st.info("No hay respuestas registradas para este canal.")
+            continue
+
+        df_long = df_canal.melt(
+            id_vars=["Área", "Asesor", "Canal", "Fecha"],
+            value_vars=preguntas_cols,
+            var_name="Pregunta",
+            value_name="Puntaje"
+        )
+
+        df_long["Puntaje"] = pd.to_numeric(df_long["Puntaje"], errors="coerce").fillna(0)
+
+        df_preg = (
+            df_long.assign(Cumple=lambda d: d["Puntaje"] > 0)
+                   .groupby("Pregunta")["Cumple"]
+                   .mean()
+                   .reset_index(name="Cumplimiento")
+        )
+
+        df_preg["Cumplimiento"] *= 100
+
+        mapa_orden = {preg: idx for idx, preg in enumerate(orden_formulario)}
+        df_preg["orden"] = df_preg["Pregunta"].map(mapa_orden)
+
+        df_preg = (
+            df_preg
+            .dropna(subset=["orden"])
+            .sort_values("orden", ascending=False)
+        )
+
+        df_preg["Pregunta_wrapped"] = df_preg["Pregunta"].apply(
+            lambda x: envolver_pregunta(x, 45)
+        )
+
+        fig = px.bar(
+            df_preg,
+            x="Cumplimiento",
+            y="Pregunta_wrapped",
+            orientation="h",
+            color="Cumplimiento",
+            color_continuous_scale="RdYlGn",
+            title=f"Cumplimiento por criterio – {canal_actual}",
+            range_x=[0, 100]
+        )
+
+        fig.update_traces(
+            texttemplate="%{x:.1f}%",
+            textposition="outside"
+        )
+
+        fig = ajustar_grafico_horizontal(fig, df_preg, "Pregunta_wrapped")
+
+        st.plotly_chart(fig, use_container_width=True)
+
+
+# =====================================================================
 # 📥 DESCARGA DE RESULTADOS
 # =====================================================================
 elif pagina == "📥 Descarga de resultados":
