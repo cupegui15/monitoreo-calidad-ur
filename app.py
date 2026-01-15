@@ -319,22 +319,22 @@ def ajustar_grafico_horizontal(fig, df_plot: pd.DataFrame, col_wrapped: str = "P
 def calcular_ponderado_por_asesor(df_asesor):
     """
     Ponderación final por asesor:
-    - Canal Servicio: 30 %
+    - Servicio: 30 %
     - Otros canales: 70 %
-    df_asesor debe tener:
-    ['Asesor', 'Canal', 'Promedio Canal']
+    Usa la columna 'Total'
     """
 
-    # Separar canales
+    if "Total" not in df_asesor.columns:
+        return 0.0
+
     servicio = df_asesor.loc[
-        df_asesor["Canal"] == "Servicio", "Promedio Canal"
+        df_asesor["Canal"] == "Servicio", "Total"
     ]
 
     otros = df_asesor.loc[
-        df_asesor["Canal"] != "Servicio", "Promedio Canal"
+        df_asesor["Canal"] != "Servicio", "Total"
     ]
 
-    # Casos
     if not servicio.empty and not otros.empty:
         return round(servicio.mean() * 0.30 + otros.mean() * 0.70, 2)
 
