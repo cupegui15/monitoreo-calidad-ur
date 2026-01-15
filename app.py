@@ -1041,6 +1041,8 @@ elif pagina == "🎯 Dashboard por Asesor":
 # =====================================================================
 elif pagina == "📥 Descarga de resultados":
 
+    from io import BytesIO
+
     st.subheader("📥 Descarga de consolidado mensual")
 
     df = cargar_todas_las_hojas_google_sheets()
@@ -1058,8 +1060,9 @@ elif pagina == "📥 Descarga de resultados":
     df["Año"] = df["Fecha"].dt.year
 
     meses = {
-        1:"Enero",2:"Febrero",3:"Marzo",4:"Abril",5:"Mayo",6:"Junio",
-        7:"Julio",8:"Agosto",9:"Septiembre",10:"Octubre",11:"Noviembre",12:"Diciembre"
+        1: "Enero", 2: "Febrero", 3: "Marzo", 4: "Abril",
+        5: "Mayo", 6: "Junio", 7: "Julio", 8: "Agosto",
+        9: "Septiembre", 10: "Octubre", 11: "Noviembre", 12: "Diciembre"
     }
 
     # -------------------------------
@@ -1095,65 +1098,64 @@ elif pagina == "📥 Descarga de resultados":
     # CONSOLIDADO
     # -------------------------------
     ponderado_asesor = (
-    promedio_canal
-    .groupby("Asesor")
-    .apply(calcular_ponderado)
-    .reset_index(name="Promedio de Total de puntos")
-)
-
-consolidado = (
-    df_f
-    .groupby("Asesor")
-    .agg(
-        **{
-            "Cantida Monitoreos": ("Asesor", "count"),
-            "Aspectos Positivos": ("Aspectos positivos", consolidar_texto),
-            "Aspectos Por Mejorar": ("Aspectos por Mejorar", consolidar_texto)
-        }
+        promedio_canal
+        .groupby("Asesor")
+        .apply(calcular_ponderado)
+        .reset_index(name="Promedio de Total de puntos")
     )
-    .reset_index()
-    .rename(columns={"Asesor": "Nombre Asesor"})
-)
 
-# Unir ponderado
-consolidado = consolidado.merge(
-    ponderado_asesor,
-    left_on="Nombre Asesor",
-    right_on="Asesor",
-    how="left"
-).drop(columns=["Asesor"])
+    consolidado = (
+        df_f
+        .groupby("Asesor")
+        .agg(
+            **{
+                "Cantida Monitoreos": ("Asesor", "count"),
+                "Aspectos Positivos": ("Aspectos positivos", consolidar_texto),
+                "Aspectos Por Mejorar": ("Aspectos por Mejorar", consolidar_texto)
+            }
+        )
+        .reset_index()
+        .rename(columns={"Asesor": "Nombre Asesor"})
+    )
 
-# Columna de correo
-consolidado["Correo Electronico"] = ""
+    consolidado = consolidado.merge(
+        ponderado_asesor,
+        left_on="Nombre Asesor",
+        right_on="Asesor",
+        how="left"
+    ).drop(columns=["Asesor"])
 
-# Orden oficial
-consolidado = consolidado[
-    [
-        "Nombre Asesor",
-        "Cantida Monitoreos",
-        "Promedio de Total de puntos",
-        "Aspectos Positivos",
-        "Aspectos Por Mejorar"
+    consolidado["Correo Electronico"] = ""
+
+    consolidado = consolidado[
+        [
+            "Nombre Asesor",
+            "Cantida Monitoreos",
+            "Promedio de Total de puntos",
+            "Aspectos Positivos",
+            "Aspectos Por Mejorar"
+        ]
     ]
-]
 
-st.dataframe(consolidado, use_container_width=True)
+    st.dataframe(consolidado, use_container_width=True)
 
     # -------------------------------
     # DESCARGA EXCEL
     # -------------------------------
-    
     buffer = BytesIO()
+
     with pd.ExcelWriter(buffer, engine="xlsxwriter") as writer:
         consolidado.to_excel(
             writer,
             index=False,
-            sheet_name="Correo"
+            sheet_name="Consolidado"
         )
+
+    buffer.seek(0)
 
     st.download_button(
         label="📥 Descargar archivo consolidado",
-        data=buffer.getvalue(),
+        data=buffer,
         file_name=f"Resultados_{area_f}_{anio_f}_{mes_f}.xlsx",
         mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
     )
