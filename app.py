@@ -742,10 +742,11 @@ elif pagina == "📊 Dashboard Casa UR":
         mes_num = [k for k, v in meses.items() if v == mes_f][0]
         df_filtrado = df_filtrado[df_filtrado["Mes"] == mes_num]
 
-    if df_filtrado.empty:
-        st.warning("No hay datos con los filtros seleccionados.")
-        st.stop()
+if df_filtrado.empty:
+    st.warning("No hay datos con los filtros seleccionados.")
+    st.stop()
 
+# 🔥 MOSTRAR ERRORES CRÍTICOS AL INICIO
         mostrar_tabla_errores_criticos(
         df_filtrado,
         titulo="Errores críticos – Casa UR"
@@ -852,14 +853,16 @@ elif pagina == "📈 Dashboard Conecta UR":
         mes_num = [k for k, v in meses.items() if v == mes_f][0]
         df_filtrado = df_filtrado[df_filtrado["Mes"] == mes_num]
 
-    if df_filtrado.empty:
-        st.warning("No hay datos con los filtros seleccionados.")
-        st.stop()
+if df_filtrado.empty:
+    st.warning("No hay datos con los filtros seleccionados.")
+    st.stop()
 
+# 🔥 MOSTRAR ERRORES CRÍTICOS AL INICIO
         mostrar_tabla_errores_criticos(
         df_filtrado,
         titulo="Errores críticos – Conecta UR"
     )
+
 
     st.subheader("📈 Dashboard Conecta UR – Global")
     c1, c2, c3 = st.columns(3)
