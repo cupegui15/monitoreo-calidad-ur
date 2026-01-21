@@ -501,6 +501,43 @@ def consolidar_texto(serie):
                 items.append(x)
     return "\n".join(sorted(set(items)))
 
+def mostrar_tabla_errores_criticos(df_filtrado, titulo="Errores Críticos Detectados"):
+    df_ec = df_filtrado[df_filtrado["Error crítico"] == "Sí"]
+
+    if df_ec.empty:
+        return
+
+    st.markdown(f"""
+    <div style="
+        background-color:#fff4e5;
+        padding:16px;
+        border-left:6px solid #9B0029;
+        border-radius:10px;
+        margin-bottom:18px;">
+        <h4 style="color:#9B0029; margin-bottom:6px;">⚠️ {titulo}</h4>
+        <p style="margin-bottom:0;">
+        Se identificaron errores críticos en el periodo seleccionado. 
+        Estos casos requieren seguimiento prioritario.
+        </p>
+    </div>
+    """, unsafe_allow_html=True)
+
+    tabla = df_ec[[
+        "Asesor",
+        "Monitor",
+        "Canal",
+        "Fecha",
+        "Aspectos por Mejorar"
+    ]].copy()
+
+    tabla["Fecha"] = tabla["Fecha"].dt.strftime("%Y-%m-%d")
+
+    st.dataframe(
+        tabla.sort_values(["Asesor", "Fecha"]),
+        use_container_width=True,
+        hide_index=True
+    )
+
 # ===============================
 # BANNER
 # ===============================
@@ -709,6 +746,11 @@ elif pagina == "📊 Dashboard Casa UR":
         st.warning("No hay datos con los filtros seleccionados.")
         st.stop()
 
+        mostrar_tabla_errores_criticos(
+        df_filtrado,
+        titulo="Errores críticos – Casa UR"
+    )
+
     st.subheader("📊 Dashboard Casa UR")
     c1, c2, c3 = st.columns(3)
     c1.metric("Monitoreos Totales", len(df_filtrado))
@@ -813,6 +855,11 @@ elif pagina == "📈 Dashboard Conecta UR":
     if df_filtrado.empty:
         st.warning("No hay datos con los filtros seleccionados.")
         st.stop()
+
+        mostrar_tabla_errores_criticos(
+        df_filtrado,
+        titulo="Errores críticos – Conecta UR"
+    )
 
     st.subheader("📈 Dashboard Conecta UR – Global")
     c1, c2, c3 = st.columns(3)
