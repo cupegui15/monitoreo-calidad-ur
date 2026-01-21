@@ -401,28 +401,39 @@ def guardar_datos_google_sheets(data):
 # ===============================
 # GOOGLE SHEETS: CARGAR TODAS LAS HOJAS
 # ===============================
+@st.cache_data(ttl=600)  # ⏱️ Cache por 10 minutos (ajustable)
 def cargar_todas_las_hojas_google_sheets():
     try:
+        # ================= CREDENCIALES =================
         creds_json = st.secrets["GCP_SERVICE_ACCOUNT"]
         creds_dict = json.loads(creds_json)
+
         scope = [
             "https://spreadsheets.google.com/feeds",
             "https://www.googleapis.com/auth/drive"
         ]
+
         creds = ServiceAccountCredentials.from_json_keyfile_dict(creds_dict, scope)
         client = gspread.authorize(creds)
+
         sh = client.open_by_key(st.secrets["GOOGLE_SHEETS_ID"])
 
+        # ================= LECTURA DE HOJAS =================
         dfs = []
+
         for ws in sh.worksheets():
             title = ws.title.strip()
+
+            # Validar formato "Área - Canal"
             if " - " not in title:
                 continue
 
             area_name, canal_name = [x.strip() for x in title.split(" - ", 1)]
 
+            # Validar área y canal permitidos
             if area_name not in areas:
                 continue
+
             if canal_name not in areas[area_name]["canales"]:
                 continue
 
@@ -433,11 +444,17 @@ def cargar_todas_las_hojas_google_sheets():
             df_temp = pd.DataFrame(records)
             df_temp.columns = [str(c).strip() for c in df_temp.columns]
 
+            # ================= PROCESAR PREGUNTAS =================
             preguntas_def = obtener_preguntas(area_name, canal_name)
+
             for p in preguntas_def:
                 if p in df_temp.columns:
-                    df_temp[p] = pd.to_numeric(df_temp[p], errors="coerce").fillna(0)
+                    df_temp[p] = (
+                        pd.to_numeric(df_temp[p], errors="coerce")
+                        .fillna(0)
+                    )
 
+            # ================= METADATA =================
             df_temp["Área"] = area_name
             df_temp["Canal"] = canal_name
 
@@ -451,7 +468,6 @@ def cargar_todas_las_hojas_google_sheets():
     except Exception as e:
         st.error(f"⚠️ Error cargando datos: {e}")
         return pd.DataFrame()
-
 # ===============================
 # RESET TOTAL DEL FORMULARIO
 # ===============================
