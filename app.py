@@ -726,42 +726,6 @@ elif pagina == "📊 Dashboard Casa UR":
         st.warning("No hay datos para Casa UR.")
         st.stop()
 
-    meses = {1:"Enero",2:"Febrero",3:"Marzo",4:"Abril",5:"Mayo",6:"Junio",7:"Julio",8:"Agosto",9:"Septiembre",10:"Octubre",11:"Noviembre",12:"Diciembre"}
-
-    st.sidebar.subheader("Filtros Casa UR")
-    canal_f = st.sidebar.selectbox("Canal:", ["Todos"] + sorted(df["Canal"].unique()))
-    anio_f = st.sidebar.selectbox("Año:", ["Todos"] + sorted(df["Año"].dropna().unique().astype(int)))
-    mes_f = st.sidebar.selectbox("Mes:", ["Todos"] + [meses[m] for m in sorted(df["Mes"].dropna().unique())])
-
-    df_filtrado = df.copy()
-    if canal_f != "Todos":
-        df_filtrado = df_filtrado[df_filtrado["Canal"] == canal_f]
-    if anio_f != "Todos":
-        df_filtrado = df_filtrado[df_filtrado["Año"] == int(anio_f)]
-    if mes_f != "Todos":
-        mes_num = [k for k, v in meses.items() if v == mes_f][0]
-        df_filtrado = df_filtrado[df_filtrado["Mes"] == mes_num]
-
-elif pagina == "📊 Dashboard Casa UR":
-
-    df = cargar_todas_las_hojas_google_sheets()
-
-    if df.empty:
-        st.warning("📭 No hay datos para mostrar aún.")
-        st.stop()
-
-    df = df.dropna(how="all")
-    df.columns = [str(c).strip() for c in df.columns]
-    df = df.dropna(subset=["Área", "Canal", "Asesor"])
-    df["Fecha"] = pd.to_datetime(df["Fecha"], errors="coerce")
-    df["Mes"] = df["Fecha"].dt.month
-    df["Año"] = df["Fecha"].dt.year
-
-    df = df[df["Área"] == "Casa UR"]
-    if df.empty:
-        st.warning("No hay datos para Casa UR.")
-        st.stop()
-
     meses = {1:"Enero",2:"Febrero",3:"Marzo",4:"Abril",5:"Mayo",6:"Junio",
              7:"Julio",8:"Agosto",9:"Septiembre",10:"Octubre",11:"Noviembre",12:"Diciembre"}
 
@@ -915,7 +879,10 @@ elif pagina == "📈 Dashboard Conecta UR":
         st.stop()
 
     # 🔥 TABLA DE ERRORES CRÍTICOS (AL INICIO)
-    mostrar_tabla_errores_criticos_conecta(df_filtrado)
+    mostrar_tabla_errores_criticos(
+    df_filtrado,
+    titulo="Errores críticos – Conecta UR"
+)
 
     # ================= DASHBOARD =================
     st.subheader("📈 Dashboard Conecta UR – Global")
