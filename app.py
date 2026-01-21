@@ -747,10 +747,10 @@ if df_filtrado.empty:
     st.stop()
 
 # 🔥 MOSTRAR ERRORES CRÍTICOS AL INICIO
-        mostrar_tabla_errores_criticos(
-        df_filtrado,
-        titulo="Errores críticos – Casa UR"
-    )
+mostrar_tabla_errores_criticos(
+    df_filtrado,
+    titulo="Errores críticos – Casa UR"
+)
 
     st.subheader("📊 Dashboard Casa UR")
     c1, c2, c3 = st.columns(3)
@@ -858,11 +858,10 @@ if df_filtrado.empty:
     st.stop()
 
 # 🔥 MOSTRAR ERRORES CRÍTICOS AL INICIO
-        mostrar_tabla_errores_criticos(
-        df_filtrado,
-        titulo="Errores críticos – Conecta UR"
-    )
-
+mostrar_tabla_errores_criticos(
+    df_filtrado,
+    titulo="Errores críticos – Conecta UR"
+)
 
     st.subheader("📈 Dashboard Conecta UR – Global")
     c1, c2, c3 = st.columns(3)
