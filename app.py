@@ -155,8 +155,6 @@ def obtener_preguntas(area, canal):
 
         elif canal == "Chat":
             return [
-                "¿Atiende la interacción en el momento que se establece contacto con el(a) usuario(a)?",
-                "¿Realiza la validación de identidad del usuario y personaliza la interacción de forma adecuada garantizando la confidencialidad de la información?",
                 "¿Escucha activamente al usuario y realiza preguntas adicionales demostrando atención y concentración?",
                 "¿Consulta todas las herramientas disponibles para estructurar la posible respuesta que se le brindará al usuario?",
                 "¿Controla los tiempos de espera informando al usuario y realizando acompañamiento cada 2 minutos?",
@@ -203,8 +201,6 @@ def obtener_preguntas(area, canal):
 
         elif canal == "Chat":
             return [
-                "¿Atiende la interacción de forma oportuna en el momento que se establece el contacto?",
-                "¿Realiza la validación de identidad del usuario garantizando confidencialidad y aplica protocolos de seguridad de la información?",
                 "¿Escucha activamente al usuario y formula preguntas pertinentes para un diagnóstico claro y completo?",
                 "¿Consulta y utiliza todas las herramientas de soporte disponibles (base de conocimiento, sistemas, documentación) para estructurar una respuesta adecuada?",
                 "¿Gestiona adecuadamente los tiempos de espera, manteniendo informado al usuario y realizando acompañamiento oportuno durante la interacción?",
@@ -241,7 +237,7 @@ def obtener_pesos(area, canal):
         if canal in ["Presencial", "Contact Center"]:
             return [9, 9, 9, 9, 9, 9, 14, 8, 14, 10]
         elif canal == "Chat":
-            return [10, 12, 12, 12, 12, 14, 12, 16]
+            return [20, 15, 15, 15, 15, 20]
         elif canal == "Back Office":
             return [20, 20, 20, 20, 20]
         elif canal == "Servicio":
@@ -251,7 +247,7 @@ def obtener_pesos(area, canal):
         if canal == "Linea":
             return [9, 9, 9, 9, 9, 9, 14, 8, 14, 10]
         elif canal == "Chat":
-            return [10, 12, 12, 12, 12, 14, 12, 16]
+            return [15, 15, 20, 15, 15, 20]
         elif canal == "Sitio":
             return [20, 20, 20, 20, 20]
         elif canal == "Servicio":
