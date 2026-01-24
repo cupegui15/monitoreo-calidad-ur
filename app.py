@@ -237,7 +237,7 @@ def obtener_pesos(area, canal):
         if canal in ["Presencial", "Contact Center"]:
             return [9, 9, 9, 9, 9, 9, 14, 8, 14, 10]
         elif canal == "Chat":
-            return [15, 15, 20, 15, 15, 20]
+            return [20, 15, 15, 15, 15, 20]
         elif canal == "Back Office":
             return [20, 20, 20, 20, 20]
         elif canal == "Servicio":
@@ -247,7 +247,7 @@ def obtener_pesos(area, canal):
         if canal == "Linea":
             return [9, 9, 9, 9, 9, 9, 14, 8, 14, 10]
         elif canal == "Chat":
-            return [15, 15, 20, 15, 15, 20]
+            return [20, 15, 15, 15, 15, 20]
         elif canal == "Sitio":
             return [20, 20, 20, 20, 20]
         elif canal == "Servicio":
