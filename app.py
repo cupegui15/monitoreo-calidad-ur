@@ -740,7 +740,7 @@ elif pagina == "📊 Dashboard Casa UR":
              7:"Julio",8:"Agosto",9:"Septiembre",10:"Octubre",11:"Noviembre",12:"Diciembre"}
 
     st.sidebar.subheader("Filtros Casa UR")
-    canal_f = st.sidebar.selectbox("Canal:", ["Todos"] + sorted(df["Canal"].unique()))
+    canal_f = st.sidebar.selectbox("Canal:", ["Todos"] + areas["Casa UR"]["canales"])
     anio_f = st.sidebar.selectbox("Año:", ["Todos"] + sorted(df["Año"].dropna().unique().astype(int)))
     mes_f = st.sidebar.selectbox("Mes:", ["Todos"] + [meses[m] for m in sorted(df["Mes"].dropna().unique())])
 
