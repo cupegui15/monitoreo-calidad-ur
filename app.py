@@ -178,7 +178,6 @@ def obtener_preguntas(area, canal):
                 "¿Realiza la validación de identidad del usuario y personaliza la interacción de forma adecuada garantizando la confidencialidad de la información?",
                 "¿Escucha activamente al usuario y realiza preguntas adicionales demostrando atención y concentración?",
                 "¿Controla los tiempos de espera informando al usuario y realizando acompañamiento cada 2 minutos?",
-                "¿Brinda respuesta de forma precisa, completa y coherente, de acuerdo a lo solicitado por el usuario?",
                 "¿Valida con el usuario si la información fue clara, completa o si requiere algún trámite adicional?",
                 "¿Finaliza la atención de forma amable, cortés utilizando el dialogo de cierre y despedida remitiendo al usuario a responder la encuesta de percepción?"
             ]
@@ -226,7 +225,6 @@ def obtener_preguntas(area, canal):
                 "¿Gestiona adecuadamente los tiempos de espera, manteniendo informado al usuario y realizando acompañamiento oportuno durante la interacción?",
                 "¿Valida con el usuario que la información brindada es clara, completa y confirma si requiere trámites o pasos adicionales?",
                 "¿Finaliza la atención de forma amable y profesional, utilizando el cierre de interacción definido y remitiendo al usuario a la encuesta de satisfacción?"
-
             ]
 
 # ===============================
@@ -241,7 +239,7 @@ def obtener_pesos(area, canal):
         elif canal == "Back Office":
             return [20, 20, 20, 20, 20]
         elif canal == "Servicio":
-            return [15, 15, 15, 15, 10, 10, 10, 10]
+            return [15, 15, 15, 15, 10, 15, 15]
 
     if area == "Conecta UR":
         if canal == "Linea":
