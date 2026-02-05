@@ -113,7 +113,7 @@ areas = {
             "Juliana Cadena Rodriguez- TMP","Yesica Yohana Tota Sierra - TMP",
             "Madeline García Fuerte- TMP","Jhon Alexis Cosme Basabe - TMP",
             "Angie Paola Rojas Jeronimo - TMP","Camilo Alexander Huertas Melo - TMP",
-            "Angela Yesenia Gomez Martinez - TMP"
+            "Angela Yesenia Gomez Martinez - TMP", "Jhojan Esteban Quiroga Mendez - TMP"
         ]
     },
     "Conecta UR": {
