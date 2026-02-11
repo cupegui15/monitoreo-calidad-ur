@@ -1176,24 +1176,14 @@ elif pagina == "📥 Descarga de resultados":
         st.stop()
 
     # -------------------------------
-    # PROMEDIO POR ASESOR Y CANAL
-    # -------------------------------
-    promedio_canal = (
-        df_f
-        .groupby(["Asesor", "Canal"])["Total"]
-        .mean()
-        .reset_index(name="Promedio Canal")
-    )
-
-    # -------------------------------
-    # PONDERADO FINAL POR ASESOR
-    # -------------------------------
-    ponderado_asesor = (
-        promedio_canal
-        .groupby("Asesor")
-        .apply(calcular_ponderado_por_asesor)
-        .reset_index(name="Promedio de Total de puntos")
-    )
+# PONDERADO FINAL POR ASESOR (CORRECTO)
+# -------------------------------
+ponderado_asesor = (
+    df_f
+    .groupby("Asesor")
+    .apply(lambda x: calcular_ponderado_por_asesor(x))
+    .reset_index(name="Promedio de Total de puntos")
+)
 
     # -------------------------------
     # CONSOLIDADO GENERAL
