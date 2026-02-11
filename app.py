@@ -1137,6 +1137,7 @@ elif pagina == "📥 Descarga de resultados":
     df.columns = [str(c).strip() for c in df.columns]
     df = df.dropna(subset=["Área", "Asesor", "Fecha", "Canal", "Total"])
 
+    df["Total"] = pd.to_numeric(df["Total"], errors="coerce").fillna(0)
     df["Fecha"] = pd.to_datetime(df["Fecha"], errors="coerce")
     df["Mes"] = df["Fecha"].dt.month
     df["Año"] = df["Fecha"].dt.year
@@ -1179,14 +1180,14 @@ elif pagina == "📥 Descarga de resultados":
         st.stop()
 
     # -------------------------------
-# PONDERADO FINAL POR ASESOR
-# -------------------------------
+    # PONDERADO FINAL POR ASESOR
+    # -------------------------------
     ponderado_asesor = (
         df_f
         .groupby("Asesor")
         .apply(lambda x: calcular_ponderado_por_asesor(x))
         .reset_index(name="Promedio de Total de puntos")
-)
+    )
 
     # -------------------------------
     # CONSOLIDADO GENERAL
@@ -1211,8 +1212,6 @@ elif pagina == "📥 Descarga de resultados":
         right_on="Asesor",
         how="left"
     ).drop(columns=["Asesor"])
-
-    consolidado["Correo Electronico"] = ""
 
     consolidado = consolidado[
         [
