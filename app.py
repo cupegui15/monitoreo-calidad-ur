@@ -318,25 +318,28 @@ def calcular_ponderado_por_asesor(df_asesor):
     Usa la columna 'Total'
     """
 
-    if "Total" not in df_asesor.columns:
+    if df_asesor.empty:
         return 0.0
 
-    servicio = df_asesor.loc[
-        df_asesor["Canal"] == "Servicio", "Total"
-    ]
+    # 🔥 Forzar Total a numérico
+    df_asesor["Total"] = pd.to_numeric(
+        df_asesor["Total"], errors="coerce"
+    ).fillna(0)
 
-    otros = df_asesor.loc[
-        df_asesor["Canal"] != "Servicio", "Total"
-    ]
+    servicio = df_asesor[df_asesor["Canal"] == "Servicio"]["Total"]
+    otros = df_asesor[df_asesor["Canal"] != "Servicio"]["Total"]
 
-    if not servicio.empty and not otros.empty:
-        return round(servicio.mean() * 0.30 + otros.mean() * 0.70, 2)
+    promedio_servicio = servicio.mean() if not servicio.empty else None
+    promedio_otros = otros.mean() if not otros.empty else None
 
-    if not servicio.empty:
-        return round(servicio.mean(), 2)
+    if promedio_servicio is not None and promedio_otros is not None:
+        return round((promedio_servicio * 0.30) + (promedio_otros * 0.70), 2)
 
-    if not otros.empty:
-        return round(otros.mean(), 2)
+    if promedio_servicio is not None:
+        return round(promedio_servicio, 2)
+
+    if promedio_otros is not None:
+        return round(promedio_otros, 2)
 
     return 0.0
 
