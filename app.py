@@ -1179,13 +1179,13 @@ elif pagina == "📥 Descarga de resultados":
         st.stop()
 
     # -------------------------------
-# PONDERADO FINAL POR ASESOR (CORRECTO)
+# PONDERADO FINAL POR ASESOR
 # -------------------------------
-ponderado_asesor = (
-    df_f
-    .groupby("Asesor")
-    .apply(lambda x: calcular_ponderado_por_asesor(x))
-    .reset_index(name="Promedio de Total de puntos")
+    ponderado_asesor = (
+        df_f
+        .groupby("Asesor")
+        .apply(lambda x: calcular_ponderado_por_asesor(x))
+        .reset_index(name="Promedio de Total de puntos")
 )
 
     # -------------------------------
