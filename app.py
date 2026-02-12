@@ -99,7 +99,8 @@ areas = {
         "monitores": [
             "Mauricio Ramirez Cubillos",
             "Alejandro Parra Sánchez",
-            "Cristian Alberto Upegui M"
+            "Cristian Alberto Upegui M",
+            "IA"
         ],
         "asesores": [
             "Adela Bogotá Cagua","David Esteban Puerto Salgado",
@@ -109,18 +110,15 @@ areas = {
             "Leyner Anyul Silva Avila","Martha Soraya Monsalve Fonseca",
             "Nancy Viviana Bulla Bustos","Nelson Peña Ramírez",
             "Solangel Milena Rodriguez Quitian","Leidy Sofia Ramirez Paez","Nathalia Andrea Bernal Lara",
-            "Rafael Ricardo Garcia Gutierrez - TMP", "Laura Sofia Mayac Roa - TMP",
-            "Juliana Cadena Rodriguez- TMP","Yesica Yohana Tota Sierra - TMP",
-            "Madeline García Fuerte- TMP","Jhon Alexis Cosme Basabe - TMP",
-            "Angie Paola Rojas Jeronimo - TMP","Camilo Alexander Huertas Melo - TMP",
-            "Angela Yesenia Gomez Martinez - TMP", "Jhojan Esteban Quiroga Mendez - TMP"
+            "Rafael Ricardo Garcia Gutierrez - TMP", "Jhojan Esteban Quiroga Mendez - TMP"
         ]
     },
     "Conecta UR": {
         "canales": ["Linea", "Chat", "Sitio", "Servicio"],
         "monitores": [
             "Johanna Rueda Cuvajante",
-            "Cristian Alberto Upegui M"
+            "Cristian Alberto Upegui M",
+            "IA"
         ],
         "asesores": [
             "Juan Sebastian Silva Gomez","Jennyfer Caicedo Alfonso",
@@ -128,7 +126,7 @@ areas = {
             "Gabriel Ferney Martinez Lopez","Juan David Gonzalez Jimenez",
             "Miguel Angel Rico Acevedo","Juan Camilo Ortega Clavijo",
             "Andres Fernando Galindo Algarra","Adrian Jose Sosa Gil","Juan David Gonzalez Jimenez",
-            "Andrea Katherine Torres Junco","Leidi Daniela Arias Rodriguez", "Wilson David Olarte Hernandez - TMP"
+            "Andrea Katherine Torres Junco","Leidi Daniela Arias Rodriguez"
         ]
     }
 }
