@@ -9,6 +9,7 @@ import json
 import time
 import textwrap
 import tempfile
+import google.generativeai as genai
 from io import BytesIO
 
 # ===============================
@@ -563,6 +564,31 @@ st.markdown(f"""
     <div><img src="{URL_BANNER_IMG}" width="130" style="border-radius:6px;"></div>
 </div>
 """, unsafe_allow_html=True)
+
+def transcribir_audio_gemini(audio_file):
+
+    try:
+        genai.configure(api_key=st.secrets["GEMINI_API_KEY"])
+
+        model = genai.GenerativeModel("gemini-1.5-flash")
+
+        audio_bytes = audio_file.read()
+
+        response = model.generate_content(
+            [
+                {
+                    "mime_type": audio_file.type,
+                    "data": audio_bytes
+                },
+                "Transcribe el audio completamente en texto claro."
+            ]
+        )
+
+        return response.text
+
+    except Exception as e:
+        st.error(f"Error en transcripción con Gemini: {e}")
+        return None
 
 if pagina == "📝 Formulario de Monitoreo":
 
@@ -1249,12 +1275,12 @@ elif pagina == "📥 Descarga de resultados":
         mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
     )
 # =====================================================================
-# 🤖 IA – Monitoreo Automático Servicio (Texto – Matriz Oficial)
+# 🤖 IA – Monitoreo Automático Servicio (Gemini + Matriz Oficial)
 # =====================================================================
 
 elif pagina == "🤖 IA":
 
-    st.markdown("## 🤖 Monitoreo Automático con IA – Servicio (Texto)")
+    st.markdown("## 🤖 Monitoreo Automático con IA – Servicio")
 
     canal = "Servicio"
     monitor = "IA"
@@ -1265,18 +1291,57 @@ elif pagina == "🤖 IA":
     area = st.selectbox("Área:", list(areas.keys()))
     asesor = st.selectbox("Asesor:", areas[area]["asesores"])
 
-    st.markdown("### 📄 Pega la transcripción completa de la llamada")
-
-    texto_llamada = st.text_area(
-        "Transcripción",
-        height=300
+    audio_file = st.file_uploader(
+        "Sube la grabación de la llamada",
+        type=["mp3", "wav", "m4a"]
     )
 
+    # ===============================
+    # FUNCIÓN TRANSCRIPCIÓN GEMINI
+    # ===============================
+    def transcribir_audio_gemini(audio_file):
+        try:
+            genai.configure(api_key=st.secrets["GEMINI_API_KEY"])
+            model = genai.GenerativeModel("gemini-1.5-flash")
+
+            audio_bytes = audio_file.read()
+
+            response = model.generate_content(
+                [
+                    {
+                        "mime_type": audio_file.type,
+                        "data": audio_bytes
+                    },
+                    "Transcribe el audio completamente en texto claro."
+                ]
+            )
+
+            return response.text
+
+        except Exception as e:
+            st.error(f"Error en transcripción con Gemini: {e}")
+            return None
+
+    # ===============================
+    # BOTÓN EVALUAR
+    # ===============================
     if st.button("🚀 Evaluar"):
 
-        if not texto_llamada.strip():
-            st.warning("Debes pegar la transcripción.")
+        if audio_file is None:
+            st.warning("Debes subir un audio.")
             st.stop()
+
+        # 🎙 TRANSCRIPCIÓN
+        with st.spinner("🎙 Transcribiendo con Gemini..."):
+            texto_llamada = transcribir_audio_gemini(audio_file)
+
+        if not texto_llamada:
+            st.stop()
+
+        st.success("Audio transcrito correctamente")
+
+        with st.expander("📄 Ver transcripción"):
+            st.write(texto_llamada)
 
         texto = texto_llamada.lower()
 
@@ -1287,25 +1352,26 @@ elif pagina == "🤖 IA":
         total = 0
 
         # ===============================
-        # EVALUACIÓN POR CRITERIO
+        # EVALUACIÓN SEGÚN MATRIZ OFICIAL
         # ===============================
 
         for pregunta, peso in zip(preguntas, pesos):
 
             puntaje = 0
+            pregunta_lower = pregunta.lower()
 
             # 1️⃣ INMEDIATEZ
-            if "atiende la interacción" in pregunta.lower():
+            if "atiende la interacción" in pregunta_lower:
                 if "buen" in texto[:120] or "hola" in texto[:120]:
                     puntaje = peso
 
             # 2️⃣ SALUDO Y PROTOCOLO
-            elif "saluda" in pregunta.lower():
+            elif "saluda" in pregunta_lower:
                 if ("casa ur" in texto or "conecta ur" in texto) and ("buen" in texto or "hola" in texto):
                     puntaje = peso
 
             # 3️⃣ SEGURIDAD
-            elif "validación de identidad" in pregunta.lower():
+            elif "validación de identidad" in pregunta_lower:
                 validaciones = 0
                 if "cédula" in texto or "documento" in texto:
                     validaciones += 1
@@ -1318,22 +1384,22 @@ elif pagina == "🤖 IA":
                     puntaje = peso
 
             # 4️⃣ ESCUCHA ACTIVA
-            elif "escucha activamente" in pregunta.lower():
+            elif "escucha activamente" in pregunta_lower:
                 if "entiendo" in texto or "me confirma" in texto or "permítame validar" in texto:
                     puntaje = peso
 
             # 5️⃣ TIEMPOS DE ESPERA
-            elif "tiempos de espera" in pregunta.lower():
+            elif "tiempos de espera" in pregunta_lower:
                 if "permítame un momento" in texto or "en línea" in texto:
                     puntaje = peso
 
             # 6️⃣ VALIDACIÓN DE CIERRE
-            elif "valida con el usuario" in pregunta.lower():
-                if "¿requiere algo adicional" in texto or "la información fue clara" in texto:
+            elif "valida con el usuario" in pregunta_lower:
+                if "requiere algo adicional" in texto or "la información fue clara" in texto:
                     puntaje = peso
 
             # 7️⃣ DESPEDIDA
-            elif "finaliza la atención" in pregunta.lower():
+            elif "finaliza la atención" in pregunta_lower:
                 if "gracias por comunicarse" in texto or "feliz día" in texto:
                     puntaje = peso
 
@@ -1341,7 +1407,7 @@ elif pagina == "🤖 IA":
             total += puntaje
 
         # ===============================
-        # ASPECTOS AUTOMÁTICOS
+        # GENERAR ASPECTOS
         # ===============================
         aspectos_positivos = [p for p, v in resultados.items() if v > 0]
         aspectos_mejorar = [p for p, v in resultados.items() if v == 0]
@@ -1372,6 +1438,5 @@ elif pagina == "🤖 IA":
         # ===============================
         st.success("✅ Evaluación completada correctamente")
         st.metric("🎯 Puntaje Total", total)
-
         st.write("### Resultado por criterio")
         st.write(resultados)
