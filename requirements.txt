@@ -5,7 +5,6 @@ email-validator
 gspread
 oauth2client
 xlsxwriter
-google-generativeai
 openai-whisper
 torch
 ffmpeg-python
