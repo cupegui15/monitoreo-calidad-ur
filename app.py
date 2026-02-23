@@ -1265,12 +1265,11 @@ elif pagina == "🤖 IA":
     area = st.selectbox("Área:", list(areas.keys()))
     asesor = st.selectbox("Asesor:", areas[area]["asesores"])
 
-    st.markdown("### 📄 Pega aquí la transcripción completa de la llamada")
+    st.markdown("### 📄 Pega la transcripción completa de la llamada")
 
     texto_llamada = st.text_area(
         "Transcripción",
-        height=300,
-        placeholder="Pega aquí el texto completo..."
+        height=300
     )
 
     if st.button("🚀 Evaluar"):
@@ -1281,100 +1280,74 @@ elif pagina == "🤖 IA":
 
         texto = texto_llamada.lower()
 
-        # ===============================
-        # MATRIZ OFICIAL
-        # ===============================
-        criterios = {
-            "Inmediatez": 15,
-            "Saludo y Protocolo": 15,
-            "Seguridad": 15,
-            "Escucha Activa": 15,
-            "Tiempos de Espera": 10,
-            "Validación de Cierre": 15,
-            "Despedida": 15
-        }
+        preguntas = obtener_preguntas(area, canal)
+        pesos = obtener_pesos(area, canal)
 
         resultados = {}
         total = 0
 
         # ===============================
-        # 1️⃣ INMEDIATEZ
+        # EVALUACIÓN POR CRITERIO
         # ===============================
-        if "buen" in texto[:120] or "hola" in texto[:120]:
-            resultados["Inmediatez"] = 15
-        else:
-            resultados["Inmediatez"] = 0
+
+        for pregunta, peso in zip(preguntas, pesos):
+
+            puntaje = 0
+
+            # 1️⃣ INMEDIATEZ
+            if "atiende la interacción" in pregunta.lower():
+                if "buen" in texto[:120] or "hola" in texto[:120]:
+                    puntaje = peso
+
+            # 2️⃣ SALUDO Y PROTOCOLO
+            elif "saluda" in pregunta.lower():
+                if ("casa ur" in texto or "conecta ur" in texto) and ("buen" in texto or "hola" in texto):
+                    puntaje = peso
+
+            # 3️⃣ SEGURIDAD
+            elif "validación de identidad" in pregunta.lower():
+                validaciones = 0
+                if "cédula" in texto or "documento" in texto:
+                    validaciones += 1
+                if "fecha de nacimiento" in texto:
+                    validaciones += 1
+                if "correo" in texto or "teléfono" in texto:
+                    validaciones += 1
+
+                if validaciones >= 3:
+                    puntaje = peso
+
+            # 4️⃣ ESCUCHA ACTIVA
+            elif "escucha activamente" in pregunta.lower():
+                if "entiendo" in texto or "me confirma" in texto or "permítame validar" in texto:
+                    puntaje = peso
+
+            # 5️⃣ TIEMPOS DE ESPERA
+            elif "tiempos de espera" in pregunta.lower():
+                if "permítame un momento" in texto or "en línea" in texto:
+                    puntaje = peso
+
+            # 6️⃣ VALIDACIÓN DE CIERRE
+            elif "valida con el usuario" in pregunta.lower():
+                if "¿requiere algo adicional" in texto or "la información fue clara" in texto:
+                    puntaje = peso
+
+            # 7️⃣ DESPEDIDA
+            elif "finaliza la atención" in pregunta.lower():
+                if "gracias por comunicarse" in texto or "feliz día" in texto:
+                    puntaje = peso
+
+            resultados[pregunta] = puntaje
+            total += puntaje
 
         # ===============================
-        # 2️⃣ SALUDO Y PROTOCOLO
-        # Debe mencionar CASA UR o CONECTA UR
+        # ASPECTOS AUTOMÁTICOS
         # ===============================
-        if ("casa ur" in texto or "conecta ur" in texto) and ("buen" in texto or "hola" in texto):
-            resultados["Saludo y Protocolo"] = 15
-        else:
-            resultados["Saludo y Protocolo"] = 0
+        aspectos_positivos = [p for p, v in resultados.items() if v > 0]
+        aspectos_mejorar = [p for p, v in resultados.items() if v == 0]
 
         # ===============================
-        # 3️⃣ SEGURIDAD (ID + 2 preguntas)
-        # ===============================
-        validaciones = 0
-        if "documento" in texto or "cédula" in texto:
-            validaciones += 1
-        if "fecha de nacimiento" in texto:
-            validaciones += 1
-        if "correo" in texto or "teléfono" in texto:
-            validaciones += 1
-
-        if validaciones >= 3:
-            resultados["Seguridad"] = 15
-        else:
-            resultados["Seguridad"] = 0
-
-        # ===============================
-        # 4️⃣ ESCUCHA ACTIVA
-        # ===============================
-        if "entiendo" in texto or "me confirma" in texto or "permítame validar" in texto:
-            resultados["Escucha Activa"] = 15
-        else:
-            resultados["Escucha Activa"] = 0
-
-        # ===============================
-        # 5️⃣ TIEMPOS DE ESPERA
-        # ===============================
-        if "permítame un momento" in texto or "en línea" in texto:
-            resultados["Tiempos de Espera"] = 10
-        else:
-            resultados["Tiempos de Espera"] = 0
-
-        # ===============================
-        # 6️⃣ VALIDACIÓN DE CIERRE
-        # ===============================
-        if "la información fue clara" in texto or "¿requiere algo adicional?" in texto:
-            resultados["Validación de Cierre"] = 15
-        else:
-            resultados["Validación de Cierre"] = 0
-
-        # ===============================
-        # 7️⃣ DESPEDIDA
-        # ===============================
-        if "gracias por comunicarse" in texto or "feliz día" in texto:
-            resultados["Despedida"] = 15
-        else:
-            resultados["Despedida"] = 0
-
-        # ===============================
-        # CALCULAR TOTAL
-        # ===============================
-        total = sum(resultados.values())
-
-        # ===============================
-        # GENERAR OBSERVACIONES AUTOMÁTICAS
-        # ===============================
-        aspectos_positivos = [k for k, v in resultados.items() if v > 0]
-        aspectos_mejorar = [k for k, v in resultados.items() if v == 0]
-
-        # ===============================
-        # GUARDAR EN GOOGLE SHEETS
+        # GUARDAR SIN CREAR COLUMNAS NUEVAS
         # ===============================
         fila = {
             "Área": area,
@@ -1385,20 +1358,20 @@ elif pagina == "🤖 IA":
             "Fecha": date.today(),
             "Error crítico": "No",
             "Total": total,
-            "Aspectos positivos": ", ".join(aspectos_positivos),
-            "Aspectos por Mejorar": ", ".join(aspectos_mejorar)
+            "Aspectos positivos": "\n".join(aspectos_positivos),
+            "Aspectos por Mejorar": "\n".join(aspectos_mejorar)
         }
 
-        for criterio, puntaje in resultados.items():
-            fila[criterio] = puntaje
+        for pregunta, valor in resultados.items():
+            fila[pregunta] = valor
 
         guardar_datos_google_sheets(fila)
 
         # ===============================
-        # MOSTRAR RESULTADO
+        # RESULTADO
         # ===============================
-        st.success("✅ Evaluación completada")
+        st.success("✅ Evaluación completada correctamente")
         st.metric("🎯 Puntaje Total", total)
 
-        st.write("### 📊 Resultado por criterio")
+        st.write("### Resultado por criterio")
         st.write(resultados)
