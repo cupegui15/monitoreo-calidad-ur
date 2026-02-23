@@ -10,3 +10,4 @@ openai-whisper
 torch
 ffmpeg-python
 imageio-ffmpeg
+google-generativeai>=0.7.0
