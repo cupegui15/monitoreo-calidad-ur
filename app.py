@@ -8,7 +8,6 @@ from oauth2client.service_account import ServiceAccountCredentials
 import json
 import time
 import textwrap
-import whisper
 import tempfile
 from io import BytesIO
 
@@ -564,36 +563,6 @@ st.markdown(f"""
     <div><img src="{URL_BANNER_IMG}" width="130" style="border-radius:6px;"></div>
 </div>
 """, unsafe_allow_html=True)
-
-@st.cache_resource
-def cargar_modelo_whisper():
-    try:
-        return whisper.load_model("base")
-    except Exception as e:
-        st.error(f"Error cargando modelo Whisper: {e}")
-        return None
-
-
-def transcribir_audio_local(audio_file):
-    try:
-        model = cargar_modelo_whisper()
-
-        if model is None:
-            return None
-
-        with tempfile.NamedTemporaryFile(delete=False, suffix=".wav") as tmp:
-            tmp.write(audio_file.read())
-            tmp_path = tmp.name
-
-        result = model.transcribe(tmp_path)
-
-        os.remove(tmp_path)
-
-        return result["text"]
-
-    except Exception as e:
-        st.error(f"Error en transcripción local: {e}")
-        return None
 
 if pagina == "📝 Formulario de Monitoreo":
 
@@ -1280,109 +1249,156 @@ elif pagina == "📥 Descarga de resultados":
         mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
     )
 # =====================================================================
-# 🤖 IA – Monitoreo Automático Servicio
+# 🤖 IA – Monitoreo Automático Servicio (Texto – Matriz Oficial)
 # =====================================================================
 
 elif pagina == "🤖 IA":
 
-    st.markdown("## 🤖 Monitoreo Automático con IA (Modo Gratuito)")
+    st.markdown("## 🤖 Monitoreo Automático con IA – Servicio (Texto)")
 
-    # ===============================
-    # CONFIGURACIÓN FIJA
-    # ===============================
     canal = "Servicio"
     monitor = "IA"
 
     st.info("Canal: Servicio")
     st.info("Monitor: IA")
 
-    # ===============================
-    # SELECCIÓN
-    # ===============================
     area = st.selectbox("Área:", list(areas.keys()))
     asesor = st.selectbox("Asesor:", areas[area]["asesores"])
 
-    audio_file = st.file_uploader(
-        "Sube la grabación de la llamada",
-        type=["mp3", "wav", "m4a"]
+    st.markdown("### 📄 Pega aquí la transcripción completa de la llamada")
+
+    texto_llamada = st.text_area(
+        "Transcripción",
+        height=300,
+        placeholder="Pega aquí el texto completo..."
     )
 
-    # ===============================
-    # BOTÓN PRINCIPAL
-    # ===============================
-    if st.button("🚀 Evaluar con IA"):
+    if st.button("🚀 Evaluar"):
 
-        if audio_file is None:
-            st.warning("Debes subir un audio.")
+        if not texto_llamada.strip():
+            st.warning("Debes pegar la transcripción.")
             st.stop()
 
-        # ===============================
-        # 1️⃣ TRANSCRIPCIÓN LOCAL (GRATIS)
-        # ===============================
-        with st.spinner("🎙 Transcribiendo audio localmente..."):
-            texto_llamada = transcribir_audio_local(audio_file)
-
-        if not texto_llamada:
-            st.stop()
-
-        st.success("Audio transcrito correctamente")
-
-        # Mostrar transcripción (opcional)
-        with st.expander("📄 Ver transcripción"):
-            st.write(texto_llamada)
+        texto = texto_llamada.lower()
 
         # ===============================
-        # 2️⃣ GENERAR FECHA Y CÓDIGO
+        # MATRIZ OFICIAL
         # ===============================
-        fecha = date.today()
-        codigo = f"IA-{int(time.time())}"
+        criterios = {
+            "Inmediatez": 15,
+            "Saludo y Protocolo": 15,
+            "Seguridad": 15,
+            "Escucha Activa": 15,
+            "Tiempos de Espera": 10,
+            "Validación de Cierre": 15,
+            "Despedida": 15
+        }
 
-        # ===============================
-        # 3️⃣ EVALUACIÓN AUTOMÁTICA BÁSICA
-        # ===============================
-        preguntas = obtener_preguntas(area, canal)
-        pesos = obtener_pesos(area, canal)
-
+        resultados = {}
         total = 0
-        resultados_finales = {}
-
-        texto_lower = texto_llamada.lower()
-
-        for pregunta, peso in zip(preguntas, pesos):
-
-            # Reglas simples automáticas (puedes mejorar luego)
-            cumple = 0
-
-            if "buen" in texto_lower or "gracias" in texto_lower:
-                cumple = 1
-
-            puntaje = peso if cumple == 1 else 0
-
-            resultados_finales[pregunta] = puntaje
-            total += puntaje
 
         # ===============================
-        # 4️⃣ GUARDAR EN GOOGLE SHEETS
+        # 1️⃣ INMEDIATEZ
+        # ===============================
+        if "buen" in texto[:120] or "hola" in texto[:120]:
+            resultados["Inmediatez"] = 15
+        else:
+            resultados["Inmediatez"] = 0
+
+        # ===============================
+        # 2️⃣ SALUDO Y PROTOCOLO
+        # Debe mencionar CASA UR o CONECTA UR
+        # ===============================
+        if ("casa ur" in texto or "conecta ur" in texto) and ("buen" in texto or "hola" in texto):
+            resultados["Saludo y Protocolo"] = 15
+        else:
+            resultados["Saludo y Protocolo"] = 0
+
+        # ===============================
+        # 3️⃣ SEGURIDAD (ID + 2 preguntas)
+        # ===============================
+        validaciones = 0
+        if "documento" in texto or "cédula" in texto:
+            validaciones += 1
+        if "fecha de nacimiento" in texto:
+            validaciones += 1
+        if "correo" in texto or "teléfono" in texto:
+            validaciones += 1
+
+        if validaciones >= 3:
+            resultados["Seguridad"] = 15
+        else:
+            resultados["Seguridad"] = 0
+
+        # ===============================
+        # 4️⃣ ESCUCHA ACTIVA
+        # ===============================
+        if "entiendo" in texto or "me confirma" in texto or "permítame validar" in texto:
+            resultados["Escucha Activa"] = 15
+        else:
+            resultados["Escucha Activa"] = 0
+
+        # ===============================
+        # 5️⃣ TIEMPOS DE ESPERA
+        # ===============================
+        if "permítame un momento" in texto or "en línea" in texto:
+            resultados["Tiempos de Espera"] = 10
+        else:
+            resultados["Tiempos de Espera"] = 0
+
+        # ===============================
+        # 6️⃣ VALIDACIÓN DE CIERRE
+        # ===============================
+        if "la información fue clara" in texto or "¿requiere algo adicional?" in texto:
+            resultados["Validación de Cierre"] = 15
+        else:
+            resultados["Validación de Cierre"] = 0
+
+        # ===============================
+        # 7️⃣ DESPEDIDA
+        # ===============================
+        if "gracias por comunicarse" in texto or "feliz día" in texto:
+            resultados["Despedida"] = 15
+        else:
+            resultados["Despedida"] = 0
+
+        # ===============================
+        # CALCULAR TOTAL
+        # ===============================
+        total = sum(resultados.values())
+
+        # ===============================
+        # GENERAR OBSERVACIONES AUTOMÁTICAS
+        # ===============================
+        aspectos_positivos = [k for k, v in resultados.items() if v > 0]
+        aspectos_mejorar = [k for k, v in resultados.items() if v == 0]
+
+        # ===============================
+        # GUARDAR EN GOOGLE SHEETS
         # ===============================
         fila = {
             "Área": area,
             "Canal": canal,
             "Monitor": monitor,
             "Asesor": asesor,
-            "Código": codigo,
-            "Fecha": fecha,
+            "Código": f"IA-{int(time.time())}",
+            "Fecha": date.today(),
             "Error crítico": "No",
             "Total": total,
-            "Aspectos positivos": "Evaluación automática IA",
-            "Aspectos por Mejorar": "Revisión manual recomendada para mayor precisión"
+            "Aspectos positivos": ", ".join(aspectos_positivos),
+            "Aspectos por Mejorar": ", ".join(aspectos_mejorar)
         }
 
-        for k, v in resultados_finales.items():
-            fila[k] = v
+        for criterio, puntaje in resultados.items():
+            fila[criterio] = puntaje
 
         guardar_datos_google_sheets(fila)
 
-        st.success("✅ Evaluación IA guardada correctamente")
+        # ===============================
+        # MOSTRAR RESULTADO
+        # ===============================
+        st.success("✅ Evaluación completada")
+        st.metric("🎯 Puntaje Total", total)
 
-        st.metric("🎯 Puntaje Total Calculado", total)
-
+        st.write("### 📊 Resultado por criterio")
+        st.write(resultados)
