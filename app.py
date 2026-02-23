@@ -8,7 +8,6 @@ from oauth2client.service_account import ServiceAccountCredentials
 import json
 import time
 import textwrap
-import openai
 from io import BytesIO
 
 # ===============================
@@ -564,6 +563,35 @@ st.markdown(f"""
 </div>
 """, unsafe_allow_html=True)
 
+@st.cache_resource
+def cargar_modelo_whisper():
+    try:
+        return whisper.load_model("base")
+    except Exception as e:
+        st.error(f"Error cargando modelo Whisper: {e}")
+        return None
+
+
+def transcribir_audio_local(audio_file):
+    try:
+        model = cargar_modelo_whisper()
+
+        if model is None:
+            return None
+
+        with tempfile.NamedTemporaryFile(delete=False, suffix=".wav") as tmp:
+            tmp.write(audio_file.read())
+            tmp_path = tmp.name
+
+        result = model.transcribe(tmp_path)
+
+        os.remove(tmp_path)
+
+        return result["text"]
+
+    except Exception as e:
+        st.error(f"Error en transcripción local: {e}")
+        return None
 
 if pagina == "📝 Formulario de Monitoreo":
 
@@ -716,153 +744,9 @@ if pagina == "📝 Formulario de Monitoreo":
             st.success("✅ Monitoreo guardado correctamente")
             time.sleep(2)
 
-# =====================================================================
-# 🤖 IA – Monitoreo Automático Servicio
-# =====================================================================
-
-elif pagina == "🤖 IA":
-
-    from openai import OpenAI
-    client_ai = openai.OpenAI(api_key=st.secrets["OPENAI_API_KEY"])
-
-    st.markdown("## 🤖 Monitoreo Automático con IA")
-
-    # ===============================
-    # CONFIGURACIÓN FIJA
-    # ===============================
-    canal = "Servicio"
-    monitor = "IA"
-
-    st.info("Canal: Servicio")
-    st.info("Monitor: IA")
-
-    area = st.selectbox("Área:", list(areas.keys()))
-    asesor = st.selectbox("Asesor:", areas[area]["asesores"])
-
-    audio_file = st.file_uploader(
-        "Sube la grabación de la llamada",
-        type=["mp3", "wav", "m4a"]
-    )
-
-    if st.button("🚀 Evaluar con IA"):
-
-        if audio_file is None:
-            st.warning("Debes subir un audio.")
-            st.stop()
-
-        # ===============================
-        # 1️⃣ TRANSCRIPCIÓN
-        # ===============================
-        with st.spinner("🎙 Transcribiendo audio..."):
-            transcript = client_ai.audio.transcriptions.create(
-                model="gpt-4o-mini-transcribe",
-                file=audio_file
-            )
-            texto_llamada = transcript.text
-
-        st.success("Audio transcrito correctamente")
-
-        # ===============================
-        # 2️⃣ EXTRAER FECHA Y CÓDIGO
-        # ===============================
-        prompt_metadata = f"""
-        Extrae únicamente en JSON:
-
-        {{
-        "fecha": "",
-        "codigo": ""
-        }}
-
-        Texto:
-        {texto_llamada}
-        """
-
-        response_meta = client_ai.chat.completions.create(
-            model="gpt-4o-mini",
-            messages=[{"role": "user", "content": prompt_metadata}],
-            temperature=0
-        )
-
-        metadata = json.loads(response_meta.choices[0].message.content)
-
-        fecha = metadata.get("fecha", date.today())
-        codigo = metadata.get("codigo", "")
-
-        # ===============================
-        # 3️⃣ EVALUACIÓN USANDO TUS PREGUNTAS REALES
-        # ===============================
-        preguntas = obtener_preguntas(area, canal)
-        pesos = obtener_pesos(area, canal)
-
-        estructura_json = {
-            "Aspectos positivos": "",
-            "Aspectos por Mejorar": ""
-        }
-
-        for i in range(len(preguntas)):
-            estructura_json[f"P{i+1}"] = 0
-
-        prompt_eval = f"""
-        Actúa como auditor de calidad.
-
-        Evalúa cada criterio con:
-        1 = Cumple
-        0 = No cumple
-
-        Devuelve SOLO JSON válido con esta estructura:
-
-        {json.dumps(estructura_json, indent=2)}
-
-        Criterios:
-        {preguntas}
-
-        Transcripción:
-        {texto_llamada}
-        """
-
-        with st.spinner("🧠 Evaluando calidad..."):
-            response_eval = client_ai.chat.completions.create(
-                model="gpt-4o-mini",
-                messages=[{"role": "user", "content": prompt_eval}],
-                temperature=0
-            )
-
-        resultado = json.loads(response_eval.choices[0].message.content)
-
-        # ===============================
-        # 4️⃣ CALCULAR TOTAL CON TUS PESOS
-        # ===============================
-        total = 0
-        resultados_finales = {}
-
-        for i, (preg, peso) in enumerate(zip(preguntas, pesos)):
-            cumple = resultado.get(f"P{i+1}", 0)
-            puntaje = peso if cumple == 1 else 0
-            resultados_finales[preg] = puntaje
-            total += puntaje
-
-        # ===============================
-        # 5️⃣ GUARDAR USANDO TU FUNCIÓN
-        # ===============================
-        fila = {
-            "Área": area,
-            "Canal": canal,
-            "Monitor": monitor,
-            "Asesor": asesor,
-            "Código": codigo,
-            "Fecha": fecha,
-            "Error crítico": "No",  # IA no usa error crítico
-            "Total": total,
-            "Aspectos positivos": resultado.get("Aspectos positivos", ""),
-            "Aspectos por Mejorar": resultado.get("Aspectos por Mejorar", "")
-        }
-
-        for k, v in resultados_finales.items():
-            fila[k] = v
-
-        guardar_datos_google_sheets(fila)
-
-        st.success("✅ Evaluación IA guardada correctamente")
+            @st.cache_resource
+            def cargar_modelo_whisper():
+                return whisper.load_model("base")  # Ligero para Streamlit Cloud
     
 # =====================================================================
 # 📊 DASHBOARD Casa UR
@@ -1399,10 +1283,7 @@ elif pagina == "📥 Descarga de resultados":
 
 elif pagina == "🤖 IA":
 
-    from openai import OpenAI
-    client_ai = OpenAI(api_key=st.secrets["OPENAI_API_KEY"])
-
-    st.markdown("## 🤖 Monitoreo Automático con IA")
+    st.markdown("## 🤖 Monitoreo Automático con IA (Modo Gratuito)")
 
     # ===============================
     # CONFIGURACIÓN FIJA
@@ -1413,6 +1294,9 @@ elif pagina == "🤖 IA":
     st.info("Canal: Servicio")
     st.info("Monitor: IA")
 
+    # ===============================
+    # SELECCIÓN
+    # ===============================
     area = st.selectbox("Área:", list(areas.keys()))
     asesor = st.selectbox("Asesor:", areas[area]["asesores"])
 
@@ -1421,6 +1305,9 @@ elif pagina == "🤖 IA":
         type=["mp3", "wav", "m4a"]
     )
 
+    # ===============================
+    # BOTÓN PRINCIPAL
+    # ===============================
     if st.button("🚀 Evaluar con IA"):
 
         if audio_file is None:
@@ -1428,98 +1315,52 @@ elif pagina == "🤖 IA":
             st.stop()
 
         # ===============================
-        # 1️⃣ TRANSCRIPCIÓN
+        # 1️⃣ TRANSCRIPCIÓN LOCAL (GRATIS)
         # ===============================
-        with st.spinner("🎙 Transcribiendo audio..."):
-            transcript = client_ai.audio.transcriptions.create(
-                model="gpt-4o-mini-transcribe",
-                file=audio_file
-            )
-            texto_llamada = transcript.text
+        with st.spinner("🎙 Transcribiendo audio localmente..."):
+            texto_llamada = transcribir_audio_local(audio_file)
+
+        if not texto_llamada:
+            st.stop()
 
         st.success("Audio transcrito correctamente")
 
-        # ===============================
-        # 2️⃣ EXTRAER FECHA Y CÓDIGO
-        # ===============================
-        prompt_metadata = f"""
-        Extrae únicamente en JSON:
-
-        {{
-        "fecha": "",
-        "codigo": ""
-        }}
-
-        Texto:
-        {texto_llamada}
-        """
-
-        response_meta = client_ai.chat.completions.create(
-            model="gpt-4o-mini",
-            messages=[{"role": "user", "content": prompt_metadata}],
-            temperature=0
-        )
-
-        metadata = json.loads(response_meta.choices[0].message.content)
-
-        fecha = metadata.get("fecha", date.today())
-        codigo = metadata.get("codigo", "")
+        # Mostrar transcripción (opcional)
+        with st.expander("📄 Ver transcripción"):
+            st.write(texto_llamada)
 
         # ===============================
-        # 3️⃣ EVALUACIÓN USANDO TUS PREGUNTAS REALES
+        # 2️⃣ GENERAR FECHA Y CÓDIGO
+        # ===============================
+        fecha = date.today()
+        codigo = f"IA-{int(time.time())}"
+
+        # ===============================
+        # 3️⃣ EVALUACIÓN AUTOMÁTICA BÁSICA
         # ===============================
         preguntas = obtener_preguntas(area, canal)
         pesos = obtener_pesos(area, canal)
 
-        estructura_json = {
-            "Aspectos positivos": "",
-            "Aspectos por Mejorar": ""
-        }
-
-        for i in range(len(preguntas)):
-            estructura_json[f"P{i+1}"] = 0
-
-        prompt_eval = f"""
-        Actúa como auditor de calidad.
-
-        Evalúa cada criterio con:
-        1 = Cumple
-        0 = No cumple
-
-        Devuelve SOLO JSON válido con esta estructura:
-
-        {json.dumps(estructura_json, indent=2)}
-
-        Criterios:
-        {preguntas}
-
-        Transcripción:
-        {texto_llamada}
-        """
-
-        with st.spinner("🧠 Evaluando calidad..."):
-            response_eval = client_ai.chat.completions.create(
-                model="gpt-4o-mini",
-                messages=[{"role": "user", "content": prompt_eval}],
-                temperature=0
-            )
-
-        resultado = json.loads(response_eval.choices[0].message.content)
-
-        # ===============================
-        # 4️⃣ CALCULAR TOTAL CON TUS PESOS
-        # ===============================
         total = 0
         resultados_finales = {}
 
-        for i, (preg, peso) in enumerate(zip(preguntas, pesos)):
-            cumple = resultado.get(f"P{i+1}", 0)
+        texto_lower = texto_llamada.lower()
+
+        for pregunta, peso in zip(preguntas, pesos):
+
+            # Reglas simples automáticas (puedes mejorar luego)
+            cumple = 0
+
+            if "buen" in texto_lower or "gracias" in texto_lower:
+                cumple = 1
+
             puntaje = peso if cumple == 1 else 0
-            resultados_finales[preg] = puntaje
+
+            resultados_finales[pregunta] = puntaje
             total += puntaje
 
         # ===============================
-        # 5️⃣ GUARDAR USANDO TU FUNCIÓN
+        # 4️⃣ GUARDAR EN GOOGLE SHEETS
         # ===============================
         fila = {
             "Área": area,
@@ -1528,10 +1369,10 @@ elif pagina == "🤖 IA":
             "Asesor": asesor,
             "Código": codigo,
             "Fecha": fecha,
-            "Error crítico": "No",  # IA no usa error crítico
+            "Error crítico": "No",
             "Total": total,
-            "Aspectos positivos": resultado.get("Aspectos positivos", ""),
-            "Aspectos por Mejorar": resultado.get("Aspectos por Mejorar", "")
+            "Aspectos positivos": "Evaluación automática IA",
+            "Aspectos por Mejorar": "Revisión manual recomendada para mayor precisión"
         }
 
         for k, v in resultados_finales.items():
@@ -1540,3 +1381,6 @@ elif pagina == "🤖 IA":
         guardar_datos_google_sheets(fila)
 
         st.success("✅ Evaluación IA guardada correctamente")
+
+        st.metric("🎯 Puntaje Total Calculado", total)
+
