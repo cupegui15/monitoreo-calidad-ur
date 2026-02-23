@@ -6,3 +6,6 @@ gspread
 oauth2client
 xlsxwriter
 openai>=1.0.0
+openai-whisper
+torch
+ffmpeg-python
