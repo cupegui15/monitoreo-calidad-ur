@@ -566,11 +566,10 @@ st.markdown(f"""
 """, unsafe_allow_html=True)
 
 def transcribir_audio_gemini(audio_file):
-
     try:
         genai.configure(api_key=st.secrets["GEMINI_API_KEY"])
 
-        model = genai.GenerativeModel("gemini-1.5-flash")
+        model = genai.GenerativeModel("gemini-1.5-flash-latest")
 
         audio_bytes = audio_file.read()
 
