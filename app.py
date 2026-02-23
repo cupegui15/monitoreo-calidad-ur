@@ -8,6 +8,7 @@ from oauth2client.service_account import ServiceAccountCredentials
 import json
 import time
 import textwrap
+import openai
 from io import BytesIO
 
 # ===============================
@@ -722,7 +723,7 @@ if pagina == "📝 Formulario de Monitoreo":
 elif pagina == "🤖 IA":
 
     from openai import OpenAI
-    client_ai = OpenAI(api_key=st.secrets["OPENAI_API_KEY"])
+    client_ai = openai.OpenAI(api_key=st.secrets["OPENAI_API_KEY"])
 
     st.markdown("## 🤖 Monitoreo Automático con IA")
 
