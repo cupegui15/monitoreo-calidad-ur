@@ -9,7 +9,7 @@ import json
 import time
 import textwrap
 import tempfile
-import google.generativeai as genai
+from google import genai
 from io import BytesIO
 
 # ===============================
@@ -567,20 +567,26 @@ st.markdown(f"""
 
 def transcribir_audio_gemini(audio_file):
     try:
-        genai.configure(api_key=st.secrets["GEMINI_API_KEY"])
-
-        model = genai.GenerativeModel("gemini-1.5-flash-latest")
+        client = genai.Client(api_key=st.secrets["GEMINI_API_KEY"])
 
         audio_bytes = audio_file.read()
 
-        response = model.generate_content(
-            [
+        response = client.models.generate_content(
+            model="gemini-1.5-flash",
+            contents=[
                 {
-                    "mime_type": audio_file.type,
-                    "data": audio_bytes
-                },
-                "Transcribe el audio completamente en texto claro."
-            ]
+                    "role": "user",
+                    "parts": [
+                        {
+                            "mime_type": audio_file.type,
+                            "data": audio_bytes,
+                        },
+                        {
+                            "text": "Transcribe este audio completamente en texto claro."
+                        }
+                    ],
+                }
+            ],
         )
 
         return response.text
