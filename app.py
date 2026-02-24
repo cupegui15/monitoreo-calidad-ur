@@ -568,17 +568,13 @@ def transcribir_audio_gemini(audio_file):
     try:
         api_key = st.secrets["GEMINI_API_KEY"]
 
-        # 🔁 Reiniciar puntero del archivo
         audio_file.seek(0)
-
         audio_bytes = audio_file.read()
         audio_base64 = base64.b64encode(audio_bytes).decode("utf-8")
 
-        url = f"https://generativelanguage.googleapis.com/v1/models/gemini-2.5-flash:generateContent?key={api_key}"
+        url = f"https://generativelanguage.googleapis.com/v1/models/gemini-2.5-flash-lite:generateContent?key={api_key}"
 
-        headers = {
-            "Content-Type": "application/json"
-        }
+        headers = {"Content-Type": "application/json"}
 
         body = {
             "contents": [
@@ -598,7 +594,30 @@ def transcribir_audio_gemini(audio_file):
             ]
         }
 
+        # 🔁 Primer intento
         response = requests.post(url, headers=headers, json=body, timeout=60)
+
+        # 🔥 Si se excede cuota
+        if response.status_code == 429:
+            try:
+                error_json = response.json()
+                retry_info = error_json.get("error", {}).get("details", [])
+                retry_seconds = 45  # fallback
+
+                for detail in retry_info:
+                    if detail.get("@type") == "type.googleapis.com/google.rpc.RetryInfo":
+                        retry_delay = detail.get("retryDelay", "45s")
+                        retry_seconds = int(retry_delay.replace("s", ""))
+
+                st.warning(f"⚠️ Límite alcanzado. Esperando {retry_seconds} segundos...")
+                time.sleep(retry_seconds)
+
+                # 🔁 Segundo intento
+                response = requests.post(url, headers=headers, json=body, timeout=60)
+
+            except:
+                st.error("Se alcanzó el límite diario gratuito. Intenta nuevamente mañana.")
+                return None
 
         if response.status_code != 200:
             st.error(f"Error Gemini: {response.text}")
@@ -607,7 +626,7 @@ def transcribir_audio_gemini(audio_file):
         result = response.json()
 
         if "candidates" not in result:
-            st.error("Gemini no devolvió candidatos.")
+            st.error("Gemini no devolvió respuesta válida.")
             return None
 
         return result["candidates"][0]["content"]["parts"][0]["text"]
