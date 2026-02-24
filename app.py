@@ -347,54 +347,49 @@ def calcular_ponderado_por_asesor(df_asesor):
 # ===============================
 # GOOGLE SHEETS: GUARDAR
 # ===============================
-def guardar_datos_google_sheets(data):
-    try:
-        for k, v in data.items():
-            if isinstance(v, date):
-                data[k] = v.strftime("%Y-%m-%d")
-
-        creds_json = st.secrets["GCP_SERVICE_ACCOUNT"]
-        creds_dict = json.loads(creds_json)
-        scope = [
-            "https://spreadsheets.google.com/feeds",
-            "https://www.googleapis.com/auth/drive"
-        ]
-        creds = ServiceAccountCredentials.from_json_keyfile_dict(creds_dict, scope)
-        client = gspread.authorize(creds)
-        sh = client.open_by_key(st.secrets["GOOGLE_SHEETS_ID"])
-
-        area = data["Área"]
-        canal = data["Canal"]
-
-        if area == "Casa UR":
-            nombre_hoja = f"Casa UR - {canal}"
-        elif area == "Conecta UR":
-            nombre_hoja = f"Conecta UR - {canal}"
-        else:
-            nombre_hoja = f"{area} - {canal}"
-
+def guardar_datos_google_sheets(data, intentos=3):
+    for intento in range(intentos):
         try:
+            for k, v in data.items():
+                if isinstance(v, date):
+                    data[k] = v.strftime("%Y-%m-%d")
+
+            creds_json = st.secrets["GCP_SERVICE_ACCOUNT"]
+            creds_dict = json.loads(creds_json)
+
+            scope = [
+                "https://spreadsheets.google.com/feeds",
+                "https://www.googleapis.com/auth/drive"
+            ]
+
+            creds = ServiceAccountCredentials.from_json_keyfile_dict(creds_dict, scope)
+            client = gspread.authorize(creds)
+            sh = client.open_by_key(st.secrets["GOOGLE_SHEETS_ID"])
+
+            area = data["Área"]
+            canal = data["Canal"]
+
+            if area == "Casa UR":
+                nombre_hoja = f"Casa UR - {canal}"
+            elif area == "Conecta UR":
+                nombre_hoja = f"Conecta UR - {canal}"
+            else:
+                nombre_hoja = f"{area} - {canal}"
+
             hoja = sh.worksheet(nombre_hoja)
-        except:
-            hoja = sh.add_worksheet(title=nombre_hoja, rows=5000, cols=200)
-            hoja.append_row(list(data.keys()))
 
-        encabezados = hoja.row_values(1)
-        nuevos = False
-        for col in data.keys():
-            if col not in encabezados:
-                encabezados.append(col)
-                nuevos = True
+            encabezados = hoja.row_values(1)
 
-        if nuevos:
-            hoja.resize(cols=len(encabezados))
-            hoja.update("1:1", [encabezados])
+            fila = [data.get(col, "") for col in encabezados]
+            hoja.append_row(fila)
 
-        fila = [data.get(col, "") for col in encabezados]
-        hoja.append_row(fila)
+            return  # éxito
 
-    except Exception as e:
-        st.error(f"❌ Error al guardar: {e}")
+        except Exception as e:
+            if intento < intentos - 1:
+                time.sleep(2)  # espera 2 segundos y reintenta
+            else:
+                st.error(f"❌ Error al guardar después de varios intentos: {e}")
 
 # ===============================
 # GOOGLE SHEETS: CARGAR TODAS LAS HOJAS
