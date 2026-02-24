@@ -576,7 +576,7 @@ def transcribir_audio_gemini(audio_file):
         audio_bytes = audio_file.read()
         audio_base64 = base64.b64encode(audio_bytes).decode("utf-8")
 
-        url = f"https://generativelanguage.googleapis.com/v1/models/gemini-1.5-pro:generateContent?key={api_key}"
+        url = f"https://generativelanguage.googleapis.com/v1/models/gemini-1.5-flash:generateContent?key={api_key}"
 
         headers = {
             "Content-Type": "application/json"
