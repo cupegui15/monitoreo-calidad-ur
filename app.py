@@ -566,6 +566,9 @@ st.markdown(f"""
 </div>
 """, unsafe_allow_html=True)
 
+    # ===============================
+    # FUNCIÓN TRANSCRIPCIÓN GEMINI
+    # ===============================
 def transcribir_audio_gemini(audio_file):
     try:
         api_key = st.secrets["GEMINI_API_KEY"]
@@ -761,10 +764,6 @@ if pagina == "📝 Formulario de Monitoreo":
             guardar_datos_google_sheets(fila)
             st.success("✅ Monitoreo guardado correctamente")
             time.sleep(2)
-
-            @st.cache_resource
-            def cargar_modelo_whisper():
-                return whisper.load_model("base")  # Ligero para Streamlit Cloud
     
 # =====================================================================
 # 📊 DASHBOARD Casa UR
@@ -1316,54 +1315,6 @@ elif pagina == "🤖 IA":
         "Sube la grabación de la llamada",
         type=["mp3", "wav", "m4a"]
     )
-
-    # ===============================
-    # FUNCIÓN TRANSCRIPCIÓN GEMINI
-    # ===============================
-def transcribir_audio_gemini(audio_file):
-    try:
-        api_key = st.secrets["GEMINI_API_KEY"]
-
-        audio_bytes = audio_file.read()
-        audio_base64 = base64.b64encode(audio_bytes).decode("utf-8")
-
-        url = f"https://generativelanguage.googleapis.com/v1/models/gemini-1.5-flash:generateContent?key={api_key}"
-
-        headers = {
-            "Content-Type": "application/json"
-        }
-
-        body = {
-            "contents": [
-                {
-                    "parts": [
-                        {
-                            "inline_data": {
-                                "mime_type": audio_file.type,
-                                "data": audio_base64
-                            }
-                        },
-                        {
-                            "text": "Transcribe este audio completamente en texto claro."
-                        }
-                    ]
-                }
-            ]
-        }
-
-        response = requests.post(url, headers=headers, json=body)
-
-        if response.status_code != 200:
-            st.error(f"Error Gemini: {response.text}")
-            return None
-
-        result = response.json()
-
-        return result["candidates"][0]["content"]["parts"][0]["text"]
-
-    except Exception as e:
-        st.error(f"Error en transcripción con Gemini: {e}")
-        return None
 
     # ===============================
     # BOTÓN EVALUAR
