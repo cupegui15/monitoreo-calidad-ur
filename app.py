@@ -497,7 +497,7 @@ pagina = st.sidebar.radio(
         "📈 Dashboard Conecta UR",
         "🎯 Dashboard por Asesor",
         "📥 Descarga de resultados",
-        "🤖 IA"
+        "🧠 IA"
     ]
 )
 
