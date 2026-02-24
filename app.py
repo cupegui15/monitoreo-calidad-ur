@@ -11,7 +11,6 @@ import textwrap
 import tempfile
 import requests
 import base64
-from google import genai
 from io import BytesIO
 
 # ===============================
@@ -1321,28 +1320,50 @@ elif pagina == "🤖 IA":
     # ===============================
     # FUNCIÓN TRANSCRIPCIÓN GEMINI
     # ===============================
-    def transcribir_audio_gemini(audio_file):
-        try:
-            genai.configure(api_key=st.secrets["GEMINI_API_KEY"])
-            model = genai.GenerativeModel("gemini-1.5-flash")
+def transcribir_audio_gemini(audio_file):
+    try:
+        api_key = st.secrets["GEMINI_API_KEY"]
 
-            audio_bytes = audio_file.read()
+        audio_bytes = audio_file.read()
+        audio_base64 = base64.b64encode(audio_bytes).decode("utf-8")
 
-            response = model.generate_content(
-                [
-                    {
-                        "mime_type": audio_file.type,
-                        "data": audio_bytes
-                    },
-                    "Transcribe el audio completamente en texto claro."
-                ]
-            )
+        url = f"https://generativelanguage.googleapis.com/v1/models/gemini-1.5-flash:generateContent?key={api_key}"
 
-            return response.text
+        headers = {
+            "Content-Type": "application/json"
+        }
 
-        except Exception as e:
-            st.error(f"Error en transcripción con Gemini: {e}")
+        body = {
+            "contents": [
+                {
+                    "parts": [
+                        {
+                            "inline_data": {
+                                "mime_type": audio_file.type,
+                                "data": audio_base64
+                            }
+                        },
+                        {
+                            "text": "Transcribe este audio completamente en texto claro."
+                        }
+                    ]
+                }
+            ]
+        }
+
+        response = requests.post(url, headers=headers, json=body)
+
+        if response.status_code != 200:
+            st.error(f"Error Gemini: {response.text}")
             return None
+
+        result = response.json()
+
+        return result["candidates"][0]["content"]["parts"][0]["text"]
+
+    except Exception as e:
+        st.error(f"Error en transcripción con Gemini: {e}")
+        return None
 
     # ===============================
     # BOTÓN EVALUAR
