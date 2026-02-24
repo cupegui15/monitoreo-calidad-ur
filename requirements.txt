@@ -1,13 +1,8 @@
 streamlit
 pandas
 plotly
-email-validator
 gspread
 oauth2client
-xlsxwriter
-openai-whisper
-torch
-ffmpeg-python
-imageio-ffmpeg
-google-genai>=0.3.0
 requests
+openpyxl
+xlsxwriter
