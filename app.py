@@ -9,6 +9,8 @@ import json
 import time
 import textwrap
 import tempfile
+import requests
+import base64
 from google import genai
 from io import BytesIO
 
@@ -567,29 +569,44 @@ st.markdown(f"""
 
 def transcribir_audio_gemini(audio_file):
     try:
-        client = genai.Client(api_key=st.secrets["GEMINI_API_KEY"])
+        api_key = st.secrets["GEMINI_API_KEY"]
 
         audio_bytes = audio_file.read()
+        audio_base64 = base64.b64encode(audio_bytes).decode("utf-8")
 
-        response = client.models.generate_content(
-            model="gemini-1.5-flash",
-            contents=[
+        url = f"https://generativelanguage.googleapis.com/v1/models/gemini-1.5-flash:generateContent?key={api_key}"
+
+        headers = {
+            "Content-Type": "application/json"
+        }
+
+        body = {
+            "contents": [
                 {
-                    "role": "user",
                     "parts": [
                         {
-                            "mime_type": audio_file.type,
-                            "data": audio_bytes,
+                            "inline_data": {
+                                "mime_type": audio_file.type,
+                                "data": audio_base64
+                            }
                         },
                         {
                             "text": "Transcribe este audio completamente en texto claro."
                         }
-                    ],
+                    ]
                 }
-            ],
-        )
+            ]
+        }
 
-        return response.text
+        response = requests.post(url, headers=headers, json=body)
+
+        if response.status_code != 200:
+            st.error(f"Error Gemini: {response.text}")
+            return None
+
+        result = response.json()
+
+        return result["candidates"][0]["content"]["parts"][0]["text"]
 
     except Exception as e:
         st.error(f"Error en transcripción con Gemini: {e}")
