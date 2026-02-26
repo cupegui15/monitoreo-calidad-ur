@@ -1319,9 +1319,9 @@ elif pagina == "📥 Descarga de resultados":
 # 🤖 IA – Monitoreo Automático Servicio (Gemini + Matriz Oficial)
 # =====================================================================
 
-elif pagina == "🤖 IA":
+elif pagina == "🧠 IA":
 
-    st.markdown("## 🤖 Monitoreo Automático con IA – Servicio")
+    st.markdown("## 🧠 Monitoreo Automático con IA – Servicio")
 
     canal = "Servicio"
     monitor = "IA"
