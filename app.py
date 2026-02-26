@@ -219,13 +219,13 @@ def obtener_preguntas(area, canal):
             ]
         if canal == "Servicio":
             return [
-                "¿Atiende la interacción de forma oportuna en el momento que se establece el contacto?",
-                "¿Saluda y se presenta de manera amable y profesional, estableciendo un inicio cordial de la atención?",
-                "¿Realiza la validación de identidad del usuario garantizando confidencialidad y aplica protocolos de seguridad de la información?",
-                "¿Escucha activamente al usuario y formula preguntas pertinentes para un diagnóstico claro y completo?",
-                "¿Gestiona adecuadamente los tiempos de espera, manteniendo informado al usuario y realizando acompañamiento oportuno durante la interacción?",
-                "¿Valida con el usuario que la información brindada es clara, completa y confirma si requiere trámites o pasos adicionales?",
-                "¿Finaliza la atención de forma amable y profesional, utilizando el cierre de interacción definido y remitiendo al usuario a la encuesta de satisfacción?"
+                "¿Atiende la interacción en el momento que se establece contacto con el(a) usuario(a)?",
+                "¿Saluda, se presenta de una forma amable y cortés, usando el dialogo de saludo y bienvenida?",
+                "¿Realiza la validación de identidad del usuario y personaliza la interacción de forma adecuada garantizando la confidencialidad de la información?",
+                "¿Escucha activamente al usuario y realiza preguntas adicionales demostrando atención y concentración?",
+                "¿Controla los tiempos de espera informando al usuario y realizando acompañamiento cada 2 minutos?",
+                "¿Valida con el usuario si la información fue clara, completa o si requiere algún trámite adicional?",
+                "¿Finaliza la atención de forma amable, cortés utilizando el dialogo de cierre y despedida remitiendo al usuario a responder la encuesta de percepción?"
             ]
 
 # ===============================
