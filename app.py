@@ -838,10 +838,31 @@ elif pagina == "📊 Dashboard Casa UR":
 
     st.subheader("📊 Dashboard Casa UR")
 
-    c1, c2, c3 = st.columns(3)
-    c1.metric("Monitoreos Totales", len(df_filtrado))
-    c2.metric("Promedio General (Total puntos)", f"{(df_filtrado['Total'].mean() if 'Total' in df_filtrado.columns else 0.0):.2f}")
-    c3.metric("Errores Críticos", len(df_filtrado[df_filtrado["Error crítico"] == "Sí"]))
+    total_monitoreos = len(df_filtrado)
+    total_asesores = df_filtrado["Asesor"].nunique()
+
+    promedio_monitoreos_asesor = (
+    total_monitoreos / total_asesores if total_asesores > 0 else 0
+    )
+
+    c1, c2, c3, c4 = st.columns(4)
+
+    c1.metric("Monitoreos Totales", total_monitoreos)
+
+    c2.metric(
+    "Promedio General (Total puntos)",
+    f"{df_filtrado['Total'].mean():.2f}" if "Total" in df_filtrado.columns else "0.00"
+    )
+
+    c3.metric(
+    "Errores Críticos",
+    len(df_filtrado[df_filtrado["Error crítico"] == "Sí"])
+    )
+
+    c4.metric(
+    "Promedio Monitoreos por Asesor",
+    f"{promedio_monitoreos_asesor:.2f}"
+    )
 
     st.subheader("📊 Distribución de Monitoreos – Casa UR")
 
@@ -968,12 +989,34 @@ elif pagina == "📈 Dashboard Conecta UR":
 )
 
     # ================= DASHBOARD =================
+    # ================= DASHBOARD =================
     st.subheader("📈 Dashboard Conecta UR – Global")
 
-    c1, c2, c3 = st.columns(3)
-    c1.metric("Monitoreos Totales", len(df_filtrado))
-    c2.metric("Promedio General (Total puntos)", f"{(df_filtrado['Total'].mean() if 'Total' in df_filtrado.columns else 0.0):.2f}")
-    c3.metric("Errores Críticos", len(df_filtrado[df_filtrado["Error crítico"] == "Sí"]))
+    total_monitoreos = len(df_filtrado)
+    total_asesores = df_filtrado["Asesor"].nunique()
+
+    promedio_monitoreos_asesor = (
+    total_monitoreos / total_asesores if total_asesores > 0 else 0
+    )
+
+    c1, c2, c3, c4 = st.columns(4)
+
+    c1.metric("Monitoreos Totales", total_monitoreos)
+
+    c2.metric(
+    "Promedio General (Total puntos)",
+    f"{df_filtrado['Total'].mean():.2f}" if "Total" in df_filtrado.columns else "0.00"
+    )
+
+    c3.metric(
+    "Errores Críticos",
+    len(df_filtrado[df_filtrado["Error crítico"] == "Sí"])
+    )
+
+    c4.metric(
+    "Promedio Monitoreos por Asesor",
+    f"{promedio_monitoreos_asesor:.2f}"
+    )
 
     st.subheader("📊 Distribución de Monitoreos – Conecta UR")
 
